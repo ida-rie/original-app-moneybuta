@@ -17,11 +17,11 @@ export const metadata: Metadata = {
 	description: 'クエスト(お手伝い)をクリアしておこづかいを貯めていくアプリです。',
 };
 
-export default function RootLayout({
+const RootLayout = ({
 	children,
 }: Readonly<{
 	children: React.ReactNode;
-}>) {
+}>) => {
 	return (
 		<html lang="ja">
 			<head>
@@ -32,4 +32,6 @@ export default function RootLayout({
 			</body>
 		</html>
 	);
-}
+};
+
+export default RootLayout;
