@@ -28,6 +28,6 @@
 	}
 
 	body {
-		@apply bg-[var(--color-background)] text-[var(--color-text)] transition-colors duration-300;
+		@apply bg-[var(--color-background)] text-[var(--color-text)] text-sm transition-colors duration-300;
 	}
 }
