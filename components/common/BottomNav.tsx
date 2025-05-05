@@ -1,11 +1,11 @@
 import React from 'react';
 import Link from 'next/link';
 import { Home, ClipboardList, User, Settings } from 'lucide-react';
-import BottomChildSwitcher from '../elements/BottomChildSwitcher';
+import BottomChildSwitcher from './BottomChildSwitcher';
 
 function BottomNav() {
 	return (
-		<nav className="md:hidden fixed bottom-0 left-0 right-0 border-t shadow z-50">
+		<nav className="md:hidden fixed bottom-0 left-0 right-0 border-t z-50 bg-[var(--color-background)]">
 			<ul className="flex justify-around items-center py-2">
 				<li>
 					<Link href="/" className="flex flex-col items-center text-xs">

@@ -11,7 +11,18 @@ import {
 const Header = () => {
 	return (
 		<header className="hidden md:flex items-center justify-between py-4 w-full">
-			<div>icon</div>
+			<div className="flex items-center gap-4">
+				<div>icon</div>
+				<Select>
+					<SelectTrigger className="w-full text-sm focus-visible:ring-offset-0 focus-visible:ring-0">
+						<SelectValue placeholder="こどもを選択" />
+					</SelectTrigger>
+					<SelectContent className="text-sm bg-[var(--color-background)]">
+						<SelectItem value="light">太郎</SelectItem>
+						<SelectItem value="dark">花子</SelectItem>
+					</SelectContent>
+				</Select>
+			</div>
 			<nav>
 				<ul className="flex items-center text-sm gap-6">
 					<li>
@@ -26,17 +37,7 @@ const Header = () => {
 					<li>
 						<Link href="/settings">設定</Link>
 					</li>
-					<li>
-						<Select>
-							<SelectTrigger className="w-full text-sm focus-visible:ring-offset-0 focus-visible:ring-0">
-								<SelectValue placeholder="こどもを選択" />
-							</SelectTrigger>
-							<SelectContent className="text-sm">
-								<SelectItem value="light">太郎</SelectItem>
-								<SelectItem value="dark">花子</SelectItem>
-							</SelectContent>
-						</Select>
-					</li>
+					<li>サインアウト</li>
 				</ul>
 			</nav>
 		</header>

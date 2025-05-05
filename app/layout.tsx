@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
+import MobileHeader from '@/components/common/MobileHeader';
 
 const geistSans = Geist({
 	variable: '--font-geist-sans',
@@ -33,6 +34,7 @@ const RootLayout = ({
 			<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
 				<div className="container m-auto px-4">
 					{isLogin && <Header />}
+					{isLogin && <MobileHeader />}
 					{children}
 					{isLogin && <BottomNav />}
 				</div>

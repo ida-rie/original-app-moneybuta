@@ -1,6 +1,6 @@
 const Home = () => {
 	return (
-		<div>
+		<div className="pt-[40px] md:pt-0">
 			<main>トップページの実装/リダイレクト処理</main>
 		</div>
 	);
