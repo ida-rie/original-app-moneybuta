@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import Header from '@/components/common/Header';
+import BottomNav from '@/components/common/BottomNav';
 
 const geistSans = Geist({
 	variable: '--font-geist-sans',
@@ -25,10 +27,15 @@ const RootLayout = ({
 }: Readonly<{
 	children: React.ReactNode;
 }>) => {
+	const isLogin = true; // 仮のサインイン状態
 	return (
 		<html lang="ja">
 			<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-				<div className="container mx-auto px-5 py-10">{children}</div>
+				<div className="container m-auto px-4">
+					{isLogin && <Header />}
+					{children}
+					{isLogin && <BottomNav />}
+				</div>
 			</body>
 		</html>
 	);
