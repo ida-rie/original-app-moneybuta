@@ -19,16 +19,19 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 const FormSchema = z.object({
-	userId: z.string().min(2, {
-		message: 'ユーザーIDは2文字以上で入力してください',
-	}),
+	userId: z
+		.string()
+		.min(1, {
+			message: 'メールアドレスは必須です',
+		})
+		.email({ message: 'メールアドレスの形式が正しくありません' }),
 	password: z.string().min(8, {
 		message: 'パスワードは8文字以上で入力してください',
 	}),
 	username: z
 		.string()
-		.min(2, {
-			message: 'ユーザー名は2文字以上で入力してください',
+		.min(1, {
+			message: 'ユーザー名は必須です',
 		})
 		.max(15, { message: 'ユーザー名は15文字以内で入力してください' }),
 });
@@ -141,7 +144,10 @@ const SignUp = () => {
 							</FormItem>
 						)}
 					/>
-					<Button type="submit" variant="custom">
+					<Button
+						type="submit"
+						className="font-bold bg-[var(--color-brand)] text-white hover:bg-[var(--color-background)] hover:text-[var(--color-brand)] hover:border-1 cursor-pointer"
+					>
 						新規登録
 					</Button>
 				</form>

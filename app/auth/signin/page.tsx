@@ -19,8 +19,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 const FormSchema = z.object({
-	userId: z.string().min(2, {
-		message: 'ユーザーIDは2文字以上で入力してください',
+	userId: z.string().min(1, {
+		message: 'ユーザーIDは必須です',
 	}),
 	password: z.string().min(8, {
 		message: 'パスワードは8文字以上で入力してください',
@@ -117,7 +117,10 @@ const SignIn = () => {
 							</FormItem>
 						)}
 					/>
-					<Button type="submit" variant="custom">
+					<Button
+						type="submit"
+						className="font-bold bg-[var(--color-brand)] text-white hover:bg-[var(--color-background)] hover:text-[var(--color-brand)] hover:border-1 cursor-pointer"
+					>
 						サインイン
 					</Button>
 				</form>
