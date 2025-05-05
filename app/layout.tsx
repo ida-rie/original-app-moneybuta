@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
 	title: 'マネぶた おこづかいクエスト',
 	description: 'クエスト(お手伝い)をクリアしておこづかいを貯めていくアプリです。',
+	icons: {
+		icon: '/favicon.ico',
+	},
 };
 
 const RootLayout = ({
@@ -24,9 +27,6 @@ const RootLayout = ({
 }>) => {
 	return (
 		<html lang="ja">
-			<head>
-				<link rel="icon" href="/favicon.ico" sizes="any" />
-			</head>
 			<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
 				<div className="container mx-auto px-5 py-10">{children}</div>
 			</body>
