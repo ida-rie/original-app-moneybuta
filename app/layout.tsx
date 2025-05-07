@@ -33,8 +33,12 @@ const RootLayout = ({
 		<html lang="ja">
 			<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
 				<div className="container m-auto px-4">
-					{isLogin && <Header />}
-					{isLogin && <MobileHeader />}
+					{isLogin && (
+						<>
+							<Header />
+							<MobileHeader />
+						</>
+					)}
 					{children}
 					{isLogin && <BottomNav />}
 				</div>
