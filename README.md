@@ -1,36 +1,95 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🐷 マネぶた　おこづかいクエスト
 
-## Getting Started
+## 📌 アプリの概要
 
-First, run the development server:
+子どもの金銭教育をサポートする、親子で使えるおこづかい管理アプリです。  
+親はおこづかいの設定やお手伝いの報酬を管理でき、子どもは自分で使える金額を確認できます。
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🔗 公開サイト URL
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+[https://your-app-url.vercel.app](https://your-app-url.vercel.app)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## ✨ 主な機能
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- 月額おこづかいの設定
+- お手伝いに応じた報酬加算
+- 残高確認機能（子ども向け）
+- 管理画面（親向け）
 
-## Learn More
+## 🧪 テスト用アカウント
 
-To learn more about Next.js, take a look at the following resources:
+※ 実装済みの場合
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **親アカウント**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+  - メール: ``
+  - パスワード: ``
 
-## Deploy on Vercel
+- **子アカウント**
+  - メール: ``
+  - パスワード: ``
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🛠 技術スタック
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 🚀 フレームワーク・言語
+
+- Next.js (App Router)
+- TypeScript
+
+### 🎨 UI
+
+- Tailwind CSS
+- shadcn/ui
+
+### ⚙️ 状態管理
+
+- React Hooks
+- Zustand
+
+### 🔐 認証・データベース
+
+- Prisma（データベース接続と ORM）
+- Supabase Auth（認証）
+
+### 🗃 バージョン管理
+
+- Git + GitHub
+
+## 📋 機能一覧
+
+### 👶 こども向け機能
+
+- 自分の残高表示
+- おこづかい履歴の確認
+- アバター選択（カスタマイズ要素）
+
+### 👨‍👩‍👧‍👦 親向け機能
+
+- 月額おこづかいの設定
+- お手伝いの追加／編集／削除
+- 履歴管理
+
+### 🔁 共通機能
+
+- ログイン／ログアウト
+- アカウント登録
+- リアルタイム反映（Supabase Realtime）
+
+## 🗂 プロジェクト構造（例）
+
+/app
+├── (auth) // 認証関連ページ
+├── dashboard // 親用ダッシュボード
+├── child // 子ども用ページ
+└── components // 再利用コンポーネント
+/libs // ロジック、ユーティリティ関数
+/types // 型定義
+
+## 🧾 データベーススキーマ（ER 図）
+
+![ER図](./public/er-diagram.png)  
+※ Supabase の ER 図は [dbdiagram.io](https://dbdiagram.io/) や Supabase Studio で作成可能です。
+
+## 📄 ライセンス
+
+© 2025 マネぶた おこづかいクエスト All rights reserved.
