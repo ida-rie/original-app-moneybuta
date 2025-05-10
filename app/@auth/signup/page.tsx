@@ -3,7 +3,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-
 import { toast, Toaster } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,20 +18,30 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 const FormSchema = z.object({
-	userId: z.string().min(1, {
-		message: 'ユーザーIDは必須です',
-	}),
+	userId: z
+		.string()
+		.min(1, {
+			message: 'メールアドレスは必須です',
+		})
+		.email({ message: 'メールアドレスの形式が正しくありません' }),
 	password: z.string().min(8, {
 		message: 'パスワードは8文字以上で入力してください',
 	}),
+	username: z
+		.string()
+		.min(1, {
+			message: 'ユーザー名は必須です',
+		})
+		.max(15, { message: 'ユーザー名は15文字以内で入力してください' }),
 });
 
-const SignIn = () => {
+const SignUp = () => {
 	const form = useForm<z.infer<typeof FormSchema>>({
 		resolver: zodResolver(FormSchema),
 		defaultValues: {
 			userId: '',
 			password: '',
+			username: '',
 		},
 	});
 
@@ -46,6 +55,13 @@ const SignIn = () => {
 		}
 		if (!data.password) {
 			toast.error('パスワードが入力されていません', {
+				duration: 3000,
+				position: 'top-right',
+			});
+			return;
+		}
+		if (!data.username) {
+			toast.error('ユーザー名が入力されていません', {
 				duration: 3000,
 				position: 'top-right',
 			});
@@ -95,10 +111,7 @@ const SignIn = () => {
 							<FormItem>
 								<FormLabel>ユーザーID</FormLabel>
 								<FormControl>
-									<Input
-										placeholder="ユーザー名またはメールアドレスを入力してください"
-										{...field}
-									/>
+									<Input placeholder="メールアドレスを入力してください" {...field} />
 								</FormControl>
 								<FormMessage />
 							</FormItem>
@@ -117,20 +130,33 @@ const SignIn = () => {
 							</FormItem>
 						)}
 					/>
+					<FormField
+						control={form.control}
+						name="username"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>ユーザー名(表示名)</FormLabel>
+								<FormControl>
+									<Input placeholder="ユーザー名を入力してください" {...field} />
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
 					<Button
 						type="submit"
 						className="font-bold bg-[var(--color-brand)] text-white hover:bg-[var(--color-background)] hover:text-[var(--color-brand)] hover:border-1 cursor-pointer"
 					>
-						サインイン
+						新規登録
 					</Button>
 				</form>
 				<Toaster position="top-right" />
 			</Form>
 			<div className="mt-6 flex items-center justify-center text-[var(--color-primary)] hover:underline">
-				<Link href="/auth/signup">親アカウントの新規登録はこちら</Link>
+				<Link href="/signin">サインインはこちら</Link>
 			</div>
 		</>
 	);
 };
 
-export default SignIn;
+export default SignUp;

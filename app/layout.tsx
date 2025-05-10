@@ -23,24 +23,45 @@ export const metadata: Metadata = {
 	},
 };
 
+// const RootLayout = ({
+// 	children,
+// }: Readonly<{
+// 	children: React.ReactNode;
+// }>) => {
+// 	return (
+// 		<html lang="ja">
+// 			<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+// 				<div className="container m-auto px-4">
+// 					<Header />
+// 					<MobileHeader />
+
+// 					{children}
+// 					<BottomNav />
+// 				</div>
+// 			</body>
+// 		</html>
+// 	);
+// };
+
 const RootLayout = ({
 	children,
+	auth,
 }: Readonly<{
 	children: React.ReactNode;
+	auth: React.ReactNode;
 }>) => {
-	const isLogin = true; // 仮のサインイン状態
 	return (
 		<html lang="ja">
 			<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
 				<div className="container m-auto px-4">
-					{isLogin && (
+					{auth ?? (
 						<>
 							<Header />
 							<MobileHeader />
+							{children}
+							<BottomNav />
 						</>
 					)}
-					{children}
-					{isLogin && <BottomNav />}
 				</div>
 			</body>
 		</html>
