@@ -8,9 +8,9 @@ import {
 	SelectValue,
 } from '@/components/ui/select';
 
-const Header = () => {
+const PcHeader = () => {
 	return (
-		<header className="hidden md:flex items-center justify-between py-4 w-full">
+		<>
 			<div className="flex items-center gap-4">
 				<div>icon</div>
 				<Select>
@@ -40,8 +40,8 @@ const Header = () => {
 					<li>サインアウト</li>
 				</ul>
 			</nav>
-		</header>
+		</>
 	);
 };
 
-export default Header;
+export default PcHeader;

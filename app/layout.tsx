@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-import Header from '@/components/common/Header';
-import BottomNav from '@/components/common/BottomNav';
-import MobileHeader from '@/components/common/MobileHeader';
+import Header from '@/components/layout/header/PcHeader';
+import BottomNav from '@/components/layout/header/BottomNav';
+import MobileHeader from '@/components/layout/header/MobileHeader';
 
 const geistSans = Geist({
 	variable: '--font-geist-sans',
@@ -56,8 +56,12 @@ const RootLayout = ({
 				<div className="container m-auto px-4">
 					{auth ?? (
 						<>
-							<Header />
-							<MobileHeader />
+							<header className="hidden md:flex items-center justify-between py-4 w-full">
+								<Header />
+							</header>
+							<header className="md:hidden fixed top-0 left-0 right-0 p-2 border-b flex justify-between items-center bg-[var(--color-background)]">
+								<MobileHeader />
+							</header>
 							{children}
 							<BottomNav />
 						</>
