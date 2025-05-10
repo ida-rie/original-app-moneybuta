@@ -67,6 +67,9 @@ const RootLayout = ({
 						</>
 					)}
 				</div>
+				<footer className="m-6 pb-[50px] md:pb-0 text-center">
+					<small>© 2025 マネぶた おこづかいクエスト All rights reserved.</small>
+				</footer>
 			</body>
 		</html>
 	);
