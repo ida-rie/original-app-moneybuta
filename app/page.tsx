@@ -1,4 +1,4 @@
-import IncomeChart from '@/components/elements/IncomeChart';
+import IncomeChart from '@/components/chart/IncomeChart';
 import Image from 'next/image';
 
 const Home = () => {
