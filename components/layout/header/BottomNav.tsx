@@ -5,7 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 
 function BottomNav() {
 	return (
-		<nav className="md:hidden fixed bottom-0 left-0 right-0 border-t z-50 bg-[var(--color-background)]">
+		<nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[var(--color-brand)] text-white">
 			<ul className="flex justify-around items-center py-2">
 				<li>
 					<Link href="/" className="flex flex-col items-center text-xs">
@@ -48,10 +48,10 @@ function BottomNav() {
 							</SheetHeader>
 							<div className="flex flex-col space-y-4 py-4">
 								{/* 自由に選択肢を構成 */}
-								<button className="mx-4 px-4 py-3 text-center text-base font-bold rounded-lg bg-[var(--color-accent)] text-white transition">
+								<button className="mx-4 px-4 py-3 text-center text-base font-bold rounded-lg bg-[var(--color-brand)] text-white transition">
 									太郎
 								</button>
-								<button className="mx-4 px-4 py-3 text-center text-base font-bold rounded-lg bg-[var(--color-accent)] text-white transition">
+								<button className="mx-4 px-4 py-3 text-center text-base font-bold rounded-lg bg-[var(--color-brand)] text-white transition">
 									花子
 								</button>
 							</div>

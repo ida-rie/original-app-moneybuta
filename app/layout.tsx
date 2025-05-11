@@ -1,19 +1,21 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Noto_Sans_JP } from 'next/font/google';
 import './globals.css';
-import Header from '@/components/layout/header/PcHeader';
+import PcHeader from '@/components/layout/header/PcHeader';
 import BottomNav from '@/components/layout/header/BottomNav';
 import MobileHeader from '@/components/layout/header/MobileHeader';
 
-const geistSans = Geist({
-	variable: '--font-geist-sans',
-	subsets: ['latin'],
+// Noto Sans JP フォントをインポート
+const notoSansJP = Noto_Sans_JP({
+	subsets: ['latin'], // 日本語サポート
+	weight: '400', // 必要なウェイトを指定
 });
 
-const geistMono = Geist_Mono({
-	variable: '--font-geist-mono',
-	subsets: ['latin'],
-});
+// Quicksand フォントをインポート
+// const quicksand = Quicksand({
+// 	subsets: ['latin'],
+// 	weight: '400', // 必要なウェイトを指定
+// });
 
 export const metadata: Metadata = {
 	title: 'マネぶた おこづかいクエスト',
@@ -52,21 +54,31 @@ const RootLayout = ({
 }>) => {
 	return (
 		<html lang="ja">
-			<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-				<div className="container m-auto px-4">
-					{auth ?? (
-						<>
-							<header className="hidden md:flex items-center justify-between py-4 w-full">
-								<Header />
-							</header>
-							<header className="md:hidden fixed top-0 left-0 right-0 p-2 border-b flex justify-between items-center bg-[var(--color-background)]">
-								<MobileHeader />
-							</header>
-							{children}
-							<BottomNav />
-						</>
-					)}
+			<body className={`${notoSansJP.className} antialiased`}>
+				{/* authページ以外はヘッダー表示 */}
+				{!auth && (
+					<>
+						{/* PC用 Header */}
+						<header className="hidden md:block">
+							<div>
+								<PcHeader />
+							</div>
+						</header>
+
+						{/* モバイル用 Header */}
+						<header className="md:hidden fixed top-0 left-0 right-0 p-2 border-b flex justify-between items-center bg-[var(--color-background)] z-50">
+							<MobileHeader />
+						</header>
+					</>
+				)}
+
+				{/* Main コンテンツ */}
+				<div className="container mx-auto px-4 pt-4">
+					{children}
+					{/* モバイル用ナビ */}
+					{!auth && <BottomNav />}
 				</div>
+
 				<footer className="m-6 pb-[50px] md:pb-0 text-center">
 					<small>© 2025 マネぶた おこづかいクエスト All rights reserved.</small>
 				</footer>

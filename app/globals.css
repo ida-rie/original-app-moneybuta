@@ -29,6 +29,9 @@
 
 	body {
 		@apply bg-[var(--color-background)] text-[var(--color-text)] text-sm transition-colors duration-300;
-		font-family: 'Comic Sans MS', sans-serif; /* 子ども向けに柔らかい印象 */
+		font-family: 'Noto Sans JP', sans-serif;
 	}
+}
+.quicksand {
+	font-family: 'Quicksand', sans-serif;
 }

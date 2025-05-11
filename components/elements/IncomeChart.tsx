@@ -77,13 +77,15 @@ const IncomeChart = () => {
 				<CardTitle>おこづかいのきろく</CardTitle>
 				<div className="mt-2">
 					<Select value={selectedMonth} onValueChange={setSelectedMonth}>
-						<SelectTrigger className="w-[200px]">
-							<SelectValue placeholder="月を選択" />
+						<SelectTrigger className="w-[200px] bg-white">
+							<SelectValue placeholder="月をえらぶ" />
 						</SelectTrigger>
-						<SelectContent>
+						<SelectContent className="bg-white">
 							{months.map((month) => (
 								<SelectItem key={month} value={month}>
-									{format(new Date(month + '-01'), 'yyyy年M月', { locale: ja })}
+									<span className="quicksand">
+										{format(new Date(month + '-01'), 'yyyy年M月', { locale: ja })}
+									</span>
 								</SelectItem>
 							))}
 						</SelectContent>
@@ -124,9 +126,9 @@ const IncomeChart = () => {
 					<table className="w-full border-separate border-spacing-0 rounded-lg shadow-md">
 						<thead>
 							<tr className="bg-[var(--color-secondary)] text-white rounded-t-lg">
-								<th className="text-left p-2 font-semibold text-lg">日付</th>
-								<th className="text-left p-2 font-semibold text-lg">内容</th>
-								<th className="text-left p-2 font-semibold text-lg">金額</th>
+								<th className="text-left p-2 font-semibold text-lg">日にち</th>
+								<th className="text-left p-2 font-semibold text-lg">ないよう</th>
+								<th className="text-left p-2 font-semibold text-lg">金がく</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -136,13 +138,15 @@ const IncomeChart = () => {
 									className="hover:bg-[var(--color-card-bg)] transition-colors duration-200"
 								>
 									<td className="p-4 border-b-2 border-[var(--color-border)] text-sm font-medium text-gray-700">
-										{format(new Date(data.date), 'yyyy年MM月d日', { locale: ja })}
+										<span className="quicksand">
+											{format(new Date(data.date), 'yyyy年MM月d日', { locale: ja })}
+										</span>
 									</td>
 									<td className="p-4 border-b-2 border-[var(--color-border)] text-sm font-medium text-gray-700">
 										{data.content} をした！
 									</td>
 									<td className="p-4 border-b-2 border-[var(--color-border)] text-sm font-medium text-gray-700">
-										{data.amount} 円手に入れた！
+										<span className="quicksand">{data.amount}</span> 円手に入れた！
 									</td>
 								</tr>
 							))}
