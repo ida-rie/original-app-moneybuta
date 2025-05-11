@@ -7,8 +7,7 @@ import { generateChartData, months } from '@/lib/utils/chartData';
 import { ChartHeader } from '../chart/ChartHeader';
 import { ChartDataPoint } from '@/types/chartType';
 import { ChartGraph } from '../chart/ChartGraph';
-import { ChartTable } from '../chart/ChartTable';
-import { ChartCardList } from '../chart/ChartCardList';
+import { ChartIncomeHistory } from './ChartIncomeHistory';
 
 export const IncomeChart = () => {
 	// 選択中の月
@@ -28,7 +27,7 @@ export const IncomeChart = () => {
 
 	return (
 		<div>
-			<Card>
+			<Card className="border-[var(--color-secondary)]">
 				<CardHeader>
 					<CardTitle>おこづかいのきろく</CardTitle>
 					{/* 月を選択 */}
@@ -43,19 +42,12 @@ export const IncomeChart = () => {
 					{/* チャート */}
 					<ChartGraph data={chartData} interval={interval} />
 
-					{/* 金額履歴テーブル（PC用） */}
-					<div className="hidden sm:block overflow-x-auto">
-						<ChartTable data={chartData} />
-					</div>
-
-					{/* 金額履歴カード（モバイル用） */}
-					<div className="sm:hidden space-y-4">
-						<ChartCardList data={chartData} />
-					</div>
+					{/* 収入履歴 */}
+					<ChartIncomeHistory data={chartData} userIconUrl="/logo.png" />
 				</CardContent>
 
 				<CardFooter className="text-sm text-muted-foreground">
-					<div>おてつだいでもらったおこづかいのきろくが見られるよ！</div>
+					<div>おてつだいクエストでもらった金がくのきろくが見られるよ！</div>
 				</CardFooter>
 			</Card>
 		</div>

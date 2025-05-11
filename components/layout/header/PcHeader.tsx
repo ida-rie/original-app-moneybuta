@@ -1,5 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { UserRound } from 'lucide-react';
 import {
 	Select,
 	SelectContent,
@@ -8,12 +10,24 @@ import {
 	SelectValue,
 } from '@/components/ui/select';
 
-export const PcHeader = () => {
+type PcHeaderProps = {
+	userIconUrl?: string;
+};
+
+export const PcHeader = ({ userIconUrl }: PcHeaderProps) => {
 	return (
 		<div className="w-full">
 			<div className="flex items-center justify-between py-4 container mx-auto px-4">
 				<div className="flex items-center gap-4">
-					<div>icon</div>
+					<div className="w-15 h-15 relative flex justify-center items-center">
+						{userIconUrl ? (
+							<Image src={userIconUrl} alt="Icon" fill className="rounded-full object-cover" />
+						) : (
+							<div className="w-10 h-10 flex items-center justify-center bg-white rounded-full shadow text-gray-500">
+								<UserRound size={30} className="rounded-full object-cover" />
+							</div>
+						)}
+					</div>
 					<Select>
 						<SelectTrigger className="w-full text-sm focus-visible:ring-offset-0 focus-visible:ring-0 bg-white">
 							<SelectValue placeholder="こどもを選択" />
@@ -30,7 +44,7 @@ export const PcHeader = () => {
 							<Link href="/">ホーム</Link>
 						</li>
 						<li>
-							<Link href="/chores">おてつだい</Link>
+							<Link href="/chores">クエスト</Link>
 						</li>
 						<li>
 							<Link href="/mypage">マイページ</Link>

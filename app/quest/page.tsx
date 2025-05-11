@@ -1,7 +1,7 @@
 import React from 'react';
 
-const Chores = () => {
+const Quest = () => {
 	return <div>page</div>;
 };
 
-export default Chores;
+export default Quest;

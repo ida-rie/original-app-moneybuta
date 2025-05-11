@@ -38,17 +38,17 @@ const RootLayout = ({
 				{/* PC用 Header */}
 				<header className="hidden md:block">
 					<div>
-						<PcHeader />
+						<PcHeader userIconUrl="" />
 					</div>
 				</header>
 
 				{/* モバイル用 Header */}
 				<header className="md:hidden fixed top-0 left-0 right-0 p-2 border-b flex justify-between items-center bg-[var(--color-background)] z-50">
-					<MobileHeader />
+					<MobileHeader userIconUrl="" />
 				</header>
 
 				{/* Main コンテンツ */}
-				<div className="container mx-auto px-4 pt-[50px] md:pt-4">
+				<div className="container mx-auto px-4 pt-[60px] md:pt-4">
 					<main>{children}</main>
 					{/* モバイル用ナビ */}
 					<BottomNav />
