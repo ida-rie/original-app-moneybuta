@@ -10,7 +10,7 @@ import { ChartGraph } from '../chart/ChartGraph';
 import { ChartTable } from '../chart/ChartTable';
 import { ChartCardList } from '../chart/ChartCardList';
 
-const IncomeChart = () => {
+export const IncomeChart = () => {
 	// 選択中の月
 	const [selectedMonth, setSelectedMonth] = useState('2024-04');
 	// 表示するデータ（クライアント側で生成）
@@ -27,37 +27,37 @@ const IncomeChart = () => {
 	}, [selectedMonth]);
 
 	return (
-		<Card>
-			<CardHeader>
-				<CardTitle>おこづかいのきろく</CardTitle>
-				{/* 月を選択 */}
-				<ChartHeader
-					selectedMonth={selectedMonth}
-					onMonthChange={setSelectedMonth}
-					months={months}
-				/>
-			</CardHeader>
+		<div>
+			<Card>
+				<CardHeader>
+					<CardTitle>おこづかいのきろく</CardTitle>
+					{/* 月を選択 */}
+					<ChartHeader
+						selectedMonth={selectedMonth}
+						onMonthChange={setSelectedMonth}
+						months={months}
+					/>
+				</CardHeader>
 
-			<CardContent className="space-y-6">
-				{/* チャート */}
-				<ChartGraph data={chartData} interval={interval} />
+				<CardContent className="space-y-6">
+					{/* チャート */}
+					<ChartGraph data={chartData} interval={interval} />
 
-				{/* 金額履歴テーブル（PC用） */}
-				<div className="hidden sm:block overflow-x-auto">
-					<ChartTable data={chartData} />
-				</div>
+					{/* 金額履歴テーブル（PC用） */}
+					<div className="hidden sm:block overflow-x-auto">
+						<ChartTable data={chartData} />
+					</div>
 
-				{/* 金額履歴カード（モバイル用） */}
-				<div className="sm:hidden space-y-4">
-					<ChartCardList data={chartData} />
-				</div>
-			</CardContent>
+					{/* 金額履歴カード（モバイル用） */}
+					<div className="sm:hidden space-y-4">
+						<ChartCardList data={chartData} />
+					</div>
+				</CardContent>
 
-			<CardFooter className="text-sm text-muted-foreground">
-				<div>おてつだいでもらったおこづかいのきろくが見られるよ！</div>
-			</CardFooter>
-		</Card>
+				<CardFooter className="text-sm text-muted-foreground">
+					<div>おてつだいでもらったおこづかいのきろくが見られるよ！</div>
+				</CardFooter>
+			</Card>
+		</div>
 	);
 };
-
-export default IncomeChart;

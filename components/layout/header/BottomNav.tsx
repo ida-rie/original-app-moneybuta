@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Home, ClipboardList, User, Settings, Smile } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
-function BottomNav() {
+export const BottomNav = () => {
 	return (
 		<nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[var(--color-brand)] text-white">
 			<ul className="flex justify-around items-center py-2">
@@ -61,6 +61,4 @@ function BottomNav() {
 			</ul>
 		</nav>
 	);
-}
-
-export default BottomNav;
+};

@@ -1,5 +1,5 @@
 import React from 'react';
-const MobileHeader = () => {
+export const MobileHeader = () => {
 	return (
 		<>
 			<div>icon</div>
@@ -10,5 +10,3 @@ const MobileHeader = () => {
 		</>
 	);
 };
-
-export default MobileHeader;

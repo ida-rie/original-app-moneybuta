@@ -8,7 +8,7 @@ import {
 	SelectValue,
 } from '@/components/ui/select';
 
-const PcHeader = () => {
+export const PcHeader = () => {
 	return (
 		<div className="w-full">
 			<div className="flex items-center justify-between py-4 container mx-auto px-4">
@@ -45,5 +45,3 @@ const PcHeader = () => {
 		</div>
 	);
 };
-
-export default PcHeader;

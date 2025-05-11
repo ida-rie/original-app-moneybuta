@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { Noto_Sans_JP } from 'next/font/google';
 import './globals.css';
-import PcHeader from '@/components/layout/header/PcHeader';
-import BottomNav from '@/components/layout/header/BottomNav';
-import MobileHeader from '@/components/layout/header/MobileHeader';
+import { PcHeader } from '@/components/layout/header/PcHeader';
+import { BottomNav } from '@/components/layout/header/BottomNav';
+import { MobileHeader } from '@/components/layout/header/MobileHeader';
 
 // Noto Sans JP フォントをインポート
 const notoSansJP = Noto_Sans_JP({
@@ -25,58 +25,34 @@ export const metadata: Metadata = {
 	},
 };
 
-// const RootLayout = ({
-// 	children,
-// }: Readonly<{
-// 	children: React.ReactNode;
-// }>) => {
-// 	return (
-// 		<html lang="ja">
-// 			<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-// 				<div className="container m-auto px-4">
-// 					<Header />
-// 					<MobileHeader />
-
-// 					{children}
-// 					<BottomNav />
-// 				</div>
-// 			</body>
-// 		</html>
-// 	);
-// };
-
 const RootLayout = ({
 	children,
-	auth,
 }: Readonly<{
 	children: React.ReactNode;
-	auth: React.ReactNode;
 }>) => {
+	console.log(children);
 	return (
 		<html lang="ja">
 			<body className={`${notoSansJP.className} antialiased`}>
-				{/* authページ以外はヘッダー表示 */}
-				{!auth && (
-					<>
-						{/* PC用 Header */}
-						<header className="hidden md:block">
-							<div>
-								<PcHeader />
-							</div>
-						</header>
+				{/* authページはヘッダーを非表示 */}
 
-						{/* モバイル用 Header */}
-						<header className="md:hidden fixed top-0 left-0 right-0 p-2 border-b flex justify-between items-center bg-[var(--color-background)] z-50">
-							<MobileHeader />
-						</header>
-					</>
-				)}
+				{/* PC用 Header */}
+				<header className="hidden md:block">
+					<div>
+						<PcHeader />
+					</div>
+				</header>
+
+				{/* モバイル用 Header */}
+				<header className="md:hidden fixed top-0 left-0 right-0 p-2 border-b flex justify-between items-center bg-[var(--color-background)] z-50">
+					<MobileHeader />
+				</header>
 
 				{/* Main コンテンツ */}
-				<div className="container mx-auto px-4 pt-4">
-					{children}
+				<div className="container mx-auto px-4 pt-[50px] md:pt-4">
+					<main>{children}</main>
 					{/* モバイル用ナビ */}
-					{!auth && <BottomNav />}
+					<BottomNav />
 				</div>
 
 				<footer className="m-6 pb-[50px] md:pb-0 text-center">
