@@ -20,7 +20,7 @@ const groupByDate = (data: ChartDataPoint[]) => {
 	}, {});
 };
 
-// PC向け金額履歴のテーブル
+// 収入履歴
 export const ChartIncomeHistory = ({ data, userIconUrl }: ChartIncomeHistoryProps) => {
 	const grouped = groupByDate(data);
 
@@ -37,7 +37,7 @@ export const ChartIncomeHistory = ({ data, userIconUrl }: ChartIncomeHistoryProp
 						</p>
 						<div className="flex flex-col gap-3 py-2">
 							{items.map((item, index) => (
-								<div key={index} className="flex items-start gap-2 self-start md:max-w-full">
+								<div key={index} className="flex items-start gap-2 md:max-w-full">
 									{/* ユーザーアイコン */}
 									<div className="w-8 h-8 relative">
 										{userIconUrl ? (
@@ -63,11 +63,12 @@ export const ChartIncomeHistory = ({ data, userIconUrl }: ChartIncomeHistoryProp
 									</div>
 								</div>
 							))}
-							{/* 合計金額（右寄せ吹き出し＋アイコン） */}
-							<div className="flex items-start gap-2 self-end md:max-w-full">
-								{/* アプリのアイコン */}
-								<div className="w-8 h-8 mt-1 flex items-center justify-center text-[var(--color-primary)]">
-									<Bot size={24} />
+
+							{/* 合計金額（右寄せ吹き出し＋Botアイコン） */}
+							<div className="flex flex-row-reverse items-start gap-2 md:max-w-full">
+								{/* Bot アイコン */}
+								<div className="w-8 h-8 mt-1 flex items-center justify-center bg-white rounded-full shadow text-[var(--color-primary)]">
+									<Bot size={20} />
 								</div>
 								{/* 吹き出し */}
 								<div className="bg-[var(--color-card-bg)] p-4 rounded-2xl shadow-md max-w-[85%]">

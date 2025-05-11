@@ -44,7 +44,7 @@ export const PcHeader = ({ userIconUrl }: PcHeaderProps) => {
 							<Link href="/">ホーム</Link>
 						</li>
 						<li>
-							<Link href="/chores">クエスト</Link>
+							<Link href="/quest">クエスト</Link>
 						</li>
 						<li>
 							<Link href="/mypage">マイページ</Link>

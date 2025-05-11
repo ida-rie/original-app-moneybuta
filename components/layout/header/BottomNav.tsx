@@ -14,7 +14,7 @@ export const BottomNav = () => {
 					</Link>
 				</li>
 				<li>
-					<Link href="/chores" className="flex flex-col items-center text-xs">
+					<Link href="/quest" className="flex flex-col items-center text-xs">
 						<ClipboardList size={20} />
 						クエスト
 					</Link>
