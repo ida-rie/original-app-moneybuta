@@ -30,7 +30,6 @@ const RootLayout = ({
 }: Readonly<{
 	children: React.ReactNode;
 }>) => {
-	console.log(children);
 	return (
 		<html lang="ja">
 			<body className={`${notoSansJP.className} antialiased`}>
