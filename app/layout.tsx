@@ -29,9 +29,9 @@ const RootLayout = ({
 }>) => {
 	return (
 		<html lang="ja">
-			<body className={`${notoSansJP.className} antialiased`}>
+			<body className={`${notoSansJP.className} antialiased flex flex-col min-h-svh`}>
 				{/* Main コンテンツ */}
-				{children}
+				<div className="grow-1">{children}</div>
 
 				<footer className="m-6 pb-[50px] md:pb-0 text-center">
 					<small>© 2025 マネぶた おこづかいクエスト All rights reserved.</small>
