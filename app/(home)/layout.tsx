@@ -3,15 +3,9 @@ import { PcHeader } from '@/components/layout/header/PcHeader';
 import { BottomNav } from '@/components/layout/header/BottomNav';
 import { MobileHeader } from '@/components/layout/header/MobileHeader';
 
-// Quicksand フォントをインポート
-// const quicksand = Quicksand({
-// 	subsets: ['latin'],
-// 	weight: '400', // 必要なウェイトを指定
-// });
-
 export const metadata: Metadata = {
-	title: 'ホーム | マネぶた',
-	description: 'ホーム画面です',
+	title: 'ホーム | マネぶた おこづかいクエスト',
+	description: 'ホーム画面です。月別のおこづかいの履歴が確認できます。',
 };
 
 const RootLayout = ({

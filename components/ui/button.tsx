@@ -5,7 +5,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-	"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+	"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer",
 	{
 		variants: {
 			variant: {
@@ -17,6 +17,15 @@ const buttonVariants = cva(
 				secondary: 'bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80',
 				ghost: 'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
 				link: 'text-primary underline-offset-4 hover:underline',
+				primary:
+					// 'font-bold bg-[var(--color-brand)] text-white hover:bg-[var(--color-background)] hover:text-[var(--color-brand)] hover:border-1',
+					'font-bold bg-[var(--color-brand)] text-white hover:bg-white hover:text-[var(--color-brand)] border border-[var(--color-brand)] transition-colors',
+				incomplete:
+					// 'font-bold bg-[var(--color-secondary)] text-white hover:bg-[var(--color-background)] hover:text-[var(--color-secondary)] hover:border-1',
+					'font-bold bg-[var(--color-secondary)] hover:bg-[var(--color-secondary-dark)] hover:text-white border border-[var(--color-secondary)] transition-colors',
+				complete:
+					// 'font-bold bg-[var(--color-accent)] text-white hover:bg-[var(--color-background)] hover:text-[var(--color-accent)] hover:border-1',
+					'font-bold bg-[var(--color-accent)] hover:bg-[var(--color-accent-dark)] hover:text-white border border-[var(--color-accent)] transition-colors',
 			},
 			size: {
 				default: 'h-9 px-4 py-2 has-[>svg]:px-3',

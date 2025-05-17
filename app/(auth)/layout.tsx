@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-	title: '認証 | マネぶた',
-	description: 'ログインまたは新規登録をしてください',
+	title: 'マネぶた おこづかいクエスト',
+	description:
+		'クエスト(お手伝い)をクリアしておこづかいを貯めていくアプリです。ログインまたは新規登録をしてください。',
 };
 
 const AuthLayout = ({

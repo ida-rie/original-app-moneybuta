@@ -117,10 +117,7 @@ const SignIn = () => {
 							</FormItem>
 						)}
 					/>
-					<Button
-						type="submit"
-						className="font-bold bg-[var(--color-brand)] text-white hover:bg-[var(--color-background)] hover:text-[var(--color-brand)] hover:border-1 cursor-pointer"
-					>
+					<Button type="submit" variant="primary">
 						サインイン
 					</Button>
 				</form>
