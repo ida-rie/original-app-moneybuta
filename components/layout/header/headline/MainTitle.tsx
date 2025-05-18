@@ -14,7 +14,7 @@ const MainTitle = ({ title, icon: Icon }: MainTitleProps) => {
 				<h2 className="text-2xl font-bold text-center text-gray-800">{title}</h2>
 				<Icon size={24} />
 			</div>
-			<div className="mt-2 w-20 h-0.5 bg-[var(--color-brand)] rounded-full" />
+			<div className="mt-2 w-15 h-0.5 bg-[var(--color-brand)] rounded-full" />
 		</div>
 	);
 };
