@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Home, ClipboardList, User, Settings, Smile } from 'lucide-react';
+import { Home, Swords, ShieldUser, Settings, Smile } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 export const BottomNav = () => {
@@ -15,13 +15,13 @@ export const BottomNav = () => {
 				</li>
 				<li>
 					<Link href="/quest" className="flex flex-col items-center text-xs">
-						<ClipboardList size={20} />
+						<Swords size={20} />
 						クエスト
 					</Link>
 				</li>
 				<li>
 					<Link href="/mypage" className="flex flex-col items-center text-xs">
-						<User size={20} />
+						<ShieldUser size={20} />
 						マイページ
 					</Link>
 				</li>

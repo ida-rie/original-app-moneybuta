@@ -24,6 +24,9 @@ const buttonVariants = cva(
 				complete:
 					'font-bold bg-[var(--color-accent)] hover:bg-[var(--color-accent-dark)] hover:text-white border border-[var(--color-accent)] transition-colors',
 				disabled: 'font-bold bg-gray-600 text-white',
+				delete:
+					'border bg-background shadow-xs hover:bg-[var(--color-text)] hover:text-[var(--color-background)] transition-colors',
+				add: 'border bg-background bg-white',
 			},
 			size: {
 				default: 'h-9 px-4 py-2 has-[>svg]:px-3',

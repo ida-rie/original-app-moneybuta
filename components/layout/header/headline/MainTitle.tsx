@@ -11,7 +11,7 @@ const MainTitle = ({ title, icon: Icon }: MainTitleProps) => {
 		<div className="flex flex-col items-center mb-8">
 			<div className="flex items-center gap-2">
 				<Icon size={24} />
-				<h2 className="text-2xl font-bold text-center text-gray-800">{title}</h2>
+				<h2 className="text-2xl font-bold text-center">{title}</h2>
 				<Icon size={24} />
 			</div>
 			<div className="mt-2 w-15 h-0.5 bg-[var(--color-brand)] rounded-full" />
