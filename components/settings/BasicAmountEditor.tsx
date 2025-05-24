@@ -51,7 +51,7 @@ const BasicAmountEditor = ({ basicAmount }: BasicAmountProps) => {
 			{isEdting ? (
 				<Form {...form}>
 					<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-						<div className="grid gap-2 md:grid-cols-[1fr_60px] items-center px-4 py-3 shadow-sm bg-white">
+						<div className="w-full md:w-1/2 grid gap-2 md:grid-cols-[1fr_60px] items-center px-4 py-3 shadow-sm bg-white">
 							{/* 金額入力 */}
 							<FormField
 								control={form.control}
@@ -111,7 +111,7 @@ const BasicAmountEditor = ({ basicAmount }: BasicAmountProps) => {
 				</Form>
 			) : (
 				<>
-					<div className="grid gap-2 md:grid-cols-[1fr_60px] items-center px-4 py-3 shadow-sm bg-white">
+					<div className="w-full md:w-1/2  grid gap-2 md:grid-cols-[1fr_60px] items-center px-4 py-3 shadow-sm bg-white">
 						<p className="font-medium text-lg">{basicAmount.amount}</p>
 						<div className="flex justify-end md:justify-center items-center">
 							<TooltipProvider>

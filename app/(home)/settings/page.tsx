@@ -39,7 +39,7 @@ const Setting = () => {
 				</div>
 			</div>
 
-			<div>
+			<div className="mb-10">
 				<SubTitle title="基本金額の設定" icon={ReceiptJapaneseYen} />
 				<div>
 					<BasicAmountEditor basicAmount={BasicAmount} />
