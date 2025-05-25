@@ -34,7 +34,9 @@ const Setting = () => {
 				</div>
 				{/* クエストの新規設定 */}
 				<div>
-					<p className="text-lg pl-2 border-l-4 border-[var(--color-accent)] mb-4">新規設定</p>
+					<p className="text-lg pl-2 border-l-4 border-[var(--color-accent)] mb-4">
+						クエストの新規設定
+					</p>
 					<QuestCreateForm />
 				</div>
 			</div>

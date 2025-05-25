@@ -125,7 +125,7 @@ const QuestCreateForm = () => {
 				{/* 追加ボタン */}
 				<div className="px-4">
 					<Button type="button" variant="add" onClick={() => append({ title: '', amount: 0 })}>
-						+ 追加する
+						＋追加する
 					</Button>
 				</div>
 

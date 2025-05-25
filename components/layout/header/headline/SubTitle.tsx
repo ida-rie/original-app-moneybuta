@@ -13,7 +13,6 @@ const SubTitle = ({ title, icon: Icon }: SubTitleProps) => {
 				<Icon size={22} />
 				<h3 className="text-lg font-bold text-left">{title}</h3>
 			</div>
-			{/* <div className="mt-2 w-15 h-0.5 bg-[var(--color-brand)] rounded-full" /> */}
 		</div>
 	);
 };

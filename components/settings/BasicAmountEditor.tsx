@@ -112,7 +112,7 @@ const BasicAmountEditor = ({ basicAmount }: BasicAmountProps) => {
 			) : (
 				<>
 					<div className="w-full md:w-1/2  grid gap-2 md:grid-cols-[1fr_60px] items-center px-4 py-3 shadow-sm bg-white">
-						<p className="font-medium text-lg">{basicAmount.amount}</p>
+						<p className="font-medium text-lg quicksand">{basicAmount.amount} 円</p>
 						<div className="flex justify-end md:justify-center items-center">
 							<TooltipProvider>
 								<Tooltip>

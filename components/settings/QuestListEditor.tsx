@@ -139,7 +139,7 @@ const QuestListEditor = ({ quest }: QuestListEditorProps) => {
 						<>
 							<div className="grid gap-2 md:grid-cols-[1fr_230px_60px] items-center px-4 py-3 shadow-sm bg-white">
 								<p className="font-medium text-base">{quest.title}</p>
-								<p className="text-sm text-center px-3 py-1 bg-[var(--color-secondary)] rounded-lg w-fit">
+								<p className="text-sm text-center px-3 py-1 bg-[var(--color-secondary)] rounded-lg w-fit quicksand">
 									{quest.amount} 円
 								</p>
 								<div className="flex justify-end md:justify-center items-center">

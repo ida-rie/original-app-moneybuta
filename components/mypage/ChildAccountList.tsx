@@ -1,0 +1,100 @@
+'use client';
+import React, { useState } from 'react';
+import Image from 'next/image';
+import { Button } from '../ui/button';
+import ProfileEditDialog from './dialog/ProfileEditDialog';
+
+type Child = {
+	userId: string;
+	username: string;
+	userIconUrl?: string;
+};
+
+type Props = {
+	childrenData: Child[];
+};
+
+const ChildAccountList = ({ childrenData }: Props) => {
+	const [selectedChild, setSelectedChild] = useState<Child | null>(null);
+	const [open, setOpen] = useState(false);
+	const [mode, setMode] = useState<'childEdit' | 'create'>('childEdit');
+
+	// 変更ボタン
+	const handleOpen = (child: Child) => {
+		setSelectedChild(child);
+		setMode('childEdit');
+		setOpen(true);
+	};
+
+	// 追加ボタン
+	const handleAddChild = () => {
+		setSelectedChild(null);
+		setMode('create');
+		setOpen(true);
+	};
+
+	const handleClose = () => {
+		setOpen(false);
+		setSelectedChild(null);
+	};
+
+	return (
+		<div className="mt-10 space-y-6 w-2/3 mx-auto">
+			{childrenData.length === 0 ? (
+				<p className="text-sm text-gray-500">登録されている子どもアカウントはありません。</p>
+			) : (
+				<ul className="space-y-3">
+					{childrenData.map((child) => (
+						<li
+							key={child.userId}
+							className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-3"
+						>
+							{/* アイコン＋名前 */}
+							<div className="flex items-center gap-3">
+								<Image
+									src={child.userIconUrl ? child.userIconUrl : '/icon/ic_pig.png'}
+									alt="ユーザーアイコン"
+									width={40}
+									height={40}
+								/>
+								<span className="font-bold">{child.username}</span>
+							</div>
+
+							{/* 変更ボタン */}
+							<div className="flex gap-3 justify-end">
+								<Button type="button" variant="primary" onClick={() => handleOpen(child)}>
+									変更
+								</Button>
+							</div>
+						</li>
+					))}
+				</ul>
+			)}
+
+			{/* 子どもアカウント追加ボタン */}
+			<div className="pt-4">
+				<Button type="button" variant="add" onClick={handleAddChild}>
+					＋子どもを追加する
+				</Button>
+			</div>
+
+			<ProfileEditDialog
+				open={open}
+				onClose={handleClose}
+				mode={mode}
+				defaultValues={
+					mode === 'childEdit'
+						? {
+								userId: selectedChild?.userId ?? '',
+								username: selectedChild?.username ?? '',
+								password: '',
+								userIconUrl: selectedChild?.userIconUrl ?? '/icon/ic_pig.png',
+						  }
+						: undefined
+				}
+			/>
+		</div>
+	);
+};
+
+export default ChildAccountList;
