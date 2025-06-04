@@ -1,9 +1,10 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-
+import { supabase } from '@/lib/supabase';
 import { toast, Toaster } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,7 +20,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 const FormSchema = z.object({
-	userId: z.string().min(1, {
+	emailOrId: z.string().min(1, {
 		message: 'ユーザーIDは必須です',
 	}),
 	password: z.string().min(8, {
@@ -28,23 +29,25 @@ const FormSchema = z.object({
 });
 
 const SignIn = () => {
+	const router = useRouter();
 	const form = useForm<z.infer<typeof FormSchema>>({
 		resolver: zodResolver(FormSchema),
 		defaultValues: {
-			userId: '',
+			emailOrId: '',
 			password: '',
 		},
 	});
 
-	const onSubmit = (data: z.infer<typeof FormSchema>) => {
-		if (!data.userId) {
+	const onSubmit = async (data: z.infer<typeof FormSchema>) => {
+		const { emailOrId, password } = data;
+		if (!emailOrId) {
 			toast.error('ユーザーIDが入力されていません', {
 				duration: 3000,
 				position: 'top-right',
 			});
 			return;
 		}
-		if (!data.password) {
+		if (!password) {
 			toast.error('パスワードが入力されていません', {
 				duration: 3000,
 				position: 'top-right',
@@ -75,6 +78,15 @@ const SignIn = () => {
 		// 		duration: 3000,
 		// 	}
 		// );
+
+		const email = emailOrId.includes('@') ? emailOrId : `${emailOrId}@yourapp.com`; // ← 固定ドメインは環境変数などで管理してもOK
+
+		const { error } = await supabase.auth.signInWithPassword({ email, password });
+		if (error) {
+			console.log(error.message);
+		} else {
+			router.push('/');
+		}
 	};
 
 	return (
@@ -90,7 +102,7 @@ const SignIn = () => {
 				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 text-center">
 					<FormField
 						control={form.control}
-						name="userId"
+						name="emailOrId"
 						render={({ field }) => (
 							<FormItem>
 								<FormLabel>ユーザーID</FormLabel>
