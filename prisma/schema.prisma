@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../lib/generated/prisma"
 }
 
 datasource db {
@@ -14,9 +13,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Users {
-  id         String   @id @default(uuid())
-  authUserId String   @unique                  // Supabase Authと紐づけ
+model User {
+  id         String   @id
   email      String   @unique
   name       String
   role       String                            // "parent", "child"
@@ -25,6 +23,6 @@ model Users {
   createdAt  DateTime @default(now())
 
   // ↓ 自己参照リレーションを定義（子→親、親→子）
-  parent     Users?    @relation("ParentChild", fields: [parentId], references: [id])
-  children   Users[]   @relation("ParentChild")
+  parent     User?    @relation("ParentChild", fields: [parentId], references: [id])
+  children   User[]   @relation("ParentChild")
 }

@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 type CreateUserRequest = {
-	authUserId: string;
+	id: string;
 	email: string;
 	name: string;
 	role: string;
-	parentId?: string;
-	iconUrl?: string;
+	parentId?: string | null;
+	iconUrl?: string | null;
 };
 
 // 新しいユーザーをUsersテーブルに登録するAPI
@@ -17,12 +17,12 @@ export const POST = async (req: Request) => {
 
 		const user = await prisma.user.create({
 			data: {
-				authUserId: body.authUserId,
+				id: body.id,
 				email: body.email,
 				name: body.name,
 				role: body.role,
-				parentId: body.parentId,
-				iconUrl: body.iconUrl,
+				parentId: body.parentId ?? null,
+				iconUrl: body.iconUrl ?? null,
 			},
 		});
 

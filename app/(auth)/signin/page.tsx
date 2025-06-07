@@ -30,6 +30,7 @@ const FormSchema = z.object({
 
 const SignIn = () => {
 	const router = useRouter();
+
 	const form = useForm<z.infer<typeof FormSchema>>({
 		resolver: zodResolver(FormSchema),
 		defaultValues: {
@@ -55,6 +56,15 @@ const SignIn = () => {
 			return;
 		}
 
+		const email = emailOrId.includes('@') ? emailOrId : `${emailOrId}@yourapp.com`; // ← 固定ドメインは環境変数などで管理してもOK
+
+		const { error } = await supabase.auth.signInWithPassword({ email, password });
+		if (error) {
+			console.log(error.message);
+		} else {
+			router.push('/');
+		}
+
 		// toast.success('ログインに成功しました！', {
 		// 	description: `ようこそ、${data.userId}さん`,
 		// 	duration: 3000,
@@ -78,15 +88,6 @@ const SignIn = () => {
 		// 		duration: 3000,
 		// 	}
 		// );
-
-		const email = emailOrId.includes('@') ? emailOrId : `${emailOrId}@yourapp.com`; // ← 固定ドメインは環境変数などで管理してもOK
-
-		const { error } = await supabase.auth.signInWithPassword({ email, password });
-		if (error) {
-			console.log(error.message);
-		} else {
-			router.push('/');
-		}
 	};
 
 	return (
