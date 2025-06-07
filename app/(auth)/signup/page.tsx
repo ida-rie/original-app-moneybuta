@@ -18,6 +18,7 @@ import {
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useAuthStore } from '@/lib/zustand/authStore';
 
 const FormSchema = z.object({
 	email: z
@@ -51,27 +52,6 @@ const SignUp = () => {
 
 	const onSubmit = async (data: z.infer<typeof FormSchema>) => {
 		const { email, password, name } = data;
-		if (!email) {
-			toast.error('ユーザーIDが入力されていません', {
-				duration: 3000,
-				position: 'top-right',
-			});
-			return;
-		}
-		if (!password) {
-			toast.error('パスワードが入力されていません', {
-				duration: 3000,
-				position: 'top-right',
-			});
-			return;
-		}
-		if (!name) {
-			toast.error('ユーザー名が入力されていません', {
-				duration: 3000,
-				position: 'top-right',
-			});
-			return;
-		}
 
 		// supabase認証でサインアップ
 		const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -79,18 +59,18 @@ const SignUp = () => {
 			password,
 		});
 		if (signUpError) {
-			console.log(signUpError.message);
-			toast.error('このユーザーIDはすでに登録されています');
+			console.error(signUpError);
+			toast.error(`登録に失敗しました: ${signUpError.message}`);
 			return;
 		}
 
 		// userテーブルに登録するためにidを取得
 		const user = signUpData.user;
+		// Zustandで状態管理するためにsessionを取得
 		const session = signUpData.session;
 
 		if (!user || !session) {
-			console.warn('セッションまたはユーザーが取得できませんでした');
-			toast.error('セッションが確立されませんでした');
+			toast.error('セッションまたはユーザーが取得できませんでした');
 			return;
 		}
 
@@ -108,37 +88,28 @@ const SignUp = () => {
 		});
 
 		if (!res.ok) {
-			alert('ユーザーDBの作成に失敗しました');
 			const errorText = await res.text(); // エラーメッセージを取得
 			console.error('APIエラー:', errorText);
+			toast.error('ユーザー情報の登録に失敗しました');
 			return;
 		}
 
-		router.push('/');
+		// Zustandに保存
+		const setUser = useAuthStore.getState().setUser;
+		setUser({
+			id: user.id,
+			email,
+			name,
+			role: 'parent',
+			iconUrl: null,
+		});
 
-		// toast.success('ログインに成功しました！', {
-		// 	description: `ようこそ、${data.userId}さん`,
-		// 	duration: 3000,
-		// 	position: 'top-right',
-		// });
+		toast.success('サインアップに成功しました🐷');
 
-		// toast.custom(
-		// 	(t) => (
-		// 		<div className="flex items-center gap-3 bg-red-100 text-red-800 border border-red-300 px-4 py-3 rounded-md shadow">
-		// 			<span className="text-xl">❌</span>
-		// 			<span>サインインに失敗しました</span>
-		// 			<button
-		// 				onClick={() => toast.dismiss(t)}
-		// 				className="ml-auto text-sm text-red-600 hover:underline"
-		// 			>
-		// 				閉じる
-		// 			</button>
-		// 		</div>
-		// 	),
-		// 	{
-		// 		duration: 3000,
-		// 	}
-		// );
+		// 1秒くらい待ってからホーム画面に遷移
+		setTimeout(() => {
+			router.push('/');
+		}, 1000);
 	};
 
 	return (
