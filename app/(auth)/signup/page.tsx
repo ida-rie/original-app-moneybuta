@@ -1,11 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { supabase } from '@/lib/supabase';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
 	Form,
@@ -53,63 +53,68 @@ const SignUp = () => {
 	const onSubmit = async (data: z.infer<typeof FormSchema>) => {
 		const { email, password, name } = data;
 
-		// supabase認証でサインアップ
-		const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-			email,
-			password,
-		});
-		if (signUpError) {
-			console.error(signUpError);
-			toast.error(`登録に失敗しました: ${signUpError.message}`);
-			return;
-		}
+		try {
+			// supabase認証でサインアップ
+			const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+				email,
+				password,
+			});
 
-		// userテーブルに登録するためにidを取得
-		const user = signUpData.user;
-		// Zustandで状態管理するためにsessionを取得
-		const session = signUpData.session;
+			if (signUpError) {
+				console.error(signUpError);
+				toast.error(`登録に失敗しました: ${signUpError.message}`);
+				return;
+			}
 
-		if (!user || !session) {
-			toast.error('セッションまたはユーザーが取得できませんでした');
-			return;
-		}
+			// userテーブルに登録するためにidを取得
+			const user = signUpData.user;
 
-		// userテーブルにuser情報を登録
-		const res = await fetch('/api/users/signup', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				id: user.id, // Supabaseのauth.user.idをUserテーブルのidに利用
+			if (!user) {
+				toast.error('ユーザー情報が取得できませんでした');
+				return;
+			}
+
+			// userテーブルにuser情報を登録
+			const res = await fetch('/api/users/signup', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					id: user.id, // Supabaseのauth.user.idをUserテーブルのidに利用
+					email,
+					name,
+					role: 'parent',
+					iconUrl: null,
+				}),
+			});
+
+			if (!res.ok) {
+				const errorText = await res.text(); // エラーメッセージを取得
+				console.error('APIエラー:', errorText);
+				toast.error('ユーザー情報の登録に失敗しました');
+				return;
+			}
+
+			// Zustandに保存
+			const setUser = useAuthStore.getState().setUser;
+			setUser({
+				id: user.id,
 				email,
 				name,
 				role: 'parent',
 				iconUrl: null,
-			}),
-		});
+				children: [],
+			});
 
-		if (!res.ok) {
-			const errorText = await res.text(); // エラーメッセージを取得
-			console.error('APIエラー:', errorText);
-			toast.error('ユーザー情報の登録に失敗しました');
-			return;
+			toast.success('サインアップに成功しました🐷');
+
+			// 少し待ってからホーム画面に遷移
+			setTimeout(() => {
+				router.push('/');
+			}, 800);
+		} catch (error) {
+			console.error('サインアップ処理中のエラー:', error);
+			toast.error('予期しないエラーが発生しました');
 		}
-
-		// Zustandに保存
-		const setUser = useAuthStore.getState().setUser;
-		setUser({
-			id: user.id,
-			email,
-			name,
-			role: 'parent',
-			iconUrl: null,
-		});
-
-		toast.success('サインアップに成功しました🐷');
-
-		// 1秒くらい待ってからホーム画面に遷移
-		setTimeout(() => {
-			router.push('/');
-		}, 1000);
 	};
 
 	return (
@@ -166,7 +171,6 @@ const SignUp = () => {
 						新規登録
 					</Button>
 				</form>
-				<Toaster position="top-right" />
 			</Form>
 			<div className="mt-6 flex items-center justify-center text-[var(--color-primary)] hover:underline">
 				<Link href="/signin">サインインはこちら</Link>

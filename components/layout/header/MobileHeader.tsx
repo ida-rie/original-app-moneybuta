@@ -1,25 +1,49 @@
+'use client';
+
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { toast } from 'sonner';
+import { useAuthStore } from '@/lib/zustand/authStore';
+import signOut from '@/lib/auth/signOut';
 
-type MobileHeaderProps = {
-	userIconUrl?: string;
-};
+import { LogOut } from 'lucide-react';
 
-export const MobileHeader = ({ userIconUrl }: MobileHeaderProps) => {
+// タブレット・スマホ幅（767px以下）の時に表示するヘッダー
+export const MobileHeader = () => {
+	const router = useRouter();
+
+	const user = useAuthStore((state) => state.user);
+
+	const handleSignOut = async () => {
+		const success = await signOut();
+		if (success) {
+			toast.success('サインアウトしました');
+			setTimeout(() => {
+				router.push('/signin');
+			}, 800);
+		} else {
+			toast.error('サインアウトに失敗しました');
+		}
+	};
+
 	return (
-		<>
+		<div className="flex items-center justify-between">
 			<div className="">
 				<Image
-					src={userIconUrl ? userIconUrl : '/icon/ic_pig.png'}
+					src={user?.iconUrl ? user.iconUrl : '/icon/ic_pig.png'}
 					alt="ユーザーアイコン"
 					width={40}
 					height={40}
 				/>
 			</div>
 
-			<div className="flex items-center gap-4">
-				<button className="text-xs">サインアウト</button>
+			<div className="">
+				<button className="grid place-items-center" onClick={handleSignOut}>
+					<LogOut size={20} />
+					<span className="text-[10px]">サインアウト</span>
+				</button>
 			</div>
-		</>
+		</div>
 	);
 };

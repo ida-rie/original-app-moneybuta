@@ -1,11 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { supabase } from '@/lib/supabase';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
 	Form,
@@ -18,6 +18,7 @@ import {
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useAuthStore } from '@/lib/zustand/authStore';
 
 const FormSchema = z.object({
 	emailOrId: z.string().min(1, {
@@ -41,53 +42,51 @@ const SignIn = () => {
 
 	const onSubmit = async (data: z.infer<typeof FormSchema>) => {
 		const { emailOrId, password } = data;
-		if (!emailOrId) {
-			toast.error('ユーザーIDが入力されていません', {
-				duration: 3000,
-				position: 'top-right',
-			});
-			return;
-		}
-		if (!password) {
-			toast.error('パスワードが入力されていません', {
-				duration: 3000,
-				position: 'top-right',
-			});
+
+		// 子アカウントの場合、ユーザーIDを擬似的にメールアドレス形式にする
+		const email = emailOrId.includes('@') ? emailOrId : `${emailOrId}@moneybuta.local`;
+
+		// supabase認証でサインイン
+		const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+			email,
+			password,
+		});
+
+		if (signInError || !signInData.user) {
+			toast.error('メールアドレスまたはパスワードが間違っています');
 			return;
 		}
 
-		const email = emailOrId.includes('@') ? emailOrId : `${emailOrId}@yourapp.com`; // ← 固定ドメインは環境変数などで管理してもOK
+		const user = signInData.user;
 
-		const { error } = await supabase.auth.signInWithPassword({ email, password });
-		if (error) {
-			console.log(error.message);
-		} else {
+		// idに紐づくuserの情報を取得
+		const res = await fetch(`/api/users/${user.id}`);
+		if (!res.ok) {
+			const errorText = await res.text(); // エラーメッセージを取得
+			console.error('APIエラー:', errorText);
+			toast.error('ユーザー情報の取得に失敗しました');
+			return;
+		}
+
+		const userInfo = await res.json();
+
+		// Zustandに保存
+		const setUser = useAuthStore.getState().setUser;
+		setUser({
+			id: userInfo.id,
+			email: userInfo.email,
+			name: userInfo.name,
+			role: userInfo.role,
+			iconUrl: userInfo.iconUrl,
+			children: userInfo.role === 'parent' ? userInfo.children ?? [] : undefined,
+		});
+
+		toast.success('サインインに成功しました🐷');
+
+		// 少し待ってからホーム画面に遷移
+		setTimeout(() => {
 			router.push('/');
-		}
-
-		// toast.success('ログインに成功しました！', {
-		// 	description: `ようこそ、${data.userId}さん`,
-		// 	duration: 3000,
-		// 	position: 'top-right',
-		// });
-
-		// toast.custom(
-		// 	(t) => (
-		// 		<div className="flex items-center gap-3 bg-red-100 text-red-800 border border-red-300 px-4 py-3 rounded-md shadow">
-		// 			<span className="text-xl">❌</span>
-		// 			<span>サインインに失敗しました</span>
-		// 			<button
-		// 				onClick={() => toast.dismiss(t)}
-		// 				className="ml-auto text-sm text-red-600 hover:underline"
-		// 			>
-		// 				閉じる
-		// 			</button>
-		// 		</div>
-		// 	),
-		// 	{
-		// 		duration: 3000,
-		// 	}
-		// );
+		}, 800);
 	};
 
 	return (
@@ -134,7 +133,6 @@ const SignIn = () => {
 						サインイン
 					</Button>
 				</form>
-				<Toaster position="top-right" />
 			</Form>
 			<div className="mt-6 flex items-center justify-center text-[var(--color-primary)] hover:underline">
 				<Link href="/signup">親アカウントの新規登録はこちら</Link>

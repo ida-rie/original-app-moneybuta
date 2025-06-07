@@ -3,7 +3,7 @@ export type UserTypes = {
 	email: string;
 	name: string;
 	role: 'parent' | 'child';
-	parentId?: string;
-	iconUrl?: string;
-	createdAt: string;
+	parentId?: string | null;
+	iconUrl?: string | null;
+	children?: UserTypes[];
 };

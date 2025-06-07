@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Noto_Sans_JP } from 'next/font/google';
+import { Toaster } from 'sonner';
 import './globals.css';
 
 // Noto Sans JP フォントをインポート
@@ -36,6 +37,9 @@ const RootLayout = ({
 				<footer className="m-6 pb-[50px] md:pb-0 text-center">
 					<small>© 2025 マネぶた おこづかいクエスト All rights reserved.</small>
 				</footer>
+
+				{/* トースター */}
+				<Toaster position="top-center" />
 			</body>
 		</html>
 	);

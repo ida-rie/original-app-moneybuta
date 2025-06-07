@@ -3,19 +3,13 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { Button } from '../ui/button';
 import ProfileEditDialog from './dialog/ProfileEditDialog';
-// import { UserRound } from 'lucide-react';
+import { UserTypes } from '@/types/userTypes';
 
 type UserProfileProps = {
-	// name: string;
-	// userId: string;
-	// role: string;
-	userIconUrl?: string;
+	user: UserTypes | null;
 };
 
-// テスト用
-const role = '親';
-
-const UserProfile = ({ userIconUrl }: UserProfileProps) => {
+const UserProfile = ({ user }: UserProfileProps) => {
 	const [open, setOpen] = useState(false);
 
 	return (
@@ -25,40 +19,34 @@ const UserProfile = ({ userIconUrl }: UserProfileProps) => {
 					ユーザープロフィール
 				</h2>
 
-				<div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+				<div className="flex flex-col md:flex-row items-center gap-6">
 					{/* アイコンと名前 */}
 					<div className="flex flex-col items-center text-center w-full md:w-auto">
 						<Image
-							src={userIconUrl ? userIconUrl : '/icon/ic_pig.png'}
+							src={user?.iconUrl ? user?.iconUrl : '/icon/ic_pig.png'}
 							alt="ユーザーアイコン"
-							width={120}
-							height={120}
+							width={160}
+							height={160}
 						/>
-						<p className="mt-2 text-xl font-semibold">太郎</p>
-						<span
-							className={`mt-1 px-3 py-1 text-sm rounded-full ${
-								role === '親' ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-secondary)]'
-							}`}
-						>
-							おや
-						</span>
 					</div>
 
 					{/* ユーザー情報 */}
 					<div className="flex-1 w-full text-base">
 						<dl className="mb-4">
 							<dt className="font-semibold text-[var(--color-text-secondary)] mb-1">名まえ</dt>
-							<dd className="text-lg">太郎</dd>
+							<dd className="text-lg">{user?.name}</dd>
 						</dl>
 						<dl className="mb-4">
 							<dt className="font-semibold text-[var(--color-text-secondary)] mb-1">ユーザーID</dt>
-							<dd className="text-lg break-all">test@test.com</dd>
+							<dd className="text-lg break-all">{user?.email}</dd>
 						</dl>
 						<dl className="mb-4">
 							<dt className="font-semibold text-[var(--color-text-secondary)] mb-1">
 								アカウントのしゅるい
 							</dt>
-							<dd className="text-lg">親</dd>
+							<dd className="text-lg">
+								{user?.role === 'parent' ? '親アカウント' : '子どもアカウント'}
+							</dd>
 						</dl>
 					</div>
 				</div>
@@ -73,10 +61,13 @@ const UserProfile = ({ userIconUrl }: UserProfileProps) => {
 					onClose={() => setOpen(false)}
 					mode="edit"
 					defaultValues={{
-						username: '太郎',
-						userId: 'test@test.com',
-						password: 'xxxx',
-						userIconUrl: '',
+						emailOrId:
+							user?.role === 'child'
+								? user?.email?.replace('@moneybuta.local', '') ?? ''
+								: user?.email ?? '',
+						name: user?.name ?? '',
+						password: '',
+						iconUrl: user?.iconUrl ?? '',
 					}}
 				/>
 			</div>

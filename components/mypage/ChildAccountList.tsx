@@ -3,24 +3,19 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { Button } from '../ui/button';
 import ProfileEditDialog from './dialog/ProfileEditDialog';
-
-type Child = {
-	userId: string;
-	username: string;
-	userIconUrl?: string;
-};
+import { UserTypes } from '@/types/userTypes';
 
 type Props = {
-	childrenData: Child[];
+	childrenData: UserTypes[];
 };
 
 const ChildAccountList = ({ childrenData }: Props) => {
-	const [selectedChild, setSelectedChild] = useState<Child | null>(null);
+	const [selectedChild, setSelectedChild] = useState<UserTypes | null>(null);
 	const [open, setOpen] = useState(false);
 	const [mode, setMode] = useState<'childEdit' | 'create'>('childEdit');
 
 	// 変更ボタン
-	const handleOpen = (child: Child) => {
+	const handleOpen = (child: UserTypes) => {
 		setSelectedChild(child);
 		setMode('childEdit');
 		setOpen(true);
@@ -46,18 +41,18 @@ const ChildAccountList = ({ childrenData }: Props) => {
 				<ul className="space-y-3">
 					{childrenData.map((child) => (
 						<li
-							key={child.userId}
+							key={child.id}
 							className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-3"
 						>
 							{/* アイコン＋名前 */}
 							<div className="flex items-center gap-3">
 								<Image
-									src={child.userIconUrl ? child.userIconUrl : '/icon/ic_pig.png'}
+									src={child.iconUrl ? child.iconUrl : '/icon/ic_pig.png'}
 									alt="ユーザーアイコン"
 									width={40}
 									height={40}
 								/>
-								<span className="font-bold">{child.username}</span>
+								<span className="font-bold">{child.name}</span>
 							</div>
 
 							{/* 変更ボタン */}
@@ -83,12 +78,14 @@ const ChildAccountList = ({ childrenData }: Props) => {
 				onClose={handleClose}
 				mode={mode}
 				defaultValues={
-					mode === 'childEdit'
+					mode === 'childEdit' && selectedChild?.email
 						? {
-								userId: selectedChild?.userId ?? '',
-								username: selectedChild?.username ?? '',
+								emailOrId: selectedChild.email.includes('@moneybuta.local')
+									? selectedChild.email.replace('@moneybuta.local', '')
+									: selectedChild.email,
+								name: selectedChild.name ?? '',
 								password: '',
-								userIconUrl: selectedChild?.userIconUrl ?? '/icon/ic_pig.png',
+								iconUrl: selectedChild.iconUrl ?? '/icon/ic_pig.png',
 						  }
 						: undefined
 				}

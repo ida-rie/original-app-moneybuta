@@ -1,37 +1,70 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+// import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
 
-// ユーザー情報の型
-type UserSessionType = {
+// ユーザーの型
+export type ChildUser = {
 	id: string;
 	email: string;
 	name: string;
-	role: string;
-	iconUrl?: string | null;
+	role: 'child';
+	iconUrl: string | null;
 };
 
-// Zustandストアの状態の型
+export type ParentUser = {
+	id: string;
+	email: string;
+	name: string;
+	role: 'parent';
+	iconUrl: string | null;
+	children: ChildUser[]; // 親ユーザーが持つ子リスト
+};
+
+// Zustandのステート定義
 type AuthState = {
-	user: UserSessionType | null;
-	setUser: (user: UserSessionType) => void;
+	user: ParentUser | ChildUser | null;
+	setUser: (user: ParentUser | ChildUser) => void;
+	addChild: (child: ChildUser) => void;
 	clearUser: () => void;
 };
 
-// ZustandのsessionStorageラッパー
-const sessionStorageProvider = createJSONStorage(() => sessionStorage);
-
 export const useAuthStore = create<AuthState>()(
 	persist(
-		(set) => ({
+		(set, get) => ({
 			user: null,
 			setUser: (user) => set({ user }),
+			addChild: (child) => {
+				const currentUser = get().user;
+				// 親ユーザーであれば children を追加
+				if (currentUser && currentUser.role === 'parent') {
+					const updatedParent: ParentUser = {
+						...currentUser,
+						children: currentUser.children ? [...currentUser.children, child] : [child],
+					};
+					set({ user: updatedParent });
+				}
+			},
 			clearUser: () => set({ user: null }),
 		}),
 		{
-			name: 'auth-storage',
-			storage: sessionStorageProvider,
+			name: 'auth', // 保存名
+			storage:
+				typeof window !== 'undefined'
+					? {
+							getItem: (name) => {
+								const value = window.sessionStorage.getItem(name);
+								return value ? JSON.parse(value) : null;
+							},
+							setItem: (name, value) => {
+								window.sessionStorage.setItem(name, JSON.stringify(value));
+							},
+							removeItem: (name) => {
+								window.sessionStorage.removeItem(name);
+							},
+					  }
+					: undefined,
 		}
 	)
 );

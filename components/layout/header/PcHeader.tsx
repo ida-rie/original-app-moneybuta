@@ -1,7 +1,10 @@
 'use client';
+
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { toast } from 'sonner';
 import {
 	Select,
 	SelectContent,
@@ -10,9 +13,26 @@ import {
 	SelectValue,
 } from '@/components/ui/select';
 import { useAuthStore } from '@/lib/zustand/authStore';
+import signOut from '@/lib/auth/signOut';
+import { Button } from '@/components/ui/button';
 
+// PC幅（768px以上）の時に表示するヘッダー
 export const PcHeader = () => {
+	const router = useRouter();
+
 	const user = useAuthStore((state) => state.user);
+
+	const handleSignOut = async () => {
+		const success = await signOut();
+		if (success) {
+			toast.success('サインアウトしました');
+			setTimeout(() => {
+				router.push('/signin');
+			}, 800);
+		} else {
+			toast.error('サインアウトに失敗しました');
+		}
+	};
 
 	return (
 		<div className="w-full">
@@ -26,15 +46,21 @@ export const PcHeader = () => {
 							height={60}
 						/>
 					</div>
-					<Select>
-						<SelectTrigger className="w-full text-sm focus-visible:ring-offset-0 focus-visible:ring-0 bg-white">
-							<SelectValue placeholder="こどもを選択" />
-						</SelectTrigger>
-						<SelectContent className="text-sm bg-white">
-							<SelectItem value="light">太郎</SelectItem>
-							<SelectItem value="dark">花子</SelectItem>
-						</SelectContent>
-					</Select>
+					{/* 親ユーザーのみ子どもを選択を表示する */}
+					{user?.role === 'parent' && (
+						<Select>
+							<SelectTrigger className="w-full text-sm focus-visible:ring-offset-0 focus-visible:ring-0 bg-white">
+								<SelectValue placeholder="こどもを選択" />
+							</SelectTrigger>
+							<SelectContent className="text-sm bg-white">
+								{user.children.map((child) => (
+									<SelectItem key={child.id} value={child.id}>
+										{child.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					)}
 				</div>
 				<nav>
 					<ul className="flex items-center text-sm gap-6">
@@ -50,7 +76,11 @@ export const PcHeader = () => {
 						<li>
 							<Link href="/settings">設定</Link>
 						</li>
-						<li>サインアウト</li>
+						<li>
+							<Button variant="delete" onClick={handleSignOut}>
+								サインアウト
+							</Button>
+						</li>
 					</ul>
 				</nav>
 			</div>
