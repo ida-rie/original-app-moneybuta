@@ -1,3 +1,4 @@
+'use client';
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -8,19 +9,18 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select';
+import { useAuthStore } from '@/lib/zustand/authStore';
 
-type PcHeaderProps = {
-	userIconUrl?: string;
-};
+export const PcHeader = () => {
+	const user = useAuthStore((state) => state.user);
 
-export const PcHeader = ({ userIconUrl }: PcHeaderProps) => {
 	return (
 		<div className="w-full">
 			<div className="flex items-center justify-between py-4 container mx-auto px-4">
 				<div className="flex items-center gap-4">
 					<div className="flex justify-center items-center">
 						<Image
-							src={userIconUrl ? userIconUrl : '/icon/ic_pig.png'}
+							src={user?.iconUrl ? user.iconUrl : '/icon/ic_pig.png'}
 							alt="ユーザーアイコン"
 							width={60}
 							height={60}

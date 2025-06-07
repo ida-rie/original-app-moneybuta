@@ -18,7 +18,7 @@ const RootLayout = ({
 			<header>
 				{/* PC用 Header */}
 				<div className="hidden md:block">
-					<PcHeader userIconUrl="" />
+					<PcHeader />
 				</div>
 				{/* モバイル用 Header */}
 				<div className="md:hidden fixed top-0 left-0 right-0 p-2 border-b flex justify-between items-center bg-[var(--color-background)] z-50">
