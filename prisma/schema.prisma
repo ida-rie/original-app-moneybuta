@@ -14,15 +14,94 @@ datasource db {
 }
 
 model User {
-  id         String   @id
-  email      String   @unique
-  name       String
-  role       String                            // "parent", "child"
-  parentId   String?                           // 子アカウント用
-  iconUrl    String?                           // プロフィール画像URL
-  createdAt  DateTime @default(now())
+  id        String   @id
+  email     String   @unique
+  name      String
+  role      String // "parent", "child"
+  parentId  String? // 子アカウント用
+  iconUrl   String?
+  createdAt DateTime @default(now())
 
-  // ↓ 自己参照リレーションを定義（子→親、親→子）
-  parent     User?    @relation("ParentChild", fields: [parentId], references: [id])
-  children   User[]   @relation("ParentChild")
+  // 自己参照（親 ⇔ 子）
+  parent   User?  @relation("ParentChild", fields: [parentId], references: [id])
+  children User[] @relation("ParentChild")
+
+  // 関連リレーション
+  basicAmountsAsParent BasicAmount[] @relation("ParentBasicAmounts")
+  basicAmountsAsChild  BasicAmount[] @relation("ChildBasicAmounts")
+
+  amountHistoriesAsParent AmountHistory[] @relation("ParentAmountHistories")
+  amountHistoriesAsChild  AmountHistory[] @relation("ChildAmountHistories")
+
+  baseQuests        BaseQuest[] @relation("ParentBaseQuests")
+  baseQuestsAsChild BaseQuest[] @relation("ChildBaseQuests")
+
+  questHistoriesAsChild QuestHistory[] @relation("ChildQuestHistories")
+
+  completedQuests QuestHistory[] @relation("CompletedByUser")
+  approvedQuests  QuestHistory[] @relation("ApprovedByUser")
+}
+
+model BasicAmount {
+  id          String   @id @default(uuid())
+  userId      String
+  childUserId String
+  basicAmount Int
+  month       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User @relation("ParentBasicAmounts", fields: [userId], references: [id])
+  childUser User @relation("ChildBasicAmounts", fields: [childUserId], references: [id])
+
+  amountHistories AmountHistory[]
+}
+
+model AmountHistory {
+  id            String   @id @default(uuid())
+  userId        String
+  childUserId   String
+  basicAmountId String
+  totalAmount   Int
+  date          DateTime
+  createdAt     DateTime @default(now())
+
+  user        User        @relation("ParentAmountHistories", fields: [userId], references: [id])
+  childUser   User        @relation("ChildAmountHistories", fields: [childUserId], references: [id])
+  basicAmount BasicAmount @relation(fields: [basicAmountId], references: [id])
+}
+
+model BaseQuest {
+  id          String   @id @default(uuid())
+  userId      String
+  childUserId String
+  title       String
+  reward      Int
+  createdAt   DateTime @default(now())
+
+  user      User @relation("ParentBaseQuests", fields: [userId], references: [id])
+  childUser User @relation("ChildBaseQuests", fields: [childUserId], references: [id])
+
+  questHistories QuestHistory[]
+}
+
+model QuestHistory {
+  id          String    @id @default(uuid())
+  baseQuestId String
+  childUserId String
+  title       String
+  reward      Int
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  completedBy String?
+  approved    Boolean   @default(false)
+  approvedAt  DateTime?
+  approvedBy  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  baseQuest       BaseQuest @relation(fields: [baseQuestId], references: [id])
+  childUser       User      @relation("ChildQuestHistories", fields: [childUserId], references: [id])
+  completedByUser User?     @relation("CompletedByUser", fields: [completedBy], references: [id])
+  approvedByUser  User?     @relation("ApprovedByUser", fields: [approvedBy], references: [id])
 }
