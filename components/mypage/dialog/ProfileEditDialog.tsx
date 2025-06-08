@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,25 +21,73 @@ import { Button } from '@/components/ui/button';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
 import { useAuthStore } from '@/lib/zustand/authStore';
 
-const FormSchema = z.object({
+type Mode = 'create' | 'edit' | 'childEdit';
+
+type ProfileEditDialogProps = {
+	open: boolean;
+	onClose: () => void;
+	mode: Mode;
+	defaultValues?: {
+		emailOrId?: string;
+		name?: string;
+		password?: string;
+		iconUrl?: string;
+	};
+	targetUserId?: string; // 編集対象のユーザー（親自身または子）
+};
+
+// 作成バリデーションスキーマ（アイコン以外必須）
+const createUserSchema = z.object({
 	emailOrId: z.string().min(1, { message: 'ユーザーIDは必須です' }),
-	password: z.string().min(8, { message: 'パスワードは8文字以上で入力してください' }),
+	password: z.string().min(8, { message: 'パスワードは8文字以上必要です' }),
 	name: z
 		.string()
 		.min(1, { message: 'ユーザー名は必須です' })
 		.max(15, { message: 'ユーザー名は15文字以内で入力してください' }),
-	iconUrl: z.string(),
+	iconUrl: z.string().optional(),
 });
 
-type FormData = z.infer<typeof FormSchema>;
+// 編集バリデーションスキーマ（すべて任意）
+const editUserSchema = z.object({
+	emailOrId: z.string().optional(),
+	password: z
+		.string()
+		.optional()
+		.or(z.literal('')) // 空文字も許容
+		.refine((val) => !val || val.length >= 8, {
+			message: 'パスワードは8文字以上で入力してください',
+		}),
+	name: z.string().optional(),
+	iconUrl: z.string().optional(),
+});
 
-type Mode = 'create' | 'edit' | 'childEdit';
+const getSchemaByMode = (mode: Mode) => {
+	return mode === 'create' ? createUserSchema : editUserSchema;
+};
 
-type Props = {
-	open: boolean;
-	onClose: () => void;
-	mode: Mode;
-	defaultValues?: FormData;
+// type FormData = z.infer<ReturnType<typeof getSchemaByMode>>;
+type CreateFormData = z.infer<typeof createUserSchema>;
+type EditFormData = z.infer<typeof editUserSchema>;
+
+const getInitialValues = (
+	mode: Mode,
+	defaultValues?: ProfileEditDialogProps['defaultValues']
+): z.infer<ReturnType<typeof getSchemaByMode>> => {
+	if (mode === 'create') {
+		return {
+			emailOrId: '',
+			password: '',
+			name: '',
+			iconUrl: '',
+			...defaultValues,
+		};
+	}
+	return {
+		emailOrId: defaultValues?.emailOrId ?? '',
+		password: '',
+		name: defaultValues?.name ?? '',
+		iconUrl: defaultValues?.iconUrl ?? '',
+	};
 };
 
 const iconList = [
@@ -56,33 +104,63 @@ const iconList = [
 
 const DEFAULT_ICON = '/icon/ic_pig.png';
 
-/** ProfileEditDialogコンポーネント
- *  1つのダイアログで新規登録・編集（自分/子供）を処理
- */
-const ProfileEditDialog = ({ open, onClose, mode, defaultValues }: Props) => {
-	const form = useForm<FormData>({
-		resolver: zodResolver(FormSchema),
-		defaultValues:
-			mode === 'create'
-				? { emailOrId: '', password: '', name: '', iconUrl: DEFAULT_ICON }
-				: defaultValues || { emailOrId: '', password: '', name: '', iconUrl: DEFAULT_ICON },
+// 1つのダイアログで新規登録・編集（自分/子供）・削除を処理
+const ProfileEditDialog = ({
+	open,
+	onClose,
+	mode,
+	defaultValues,
+	targetUserId,
+}: ProfileEditDialogProps) => {
+	const [confirmOpen, setConfirmOpen] = useState(false);
+	const [selectedIcon, setSelectedIcon] = useState<string>(
+		mode === 'create'
+			? DEFAULT_ICON
+			: defaultValues?.iconUrl && defaultValues.iconUrl.trim() !== ''
+			? defaultValues.iconUrl
+			: DEFAULT_ICON
+	);
+	const schema = useMemo(() => getSchemaByMode(mode), [mode]);
+
+	const form = useForm<z.infer<typeof schema>>({
+		resolver: zodResolver(schema),
+		defaultValues: {
+			emailOrId: defaultValues?.emailOrId ?? '',
+			password: '',
+			name: defaultValues?.name ?? '',
+			iconUrl: defaultValues?.iconUrl ?? '',
+		},
 	});
 
 	const user = useAuthStore((state) => state.user);
+	const token = sessionStorage.getItem('access_token');
 
-	const [confirmOpen, setConfirmOpen] = useState(false);
-	const [selectedIcon, setSelectedIcon] = useState<string>(
-		mode === 'create' ? DEFAULT_ICON : defaultValues?.iconUrl || DEFAULT_ICON
-	);
+	// モードによってタイトルとボタン文言を変更
+	const dialogTitleMap: Record<Mode, string> = {
+		create: '子どもアカウント追加',
+		edit: 'ユーザープロフィールへんこう',
+		childEdit: '子どもアカウント変更',
+	};
+
+	const submitButtonTextMap: Record<Mode, string> = {
+		create: '登録',
+		edit: '保存',
+		childEdit: '保存',
+	};
+
+	// 削除ボタンは編集モードかつ親アカウントの場合のみ表示
+	const showDeleteButton = (mode === 'edit' || mode === 'childEdit') && user?.role === 'parent';
 
 	useEffect(() => {
 		if (open) {
-			form.reset(
-				mode === 'create'
-					? { emailOrId: '', password: '', name: '', iconUrl: DEFAULT_ICON }
-					: defaultValues || { emailOrId: '', password: '', name: '', iconUrl: DEFAULT_ICON }
-			);
-			setSelectedIcon(mode === 'create' ? DEFAULT_ICON : defaultValues?.iconUrl || DEFAULT_ICON);
+			const values = getInitialValues(mode, defaultValues);
+			form.reset(values);
+
+			const initialIcon =
+				values.iconUrl && values.iconUrl.trim() !== '' ? values.iconUrl : DEFAULT_ICON;
+			setSelectedIcon(initialIcon);
+
+			form.setValue('iconUrl', initialIcon);
 		}
 	}, [open, defaultValues, mode, form]);
 
@@ -92,90 +170,149 @@ const ProfileEditDialog = ({ open, onClose, mode, defaultValues }: Props) => {
 		form.setValue('iconUrl', iconUrl, { shouldValidate: true });
 	};
 
-	const onSubmit = async (data: z.infer<typeof FormSchema>) => {
-		const { emailOrId, password, name } = data;
+	// 子アカウント作成
+	const handleCreate = async (data: CreateFormData) => {
+		const { emailOrId, password, name, iconUrl } = data;
+
 		// 子アカウントの場合、ユーザーIDを擬似的にメールアドレス形式にする
 		const email = emailOrId.includes('@') ? emailOrId : `${emailOrId}@moneybuta.local`;
 
-		if (mode === 'create') {
-			// supabase認証でサインアップ
-			const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-				email,
-				password,
-			});
+		// supabase認証でサインアップ
+		const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+			email,
+			password,
+		});
 
-			if (signUpError) {
-				console.error(signUpError);
-				toast.error(`登録に失敗しました: ${signUpError.message}`);
-				return;
-			}
+		if (signUpError) {
+			console.error(signUpError);
+			toast.error(`登録に失敗しました: ${signUpError.message}`);
+			return false;
+		}
 
-			// userテーブルに登録するためにidを取得
-			const childUser = signUpData.user;
+		// userテーブルに登録するためにidを取得
+		const childUser = signUpData.user;
 
-			if (!childUser) {
-				toast.error('ユーザー情報が取得できませんでした');
-				return;
-			}
+		if (!childUser) {
+			toast.error('ユーザー情報が取得できませんでした');
+			return false;
+		}
 
-			// userテーブルにuser情報を登録
-			const res = await fetch('/api/users/signup', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					id: childUser.id, // Supabaseのauth.user.idをUserテーブルのidに利用
-					email,
-					name,
-					role: 'child',
-					parentId: user!.id,
-					iconUrl: selectedIcon ?? null,
-				}),
-			});
-
-			if (!res.ok) {
-				const errorText = await res.text(); // エラーメッセージを取得
-				console.error('APIエラー:', errorText);
-				toast.error('ユーザー情報の登録に失敗しました');
-				return;
-			}
-
-			// 作成した子ユーザーの情報を親ユーザーに追加
-			const addChild = useAuthStore.getState().addChild;
-			addChild({
-				id: childUser.id,
+		// userテーブルにuser情報を登録
+		const res = await fetch('/api/users/signup', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				id: childUser.id, // Supabaseのauth.user.idをUserテーブルのidに利用
 				email,
 				name,
 				role: 'child',
-				iconUrl: null,
-			});
-		} else if (mode === 'edit') {
-			// 自分の編集処理
-			console.log('自分の編集', data);
-		} else if (mode === 'childEdit') {
-			// 子供アカウントの編集処理
-			console.log('子供の編集', data);
+				parentId: user!.id,
+				iconUrl: iconUrl ?? DEFAULT_ICON,
+			}),
+		});
+
+		if (!res.ok) {
+			const errorText = await res.text(); // エラーメッセージを取得
+			console.error('APIエラー:', errorText);
+			toast.error('ユーザー情報の登録に失敗しました');
+			return false;
 		}
-		onClose();
+
+		// 作成した子ユーザーの情報を親ユーザーに追加
+		const { addChild } = useAuthStore.getState();
+		addChild({
+			id: childUser.id,
+			email,
+			name,
+			role: 'child',
+			iconUrl: selectedIcon ?? null,
+		});
+
+		toast.success('子どもユーザーを追加しました🐷');
+
+		return true;
 	};
 
-	// モードによってタイトルとボタン文言を変更
-	const dialogTitle =
-		mode === 'create'
-			? '子どもアカウント追加'
-			: mode === 'childEdit'
-			? '子どもアカウント変更'
-			: 'ユーザープロフィールへんこう';
+	// ユーザー情報を編集
+	const handleEdit = async (data: EditFormData) => {
+		const { emailOrId, password, name } = data;
 
-	const submitButtonText = mode === 'create' ? '登録' : '保存';
+		// 入力（変更）があればメールとして整形
+		const email =
+			emailOrId && emailOrId.trim() !== ''
+				? emailOrId.includes('@')
+					? emailOrId
+					: `${emailOrId}@moneybuta.local`
+				: undefined;
+		// 送信データを構築
+		const updateData: Record<string, string> = {};
+		// 入力（変更）があれば更新データに含める
+		if (email) updateData.email = email;
+		if (name?.trim()) updateData.name = name.trim();
+		if (password?.trim()) updateData.password = password.trim();
+		if (selectedIcon?.trim()) updateData.iconUrl = selectedIcon.trim();
 
-	// 削除ボタンは編集モードかつ親アカウントの場合のみ表示
-	const showDeleteButton = (mode === 'edit' || mode === 'childEdit') && user?.role === 'parent';
+		// user情報を更新
+		const res = await fetch(`/api/users/${targetUserId ?? user?.id}`, {
+			method: 'PUT',
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${token}`,
+			},
+			body: JSON.stringify(updateData),
+		});
+
+		if (!res.ok) {
+			const errorText = await res.text(); // エラーメッセージを取得
+			console.error('APIエラー:', errorText);
+			toast.error('ユーザー情報の更新に失敗しました');
+			return false;
+		}
+
+		// 更新されたユーザー情報を取得
+		const updatedUser = await res.json();
+
+		const { setUser } = useAuthStore.getState();
+
+		if (user?.role === 'parent') {
+			if (user.id === targetUserId) {
+				setUser(updatedUser); // 親自身
+			} else {
+				// 子アカウント編集時
+				const updatedChildren =
+					user.children?.map((c) => (c.id === updatedUser.id ? updatedUser : c)) ?? [];
+				setUser({ ...user, children: updatedChildren });
+			}
+		} else {
+			// 子アカウント自身
+			setUser(updatedUser);
+		}
+
+		toast.success('ユーザー情報を更新しました🐷');
+
+		return true;
+	};
+
+	const onSubmit = async (data: unknown) => {
+		let success = false;
+		if (mode === 'create') {
+			// 子どもアカウントの作成処理
+			success = await handleCreate(data as CreateFormData);
+		} else if (mode === 'edit') {
+			// 自分の編集処理
+			success = await handleEdit(data as EditFormData);
+		} else if (mode === 'childEdit') {
+			// 子どもアカウントの編集処理
+			success = await handleEdit(data as EditFormData);
+		}
+		if (success) onClose();
+	};
 
 	return (
 		<Dialog open={open} onOpenChange={onClose}>
 			<DialogContent className="bg-white w-full max-w-lg sm:max-w-xl max-h-screen overflow-auto">
 				<DialogHeader>
-					<DialogTitle>{dialogTitle}</DialogTitle>
+					<DialogTitle>{dialogTitleMap[mode]}</DialogTitle>
 				</DialogHeader>
 
 				<div>
@@ -266,7 +403,7 @@ const ProfileEditDialog = ({ open, onClose, mode, defaultValues }: Props) => {
 						/>
 						<div className="flex items-center justify-center gap-4">
 							<Button type="submit" variant="primary">
-								{submitButtonText}
+								{submitButtonTextMap[mode]}
 							</Button>
 							{showDeleteButton && (
 								<Button type="button" variant="delete" onClick={() => setConfirmOpen(true)}>
@@ -274,7 +411,12 @@ const ProfileEditDialog = ({ open, onClose, mode, defaultValues }: Props) => {
 								</Button>
 							)}
 						</div>
-						<DeleteConfirmDialog open={confirmOpen} onClose={() => setConfirmOpen(false)} />
+						<DeleteConfirmDialog
+							open={confirmOpen}
+							onClose={() => setConfirmOpen(false)}
+							onCloseAll={onClose}
+							targetUserId={targetUserId ?? user?.id}
+						/>
 					</form>
 				</Form>
 			</DialogContent>

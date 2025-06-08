@@ -66,6 +66,12 @@ const SignUp = () => {
 				return;
 			}
 
+			// トークンをセッションストレージに保存
+			if (signUpData.session?.access_token) {
+				sessionStorage.setItem('access_token', signUpData.session.access_token);
+				console.log(signUpData.session.access_token);
+			}
+
 			// userテーブルに登録するためにidを取得
 			const user = signUpData.user;
 

@@ -89,6 +89,7 @@ const ChildAccountList = ({ childrenData }: Props) => {
 						  }
 						: undefined
 				}
+				targetUserId={selectedChild?.id}
 			/>
 		</div>
 	);

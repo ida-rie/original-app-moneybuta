@@ -27,6 +27,7 @@ type AuthState = {
 	user: ParentUser | ChildUser | null;
 	setUser: (user: ParentUser | ChildUser) => void;
 	addChild: (child: ChildUser) => void;
+	removeChild: (childId: string) => void;
 	clearUser: () => void;
 };
 
@@ -42,6 +43,16 @@ export const useAuthStore = create<AuthState>()(
 					const updatedParent: ParentUser = {
 						...currentUser,
 						children: currentUser.children ? [...currentUser.children, child] : [child],
+					};
+					set({ user: updatedParent });
+				}
+			},
+			removeChild: (childId: string) => {
+				const currentUser = get().user;
+				if (currentUser && currentUser.role === 'parent') {
+					const updatedParent: ParentUser = {
+						...currentUser,
+						children: currentUser.children?.filter((child) => child.id !== childId) || [],
 					};
 					set({ user: updatedParent });
 				}

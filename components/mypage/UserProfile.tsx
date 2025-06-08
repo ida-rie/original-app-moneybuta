@@ -69,6 +69,7 @@ const UserProfile = ({ user }: UserProfileProps) => {
 						password: '',
 						iconUrl: user?.iconUrl ?? '',
 					}}
+					targetUserId={user?.id}
 				/>
 			</div>
 		</>

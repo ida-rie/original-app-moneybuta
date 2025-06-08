@@ -11,8 +11,6 @@ import { useAuthStore } from '@/lib/zustand/authStore';
 const MyPage = () => {
 	const user = useAuthStore((state) => state.user);
 
-	console.log(user);
-
 	return (
 		<>
 			{/* 見出し */}

@@ -26,9 +26,7 @@ export const PcHeader = () => {
 		const success = await signOut();
 		if (success) {
 			toast.success('サインアウトしました');
-			setTimeout(() => {
-				router.push('/signin');
-			}, 800);
+			router.push('/signin');
 		} else {
 			toast.error('サインアウトに失敗しました');
 		}

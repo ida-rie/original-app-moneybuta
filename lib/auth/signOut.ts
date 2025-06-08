@@ -10,6 +10,7 @@ export const signOut = async (): Promise<boolean> => {
 		return false;
 	}
 
+	sessionStorage.removeItem('access_token');
 	useAuthStore.getState().clearUser();
 	return true;
 };

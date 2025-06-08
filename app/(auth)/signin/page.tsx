@@ -57,9 +57,15 @@ const SignIn = () => {
 			return;
 		}
 
-		const user = signInData.user;
+		// トークンをセッションストレージに保存
+		if (signInData.session?.access_token) {
+			sessionStorage.setItem('access_token', signInData.session.access_token);
+			console.log(signInData.session.access_token);
+		}
 
 		// idに紐づくuserの情報を取得
+		const user = signInData.user;
+
 		const res = await fetch(`/api/users/${user.id}`);
 		if (!res.ok) {
 			const errorText = await res.text(); // エラーメッセージを取得
