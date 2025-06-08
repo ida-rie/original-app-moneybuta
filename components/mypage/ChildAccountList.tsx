@@ -3,19 +3,19 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { Button } from '../ui/button';
 import ProfileEditDialog from './dialog/ProfileEditDialog';
-import { UserTypes } from '@/types/userTypes';
+import { UserType } from '@/types/userType';
 
 type Props = {
-	childrenData: UserTypes[];
+	childrenData: UserType[];
 };
 
 const ChildAccountList = ({ childrenData }: Props) => {
-	const [selectedChild, setSelectedChild] = useState<UserTypes | null>(null);
+	const [selectedChild, setSelectedChild] = useState<UserType | null>(null);
 	const [open, setOpen] = useState(false);
 	const [mode, setMode] = useState<'childEdit' | 'create'>('childEdit');
 
 	// 変更ボタン
-	const handleOpen = (child: UserTypes) => {
+	const handleOpen = (child: UserType) => {
 		setSelectedChild(child);
 		setMode('childEdit');
 		setOpen(true);

@@ -1,13 +1,21 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { Home, Swords, ShieldUser, Settings, Smile } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useAuthStore } from '@/lib/zustand/authStore';
 
+// タブレット幅〜（767px以下）の時に表示するナビ
 export const BottomNav = () => {
-	const user = useAuthStore((state) => state.user);
+	const { user, selectedChild, setSelectedChild } = useAuthStore();
+
+	// 初期表示時に自動で0番目の子を選択
+	useEffect(() => {
+		if (user?.role === 'parent' && user.children.length > 0 && selectedChild === null) {
+			setSelectedChild(user.children[0]);
+		}
+	}, [user, selectedChild, setSelectedChild]);
 
 	return (
 		<nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[var(--color-brand)] text-white">
@@ -54,15 +62,25 @@ export const BottomNav = () => {
 									<SheetTitle>こどもを選択</SheetTitle>
 								</SheetHeader>
 								<div className="flex flex-col space-y-4 py-4">
-									{/* 自由に選択肢を構成 */}
-									{user.children.map((child) => (
-										<button
-											key={child.id}
-											className="mx-4 px-4 py-3 text-center text-base font-bold rounded-lg bg-[var(--color-brand)] text-white transition"
-										>
-											{child.name}
-										</button>
-									))}
+									{user.children.length > 0 ? (
+										user.children.map((child) => (
+											<button
+												key={child.id}
+												onClick={() => setSelectedChild(child)}
+												className={`mx-4 px-4 py-3 text-center text-base font-bold rounded-lg transition ${
+													selectedChild?.id === child.id
+														? 'bg-[var(--color-accent)] text-white'
+														: 'bg-[var(--color-brand)] text-white'
+												}`}
+											>
+												{child.name}
+											</button>
+										))
+									) : (
+										<p className="text-center text-sm text-gray-500">
+											子どもアカウントがありません
+										</p>
+									)}
 								</div>
 							</SheetContent>
 						</Sheet>

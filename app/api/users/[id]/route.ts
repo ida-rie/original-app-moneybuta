@@ -16,10 +16,11 @@ type updateUserRequest = {
 };
 
 // ユーザー情報の取得
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, context: { params: { id: string } }) {
 	try {
+		const { id } = context.params;
 		const user = await prisma.user.findUnique({
-			where: { id: params.id },
+			where: { id },
 			include: {
 				children: true, // 子アカウントを一緒に取得
 			},

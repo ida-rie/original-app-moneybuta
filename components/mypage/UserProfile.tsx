@@ -3,10 +3,10 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { Button } from '../ui/button';
 import ProfileEditDialog from './dialog/ProfileEditDialog';
-import { UserTypes } from '@/types/userTypes';
+import { UserType } from '@/types/userType';
 
 type UserProfileProps = {
-	user: UserTypes | null;
+	user: UserType | null;
 };
 
 const UserProfile = ({ user }: UserProfileProps) => {

@@ -1,23 +1,32 @@
 'use client';
-import React from 'react';
+
+import { useAuthStore } from '@/lib/zustand/authStore';
 import { Swords } from 'lucide-react';
 import QuestCard from '@/components/quest/QuestCard';
 import MainTitle from '@/components/layout/header/headline/MainTitle';
-
-const quests = [
-	{ id: 1, title: 'おそうじ', price: 50 },
-	{ id: 2, title: 'せんたくものをたたむ', price: 50 },
-	{ id: 3, title: 'ごはんのおてつだい', price: 80 },
-	{ id: 4, title: 'かいもののおてつだい', price: 100 },
-];
+import { useQuestList } from '@/hooks/useQuestList';
 
 const Quest = () => {
+	const { user, selectedChild } = useAuthStore();
+	const { quests, loading } = useQuestList();
+
+	if (!selectedChild) {
+		return <p>子どもアカウントを選択してください</p>;
+	}
+
+	if (loading) {
+		return <p>読み込み中...</p>;
+	}
+
+	if (quests.length === 0) {
+		return <p>クエストがありません</p>;
+	}
 	return (
 		<>
 			{/* 見出し */}
 			<MainTitle title="おてつだいクエスト" icon={Swords} />
 			{/* クエストの表示 */}
-			<QuestCard quests={quests} />
+			<QuestCard user={user!} />
 		</>
 	);
 };

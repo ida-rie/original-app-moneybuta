@@ -1,32 +1,41 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { PiggyBank } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { UserType } from '@/types/userType';
+import { toast } from 'sonner';
+import { useQuestList } from '@/hooks/useQuestList';
 
-type QuestType = {
-	id: number;
-	title: string;
-	price: number;
-};
 type QuestCardProps = {
-	quests: QuestType[];
+	user: UserType;
 };
 
-const QuestCard = ({ quests }: QuestCardProps) => {
-	const [completedQuests, setCompletedQuests] = useState<Record<number, boolean>>({});
-	// テスト用の親判定
-	const isParent = false;
+const QuestCard = ({ user }: QuestCardProps) => {
+	const { quests, fetchQuests } = useQuestList();
+	const token = sessionStorage.getItem('access_token');
 
-	const handleClickComplete = (id: number) => {
-		setCompletedQuests((prev) => ({
-			...prev,
-			[id]: !prev[id],
-		}));
+	const handleClickComplete = async (questId: string) => {
+		const res = await fetch(`/api/quests/${questId}/complete`, {
+			method: 'PUT',
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${token}`,
+			},
+		});
+
+		if (!res.ok) {
+			const errorText = await res.text(); // エラーメッセージを取得
+			console.error('APIエラー:', errorText);
+			toast.error('クエストの更新に失敗しました');
+			return;
+		}
+
+		toast.success('クエストをかんりょうしました！');
+		await fetchQuests();
 	};
+
 	return (
 		<>
 			{quests.map((quest) => {
-				const isCompleted = completedQuests[quest.id] ?? false;
-
 				return (
 					<div
 						key={quest.id}
@@ -37,13 +46,13 @@ const QuestCard = ({ quests }: QuestCardProps) => {
 							<div className="flex items-center gap-1 text-sm">
 								<PiggyBank size={23} color="var(--color-secondary)" />
 								<p>
-									おこづかい: <span className="quicksand">＋{quest.price}</span>円
+									おこづかい: <span className="quicksand">＋{quest.reward}</span>円
 								</p>
 							</div>
 						</div>
 						<div>
-							{isParent ? (
-								isCompleted ? (
+							{user?.role === 'parent' ? (
+								quest.completed ? (
 									<Button type="button" variant="complete" onClick={() => {}}>
 										承認
 									</Button>
@@ -52,7 +61,7 @@ const QuestCard = ({ quests }: QuestCardProps) => {
 										未完了
 									</Button>
 								)
-							) : isCompleted ? (
+							) : quest.completed ? (
 								<Button
 									type="button"
 									variant="complete"

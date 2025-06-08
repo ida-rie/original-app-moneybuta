@@ -29,6 +29,9 @@ type AuthState = {
 	addChild: (child: ChildUser) => void;
 	removeChild: (childId: string) => void;
 	clearUser: () => void;
+
+	selectedChild: ChildUser | null;
+	setSelectedChild: (child: ChildUser | null) => void;
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -58,6 +61,8 @@ export const useAuthStore = create<AuthState>()(
 				}
 			},
 			clearUser: () => set({ user: null }),
+			selectedChild: null,
+			setSelectedChild: (child) => set({ selectedChild: child }),
 		}),
 		{
 			name: 'auth', // 保存名
