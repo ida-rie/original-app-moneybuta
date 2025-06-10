@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
 
-// クエスト完了API（子が「やったよ」を押す）
 export const PUT = async (req: NextRequest, context: { params: { id: string } }) => {
 	try {
 		const { id } = context.params;
@@ -23,19 +22,19 @@ export const PUT = async (req: NextRequest, context: { params: { id: string } })
 			return NextResponse.json({ error: 'ユーザー認証に失敗しました' }, { status: 401 });
 		}
 
-		// クエストを完了状態にする
+		// クエストを承認状態にする
 		const updated = await prisma.questHistory.update({
 			where: { id },
 			data: {
-				completed: true,
-				completedAt: new Date(),
-				completedBy: user.id,
+				approved: true,
+				approvedAt: new Date(),
+				approvedBy: user.id,
 			},
 		});
 
-		return NextResponse.json({ message: 'クエストを完了しました', quest: updated });
+		return NextResponse.json({ message: 'クエストを承認しました', quest: updated });
 	} catch (error) {
-		console.error('クエスト完了エラー:', error);
-		return NextResponse.json({ error: 'クエストの完了に失敗しました' }, { status: 500 });
+		console.error('クエスト承認エラー:', error);
+		return NextResponse.json({ error: 'クエストの承認に失敗しました' }, { status: 500 });
 	}
 };

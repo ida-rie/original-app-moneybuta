@@ -1,52 +1,91 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { startOfDay, endOfDay } from 'date-fns';
+// app/api/quests/generate/route.ts
 
-// ① 型定義
-type ExistingHistoryKey = {
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { parseISO, isValid, startOfDay, endOfDay } from 'date-fns';
+import { supabase } from '@/lib/supabase';
+
+/** 既存履歴のキー */
+type ExistingHistory = {
 	baseQuestId: string;
 	childUserId: string;
 };
 
-type BaseQuestRecord = {
+/** base_quests の必要フィールド */
+type BaseQuestSelect = {
 	id: string;
 	childUserId: string;
 	title: string;
 	reward: number;
 };
 
-export const POST = async () => {
+export const POST = async (req: NextRequest) => {
 	try {
-		const today = new Date();
-		const start = startOfDay(today);
-		const end = endOfDay(today);
+		// トークンを確認
+		const accessToken = req.headers.get('authorization')?.replace('Bearer ', '');
+		if (!accessToken) {
+			return NextResponse.json({ error: '認証情報がありません' }, { status: 401 });
+		}
 
-		// ② 今日作成済みのクエスト履歴（最小限の情報だけ取得）
-		const existingHistories: ExistingHistoryKey[] = await prisma.questHistory.findMany({
+		// Supabaseのセッションを取得
+		const {
+			data: { user },
+			error: sessionError,
+		} = await supabase.auth.getUser(accessToken);
+
+		if (sessionError || !user) {
+			return NextResponse.json({ error: '認証エラー' }, { status: 401 });
+		}
+
+		const { searchParams } = new URL(req.url);
+
+		// ★ childId を必須パラメータに変更
+		const childId = searchParams.get('childId');
+		if (!childId) {
+			return NextResponse.json({ error: 'childId が必要です' }, { status: 400 });
+		}
+
+		// オプションで targetDate を受け取れる
+		const dateParam = searchParams.get('date');
+		const targetDate = dateParam ? parseISO(dateParam) : new Date();
+		if (!isValid(targetDate)) {
+			return NextResponse.json({ error: 'dateパラメータが不正です' }, { status: 400 });
+		}
+
+		const start = startOfDay(targetDate);
+		const end = endOfDay(targetDate);
+
+		// ————————————————
+		// 1) その子の既存履歴だけ取得
+		// ————————————————
+		const existing: ExistingHistory[] = await prisma.questHistory.findMany({
 			where: {
-				createdAt: {
-					gte: start,
-					lte: end,
-				},
+				childUserId: childId,
+				createdAt: { gte: start, lte: end },
 			},
+			select: { baseQuestId: true, childUserId: true },
+		});
+		const existingSet = new Set(existing.map((h) => `${h.baseQuestId}_${h.childUserId}`));
+
+		// ————————————————
+		// 2) その子の base_quests のみ取得
+		// ————————————————
+		const baseQuests: BaseQuestSelect[] = await prisma.baseQuest.findMany({
+			where: { childUserId: childId },
 			select: {
-				baseQuestId: true,
+				id: true,
 				childUserId: true,
+				title: true,
+				reward: true,
 			},
 		});
 
-		// ③ 重複判定のキーセットを作成
-		const existingKeySet = new Set<string>(
-			existingHistories.map((h: ExistingHistoryKey) => `${h.baseQuestId}_${h.childUserId}`)
-		);
-
-		// ④ base_quests 全件取得（実際の型は Prisma が補完）
-		const baseQuests = await prisma.baseQuest.findMany();
-
-		// ⑤ 今日未作成のものをフィルタして履歴を作成
-		const newHistories = baseQuests
-			.filter((bq: BaseQuestRecord) => !existingKeySet.has(`${bq.id}_${bq.childUserId}`))
-			.map((bq: BaseQuestRecord) => ({
+		// ————————————————
+		// 3) 未生成分だけを抽出してペイロード作成
+		// ————————————————
+		const toCreate = baseQuests
+			.filter((bq) => !existingSet.has(`${bq.id}_${bq.childUserId}`))
+			.map((bq) => ({
 				baseQuestId: bq.id,
 				childUserId: bq.childUserId,
 				title: bq.title,
@@ -55,15 +94,19 @@ export const POST = async () => {
 				approved: false,
 			}));
 
-		if (newHistories.length === 0) {
-			return NextResponse.json({ message: '今日のクエストはすでに作成済みです' });
+		if (toCreate.length === 0) {
+			return NextResponse.json({
+				message: `${dateParam ?? '今日'}のクエストはすでに生成済みです`,
+			});
 		}
 
-		await prisma.questHistory.createMany({ data: newHistories });
+		// ————————————————
+		// 4) 一括生成
+		// ————————————————
+		await prisma.questHistory.createMany({ data: toCreate });
 
 		return NextResponse.json({
-			message: '今日のクエスト履歴を作成しました',
-			count: newHistories.length,
+			message: `${dateParam ?? '今日'}のクエストを ${toCreate.length} 件生成しました`,
 		});
 	} catch (error) {
 		console.error('クエスト履歴生成エラー:', error);

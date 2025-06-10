@@ -60,7 +60,6 @@ const SignIn = () => {
 		// トークンをセッションストレージに保存
 		if (signInData.session?.access_token) {
 			sessionStorage.setItem('access_token', signInData.session.access_token);
-			console.log(signInData.session.access_token);
 		}
 
 		// idに紐づくuserの情報を取得
