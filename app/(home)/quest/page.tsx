@@ -35,7 +35,7 @@ const QuestPage = () => {
 			toast.error('クエストの作成に失敗しました');
 			console.error(json.error);
 		} else {
-			toast.success('クエストを作成しました');
+			toast.success(json.message);
 			await fetchQuests();
 		}
 		setIsGenerating(false);
@@ -63,7 +63,7 @@ const QuestPage = () => {
 					<p className="mt-2 text-sm text-gray-600">
 						{quests.length === 0
 							? 'ボタンを押すと、今日のクエストが作成されます。'
-							: '今日のクエストは作成済みです。'}
+							: 'クエスト承認後にボタンを押してください。明日のクエストをセットします。'}
 					</p>
 				</div>
 			)}

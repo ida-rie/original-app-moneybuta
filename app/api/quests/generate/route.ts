@@ -5,13 +5,13 @@ import { prisma } from '@/lib/prisma';
 import { parseISO, isValid, startOfDay, endOfDay } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 
-/** 既存履歴のキー */
+// 既存履歴
 type ExistingHistory = {
 	baseQuestId: string;
 	childUserId: string;
 };
 
-/** base_quests の必要フィールド */
+// base_quests
 type BaseQuestSelect = {
 	id: string;
 	childUserId: string;
@@ -39,7 +39,7 @@ export const POST = async (req: NextRequest) => {
 
 		const { searchParams } = new URL(req.url);
 
-		// ★ childId を必須パラメータに変更
+		// childId を必須パラメータに変更
 		const childId = searchParams.get('childId');
 		if (!childId) {
 			return NextResponse.json({ error: 'childId が必要です' }, { status: 400 });
@@ -55,9 +55,7 @@ export const POST = async (req: NextRequest) => {
 		const start = startOfDay(targetDate);
 		const end = endOfDay(targetDate);
 
-		// ————————————————
-		// 1) その子の既存履歴だけ取得
-		// ————————————————
+		// ①その子の既存履歴だけ取得
 		const existing: ExistingHistory[] = await prisma.questHistory.findMany({
 			where: {
 				childUserId: childId,
@@ -67,9 +65,7 @@ export const POST = async (req: NextRequest) => {
 		});
 		const existingSet = new Set(existing.map((h) => `${h.baseQuestId}_${h.childUserId}`));
 
-		// ————————————————
-		// 2) その子の base_quests のみ取得
-		// ————————————————
+		// ②その子の base_quests のみ取得
 		const baseQuests: BaseQuestSelect[] = await prisma.baseQuest.findMany({
 			where: { childUserId: childId },
 			select: {
@@ -80,9 +76,7 @@ export const POST = async (req: NextRequest) => {
 			},
 		});
 
-		// ————————————————
-		// 3) 未生成分だけを抽出してペイロード作成
-		// ————————————————
+		// ③未作成分だけを抽出してペイロード作成
 		const toCreate = baseQuests
 			.filter((bq) => !existingSet.has(`${bq.id}_${bq.childUserId}`))
 			.map((bq) => ({
@@ -96,17 +90,15 @@ export const POST = async (req: NextRequest) => {
 
 		if (toCreate.length === 0) {
 			return NextResponse.json({
-				message: `${dateParam ?? '今日'}のクエストはすでに生成済みです`,
+				message: `${dateParam ?? '今日'}のクエストはすでに作成済みです`,
 			});
 		}
 
-		// ————————————————
-		// 4) 一括生成
-		// ————————————————
+		// ④一括作成
 		await prisma.questHistory.createMany({ data: toCreate });
 
 		return NextResponse.json({
-			message: `${dateParam ?? '今日'}のクエストを ${toCreate.length} 件生成しました`,
+			message: `${dateParam ?? '今日'}のクエストを生成しました`,
 		});
 	} catch (error) {
 		console.error('クエスト履歴生成エラー:', error);
