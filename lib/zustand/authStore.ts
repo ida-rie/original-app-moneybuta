@@ -1,10 +1,8 @@
 'use client';
 
 import { create } from 'zustand';
-// import { persist, createJSONStorage } from 'zustand/middleware';
-import { persist } from 'zustand/middleware';
 
-// ユーザーの型
+// ユーザーの型定義
 export type ChildUser = {
 	id: string;
 	email: string;
@@ -19,68 +17,77 @@ export type ParentUser = {
 	name: string;
 	role: 'parent';
 	iconUrl: string | null;
-	children: ChildUser[]; // 親ユーザーが持つ子リスト
+	children: ChildUser[];
 };
 
-// Zustandのステート定義
+type User = ParentUser | ChildUser;
+
 type AuthState = {
-	user: ParentUser | ChildUser | null;
-	setUser: (user: ParentUser | ChildUser) => void;
+	// === 追加したフラグ ===
+	isInitialized: boolean;
+	setIsInitialized: (v: boolean) => void;
+
+	user: User | null;
+	setUser: (user: User | null) => void;
+	clearUser: () => void;
+
 	addChild: (child: ChildUser) => void;
 	removeChild: (childId: string) => void;
-	clearUser: () => void;
 
 	selectedChild: ChildUser | null;
 	setSelectedChild: (child: ChildUser | null) => void;
 };
 
-export const useAuthStore = create<AuthState>()(
-	persist(
-		(set, get) => ({
-			user: null,
-			setUser: (user) => set({ user }),
-			addChild: (child) => {
-				const currentUser = get().user;
-				// 親ユーザーであれば children を追加
-				if (currentUser && currentUser.role === 'parent') {
-					const updatedParent: ParentUser = {
-						...currentUser,
-						children: currentUser.children ? [...currentUser.children, child] : [child],
-					};
-					set({ user: updatedParent });
-				}
-			},
-			removeChild: (childId: string) => {
-				const currentUser = get().user;
-				if (currentUser && currentUser.role === 'parent') {
-					const updatedParent: ParentUser = {
-						...currentUser,
-						children: currentUser.children?.filter((child) => child.id !== childId) || [],
-					};
-					set({ user: updatedParent });
-				}
-			},
-			clearUser: () => set({ user: null }),
-			selectedChild: null,
-			setSelectedChild: (child) => set({ selectedChild: child }),
-		}),
-		{
-			name: 'auth', // 保存名
-			storage:
-				typeof window !== 'undefined'
-					? {
-							getItem: (name) => {
-								const value = window.sessionStorage.getItem(name);
-								return value ? JSON.parse(value) : null;
-							},
-							setItem: (name, value) => {
-								window.sessionStorage.setItem(name, JSON.stringify(value));
-							},
-							removeItem: (name) => {
-								window.sessionStorage.removeItem(name);
-							},
-					  }
-					: undefined,
+export const useAuthStore = create<AuthState>((set, get) => ({
+	// —— 初期状態 ——
+	isInitialized: false,
+	user: null,
+	selectedChild: null,
+
+	// —— セッションからの復元完了フラグ ——
+	setIsInitialized: (v) => set({ isInitialized: v }),
+
+	// —— ユーザー設定 ——
+	setUser: (user) => {
+		set({ user });
+		if (typeof window !== 'undefined') {
+			sessionStorage.setItem('user', JSON.stringify(user));
 		}
-	)
-);
+	},
+
+	// —— ユーザークリア ——
+	clearUser: () => {
+		set({ user: null });
+		if (typeof window !== 'undefined') {
+			sessionStorage.removeItem('user');
+		}
+	},
+
+	// —— 子アカウント操作 ——
+	addChild: (child) => {
+		const cu = get().user;
+		if (cu && cu.role === 'parent') {
+			const updated = { ...cu, children: [...cu.children, child] };
+			set({ user: updated });
+			if (typeof window !== 'undefined') {
+				sessionStorage.setItem('user', JSON.stringify(updated));
+			}
+		}
+	},
+	removeChild: (childId) => {
+		const cu = get().user;
+		if (cu && cu.role === 'parent') {
+			const updated = {
+				...cu,
+				children: cu.children.filter((c) => c.id !== childId),
+			};
+			set({ user: updated });
+			if (typeof window !== 'undefined') {
+				sessionStorage.setItem('user', JSON.stringify(updated));
+			}
+		}
+	},
+
+	// —— 選択中の子アカウント ——
+	setSelectedChild: (child) => set({ selectedChild: child }),
+}));

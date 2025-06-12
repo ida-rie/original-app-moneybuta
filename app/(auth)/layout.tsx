@@ -12,9 +12,14 @@ const AuthLayout = ({
 	children: React.ReactNode;
 }>) => {
 	return (
-		<main className="flex justify-center">
-			<div className="w-full max-w-lg p-6">{children}</div>
-		</main>
+		<>
+			<main className="flex justify-center">
+				<div className="w-full max-w-lg p-6">{children}</div>
+			</main>
+			<footer className="m-6 pb-[50px] md:pb-0 text-center">
+				<small>© 2025 マネぶた おこづかいクエスト All rights reserved.</small>
+			</footer>
+		</>
 	);
 };
 
