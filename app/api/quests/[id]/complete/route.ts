@@ -3,9 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
 
 // クエスト完了API（子が「やったよ」を押す）
-export const PUT = async (req: NextRequest, context: { params: { id: string } }) => {
+export const PUT = async (req: NextRequest, { params }: { params: { id: string } }) => {
 	try {
-		const { id } = context.params;
+		const { id } = params;
 
 		// 認証トークン取得
 		const accessToken = req.headers.get('authorization')?.replace('Bearer ', '');

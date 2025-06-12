@@ -16,9 +16,9 @@ type updateUserRequest = {
 };
 
 // ユーザー情報の取得
-export async function GET(_req: NextRequest, context: { params: { id: string } }) {
+export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
 	try {
-		const { id } = context.params;
+		const { id } = params;
 		const user = await prisma.user.findUnique({
 			where: { id },
 			include: {
@@ -38,9 +38,9 @@ export async function GET(_req: NextRequest, context: { params: { id: string } }
 }
 
 // ユーザー情報の更新
-export async function PUT(req: NextRequest, context: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
 	try {
-		const { id } = context.params;
+		const { id } = params;
 		const body: updateUserRequest = await req.json();
 
 		// トークンを確認
@@ -123,9 +123,9 @@ export async function PUT(req: NextRequest, context: { params: { id: string } })
 }
 
 // ユーザー情報の削除
-export async function DELETE(req: NextRequest, context: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
 	try {
-		const { id } = context.params;
+		const { id } = params;
 
 		const accessToken = req.headers.get('authorization')?.replace('Bearer ', '');
 		if (!accessToken) {

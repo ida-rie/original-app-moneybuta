@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
 
-export const PUT = async (req: NextRequest, context: { params: { id: string } }) => {
+export const PUT = async (req: NextRequest, { params }: { params: { id: string } }) => {
 	try {
-		const { id } = context.params;
+		const { id } = params;
 
 		// 認証トークン取得
 		const accessToken = req.headers.get('authorization')?.replace('Bearer ', '');
