@@ -3,9 +3,10 @@ import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
 
 // クエスト完了API（子が「やったよ」を押す）
-export const PUT = async (req: NextRequest, { params }: { params: { id: string } }) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function PUT(req: NextRequest, context: any) {
 	try {
-		const { id } = params;
+		const { id } = context.params;
 
 		// 認証トークン取得
 		const accessToken = req.headers.get('authorization')?.replace('Bearer ', '');
@@ -38,4 +39,4 @@ export const PUT = async (req: NextRequest, { params }: { params: { id: string }
 		console.error('クエスト完了エラー:', error);
 		return NextResponse.json({ error: 'クエストの完了に失敗しました' }, { status: 500 });
 	}
-};
+}

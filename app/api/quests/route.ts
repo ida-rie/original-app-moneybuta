@@ -3,7 +3,7 @@ import { startOfDay, endOfDay, addHours } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 
 // クエストを取得
-export const GET = async (req: NextRequest) => {
+export async function GET(req: NextRequest) {
 	try {
 		const { searchParams } = new URL(req.url);
 		const childId = searchParams.get('childId');
@@ -47,4 +47,4 @@ export const GET = async (req: NextRequest) => {
 		console.error('クエスト一覧取得エラー:', error);
 		return NextResponse.json({ error: 'クエスト一覧の取得に失敗しました' }, { status: 500 });
 	}
-};
+}
