@@ -2,6 +2,13 @@ import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+console.error('▶️ DATABASE_URL is defined:', typeof process.env.DATABASE_URL !== 'undefined');
+console.error('▶️ SUPABASE_URL is defined:', typeof process.env.SUPABASE_URL !== 'undefined');
+console.error(
+	'▶️ SUPABASE_SERVICE_ROLE_KEY is defined:',
+	typeof process.env.SUPABASE_SERVICE_ROLE_KEY !== 'undefined'
+);
+
 // ここでしか使わないように！
 const supabase = createClient(
 	process.env.SUPABASE_URL!,
