@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  previewFeatures = ["dataProxy"]
 }
 
 datasource db {
@@ -42,7 +41,7 @@ model User {
   completedQuests QuestHistory[] @relation("CompletedByUser")
   approvedQuests  QuestHistory[] @relation("ApprovedByUser")
 
-  @@map("user")
+  @@map("User")
 }
 
 model BasicAmount {

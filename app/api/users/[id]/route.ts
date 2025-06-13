@@ -18,12 +18,6 @@ type updateUserRequest = {
 // ユーザー情報の取得
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function GET(_req: NextRequest, context: any) {
-	console.error('▶️ Runtime DATABASE_URL:', process.env.DATABASE_URL?.slice(0, 50));
-	console.error('▶️ Runtime SUPABASE_URL:', process.env.SUPABASE_URL?.slice(0, 50));
-	console.error(
-		'▶️ Runtime SERVICE_ROLE_KEY:',
-		process.env.SUPABASE_SERVICE_ROLE_KEY?.slice(0, 50)
-	);
 	try {
 		const { id } = context.params;
 		const user = await prisma.user.findUnique({
