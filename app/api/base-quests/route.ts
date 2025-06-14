@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
 			return NextResponse.json({ error: '認証エラー' }, { status: 401 });
 		}
 
-		// 必要なデータの抽出
+		// 必要なデータの取得
 		const { quests, childUserId } = body;
 
 		if (!quests || !Array.isArray(quests) || !childUserId) {
