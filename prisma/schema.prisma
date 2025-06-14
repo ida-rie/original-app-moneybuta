@@ -69,6 +69,8 @@ model AmountHistory {
   user        User        @relation("ParentAmountHistories", fields: [userId], references: [id])
   childUser   User        @relation("ChildAmountHistories", fields: [childUserId], references: [id])
   basicAmount BasicAmount @relation(fields: [basicAmountId], references: [id])
+
+  @@unique([userId, date])
 }
 
 model BaseQuest {
@@ -105,4 +107,6 @@ model QuestHistory {
   childUser       User      @relation("ChildQuestHistories", fields: [childUserId], references: [id])
   completedByUser User?     @relation("CompletedByUser", fields: [completedBy], references: [id])
   approvedByUser  User?     @relation("ApprovedByUser", fields: [approvedBy], references: [id])
+
+   @@unique([baseQuestId, childUserId, questDate])
 }

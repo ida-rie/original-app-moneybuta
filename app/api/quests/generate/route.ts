@@ -34,7 +34,7 @@ type QuestHistoryCreateInput = {
 	questDate: Date;
 };
 
-async function handleGenerate(req: NextRequest) {
+export async function GET(req: NextRequest) {
 	try {
 		const { searchParams } = new URL(req.url);
 
@@ -45,9 +45,9 @@ async function handleGenerate(req: NextRequest) {
 		if (childParam) {
 			targetChildIds = [childParam];
 		} else {
-			// 全子アカウントIDを取得
 			const allChildren: ChildSelect[] = await prisma.baseQuest.findMany({
 				select: { childUserId: true },
+				distinct: ['childUserId'], // 重複除去
 			});
 			targetChildIds = allChildren.map((c: ChildSelect) => c.childUserId);
 		}
@@ -55,8 +55,7 @@ async function handleGenerate(req: NextRequest) {
 		// dateパラメータ取得・解析
 		const dateParam: string | null = searchParams.get('date');
 		const targetDate: Date = dateParam ? parseISO(dateParam) : new Date();
-		// クエストの重複作成を防ぐため定義
-		const questDate = startOfDay(targetDate);
+		const questDate = startOfDay(targetDate); // 正規化
 
 		if (!isValid(targetDate)) {
 			return NextResponse.json({ error: 'dateパラメータが不正です' }, { status: 400 });
@@ -64,9 +63,8 @@ async function handleGenerate(req: NextRequest) {
 
 		const toCreate: QuestHistoryCreateInput[] = [];
 
-		// 子ごとに生成ロジック
 		for (const childId of targetChildIds) {
-			// その日の既存履歴を取得
+			// 既存履歴取得
 			const existing: ExistingHistory[] = await prisma.questHistory.findMany({
 				where: {
 					childUserId: childId,
@@ -78,7 +76,7 @@ async function handleGenerate(req: NextRequest) {
 				existing.map((h: ExistingHistory) => `${h.baseQuestId}_${h.childUserId}`)
 			);
 
-			// その子の base_quests を取得
+			// 対象 base_quests を取得
 			const baseQuests: BaseQuestSelect[] = await prisma.baseQuest.findMany({
 				where: { childUserId: childId },
 				select: {
@@ -89,7 +87,6 @@ async function handleGenerate(req: NextRequest) {
 				},
 			});
 
-			// 未生成分を toCreate に追加
 			baseQuests.forEach((bq: BaseQuestSelect) => {
 				const key = `${bq.id}_${bq.childUserId}`;
 				if (!existingSet.has(key)) {
@@ -112,7 +109,6 @@ async function handleGenerate(req: NextRequest) {
 			});
 		}
 
-		// 一括作成
 		await prisma.questHistory.createMany({ data: toCreate });
 
 		return NextResponse.json({
@@ -120,9 +116,6 @@ async function handleGenerate(req: NextRequest) {
 		});
 	} catch (error) {
 		console.error('クエスト履歴作成エラー:', error);
-		return NextResponse.json({ error: 'クエスト履歴の作成に失敗しました' }, { status: 500 });
+		return NextResponse.json({ error: 'サーバーエラーが発生しました' }, { status: 500 });
 	}
 }
-
-export const POST = handleGenerate;
-export const GET = handleGenerate;
