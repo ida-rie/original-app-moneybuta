@@ -33,7 +33,7 @@ type QuestHistoryCreateInput = {
 	approved: boolean;
 };
 
-export async function POST(req: NextRequest) {
+async function handleGenerate(req: NextRequest) {
 	try {
 		const { searchParams } = new URL(req.url);
 
@@ -122,3 +122,6 @@ export async function POST(req: NextRequest) {
 		return NextResponse.json({ error: 'クエスト履歴の作成に失敗しました' }, { status: 500 });
 	}
 }
+
+export const POST = handleGenerate;
+export const GET = handleGenerate;
