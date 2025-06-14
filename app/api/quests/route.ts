@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 					lte: end,
 				},
 			},
-			orderBy: { createdAt: 'desc' },
+			// orderBy: { createdAt: 'desc' },
 			select: {
 				id: true,
 				title: true,

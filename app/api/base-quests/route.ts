@@ -34,9 +34,9 @@ export const GET = async (req: NextRequest) => {
 			where: {
 				childUserId: childId,
 			},
-			orderBy: {
-				createdAt: 'desc',
-			},
+			// orderBy: {
+			// 	createdAt: 'desc',
+			// },
 		});
 
 		if (!baseQuests || baseQuests.length === 0) {
