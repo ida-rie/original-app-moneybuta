@@ -39,6 +39,10 @@ export const GET = async (req: NextRequest) => {
 			},
 		});
 
+		if (!baseQuests || baseQuests.length === 0) {
+			return NextResponse.json({ message: 'データが見つかりません', data: [] }, { status: 200 });
+		}
+
 		return NextResponse.json(baseQuests);
 	} catch (error) {
 		console.error('BaseQuest取得エラー:', error);
