@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { deleteRelatedUserData } from '@/lib/prisma/deleteRelatedUserData';
 
 // ここでしか使わないように！
 const supabase = createClient(
@@ -157,28 +158,31 @@ export async function DELETE(req: NextRequest, context: any) {
 
 		// 自分自身を削除する場合（=親自身）
 		if (authUser.id === id) {
-			// ① 子ユーザーのIDを先に取得
+			// 子ユーザーを全削除
 			const childUsers = await prisma.user.findMany({
 				where: { parentId: id },
 				select: { id: true },
 			});
 
-			// ② 認証情報（Supabase Auth）から削除
 			for (const child of childUsers) {
+				await deleteRelatedUserData(child.id, 'child');
+
 				const { error } = await supabase.auth.admin.deleteUser(child.id);
-				if (error) console.error(`子アカウント（${child.id}）の認証削除失敗:`, error);
+				if (error) {
+					console.error(`子アカウント（${child.id}）の認証削除失敗:`, error);
+				}
+
+				await prisma.user.delete({ where: { id: child.id } });
 			}
 
-			// ③ DBから削除（prisma）
-			await prisma.user.deleteMany({
-				where: { parentId: id },
-			});
+			// 親のデータも削除
+			await deleteRelatedUserData(id, 'parent');
 
-			// ④ 親アカウントも削除（認証とDB）
 			const { error: parentDeleteError } = await supabase.auth.admin.deleteUser(id);
 			if (parentDeleteError) {
 				console.error('親ユーザー削除エラー:', parentDeleteError);
 			}
+
 			await prisma.user.delete({ where: { id } });
 
 			return NextResponse.json(
@@ -187,7 +191,7 @@ export async function DELETE(req: NextRequest, context: any) {
 			);
 		}
 
-		// 自分の子どもだけを削除する場合
+		// 子どもだけを削除する場合（親が操作）
 		if (targetUser.parentId !== authUser.id) {
 			return NextResponse.json(
 				{ error: 'このユーザーを削除する権限がありません' },
@@ -195,14 +199,15 @@ export async function DELETE(req: NextRequest, context: any) {
 			);
 		}
 
-		// Supabaseの認証情報も削除
+		// 子どもの関連データを削除
+		await deleteRelatedUserData(id, 'child');
+
 		const { error: childDeleteAuthError } = await supabase.auth.admin.deleteUser(id);
 		if (childDeleteAuthError) {
 			console.error('子アカウント認証削除失敗:', childDeleteAuthError);
 			return NextResponse.json({ error: '認証情報の削除に失敗しました' }, { status: 500 });
 		}
 
-		// DBから削除
 		await prisma.user.delete({ where: { id } });
 
 		return NextResponse.json({ message: '子アカウントを削除しました' }, { status: 200 });
