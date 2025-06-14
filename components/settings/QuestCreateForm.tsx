@@ -173,7 +173,7 @@ const QuestCreateForm = ({ mutate }: QuestCreateFormProps) => {
 				{/* 追加ボタン */}
 				<div className="px-4">
 					<Button type="button" variant="add" onClick={() => append({ title: '', reward: 0 })}>
-						＋追加する
+						＋行を追加する
 					</Button>
 				</div>
 

@@ -99,7 +99,12 @@ export async function DELETE(req: NextRequest, context: any) {
 			return NextResponse.json({ error: '権限がありません' }, { status: 403 });
 		}
 
-		// 削除処理
+		// ① 関連履歴を先に削除
+		await prisma.questHistory.deleteMany({
+			where: { baseQuestId: id },
+		});
+
+		// ② 基本クエストを削除
 		await prisma.baseQuest.delete({
 			where: { id },
 		});
