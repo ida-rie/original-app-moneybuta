@@ -40,8 +40,6 @@ model User {
 
   completedQuests QuestHistory[] @relation("CompletedByUser")
   approvedQuests  QuestHistory[] @relation("ApprovedByUser")
-
-  @@map("User")
 }
 
 model BasicAmount {
