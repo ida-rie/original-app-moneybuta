@@ -37,6 +37,10 @@ export async function GET(req: NextRequest) {
 			},
 		});
 
+		if (!quests) {
+			return NextResponse.json({ message: 'データが見つかりません', data: null }, { status: 200 });
+		}
+
 		return NextResponse.json(quests);
 	} catch (error) {
 		console.error('クエスト一覧取得エラー:', error);

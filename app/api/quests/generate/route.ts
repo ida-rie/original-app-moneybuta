@@ -34,7 +34,7 @@ type QuestHistoryCreateInput = {
 	questDate: Date;
 };
 
-export default async function GET(req: NextRequest) {
+export const GET = async (req: NextRequest) => {
 	try {
 		const { searchParams } = new URL(req.url);
 
@@ -118,4 +118,4 @@ export default async function GET(req: NextRequest) {
 		console.error('クエスト履歴作成エラー:', error);
 		return NextResponse.json({ error: 'サーバーエラーが発生しました' }, { status: 500 });
 	}
-}
+};
