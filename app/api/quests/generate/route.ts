@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { parseISO, isValid, startOfDay, endOfDay } from 'date-fns';
+import { parseISO, isValid, startOfDay } from 'date-fns';
 
 /** 既存履歴のキー情報 */
 type ExistingHistory = {
@@ -31,6 +31,7 @@ type QuestHistoryCreateInput = {
 	reward: number;
 	completed: boolean;
 	approved: boolean;
+	questDate: Date;
 };
 
 async function handleGenerate(req: NextRequest) {
@@ -54,13 +55,12 @@ async function handleGenerate(req: NextRequest) {
 		// dateパラメータ取得・解析
 		const dateParam: string | null = searchParams.get('date');
 		const targetDate: Date = dateParam ? parseISO(dateParam) : new Date();
+		// クエストの重複作成を防ぐため定義
+		const questDate = startOfDay(targetDate);
 
 		if (!isValid(targetDate)) {
 			return NextResponse.json({ error: 'dateパラメータが不正です' }, { status: 400 });
 		}
-
-		const start: Date = startOfDay(targetDate);
-		const end: Date = endOfDay(targetDate);
 
 		const toCreate: QuestHistoryCreateInput[] = [];
 
@@ -70,7 +70,7 @@ async function handleGenerate(req: NextRequest) {
 			const existing: ExistingHistory[] = await prisma.questHistory.findMany({
 				where: {
 					childUserId: childId,
-					createdAt: { gte: start, lte: end },
+					questDate,
 				},
 				select: { baseQuestId: true, childUserId: true },
 			});
@@ -100,6 +100,7 @@ async function handleGenerate(req: NextRequest) {
 						reward: bq.reward,
 						completed: false,
 						approved: false,
+						questDate,
 					});
 				}
 			});

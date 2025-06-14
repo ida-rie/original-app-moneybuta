@@ -97,6 +97,7 @@ model QuestHistory {
   approved    Boolean   @default(false)
   approvedAt  DateTime?
   approvedBy  String?
+  questDate   DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
