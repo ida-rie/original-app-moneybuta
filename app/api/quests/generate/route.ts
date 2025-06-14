@@ -1,5 +1,3 @@
-// app/api/quests/generate/route.ts
-
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { parseISO, isValid, startOfDay } from 'date-fns';
@@ -36,6 +34,8 @@ type QuestHistoryCreateInput = {
 
 export const GET = async (req: NextRequest) => {
 	try {
+		console.log('🚀 クエスト自動生成 cron 開始:', new Date().toISOString());
+
 		const { searchParams } = new URL(req.url);
 
 		// クエリから子ID取得 (optional)
@@ -52,12 +52,18 @@ export const GET = async (req: NextRequest) => {
 			targetChildIds = allChildren.map((c: ChildSelect) => c.childUserId);
 		}
 
+		if (targetChildIds.length === 0) {
+			console.warn('⚠️ 対象の childUserId が存在しません');
+			return NextResponse.json({ message: 'childUserId が見つかりません' });
+		}
+
 		// dateパラメータ取得・解析
 		const dateParam: string | null = searchParams.get('date');
 		const targetDate: Date = dateParam ? parseISO(dateParam) : new Date();
 		const questDate = startOfDay(targetDate); // 正規化
 
 		if (!isValid(targetDate)) {
+			console.warn('❌ 不正な日付パラメータ:', dateParam);
 			return NextResponse.json({ error: 'dateパラメータが不正です' }, { status: 400 });
 		}
 
@@ -104,6 +110,7 @@ export const GET = async (req: NextRequest) => {
 		}
 
 		if (toCreate.length === 0) {
+			console.log('🟡 クエスト作成なし（すでに作成済み）:', questDate.toISOString());
 			return NextResponse.json({
 				message: `${dateParam ?? '今日'}のクエストはすでに作成済みです`,
 			});
@@ -111,11 +118,12 @@ export const GET = async (req: NextRequest) => {
 
 		await prisma.questHistory.createMany({ data: toCreate });
 
+		console.log(`✅ クエスト作成成功: ${toCreate.length} 件 (${questDate.toISOString()})`);
 		return NextResponse.json({
 			message: `${dateParam ?? '今日'}のクエストを ${toCreate.length} 件作成しました`,
 		});
 	} catch (error) {
-		console.error('クエスト履歴作成エラー:', error);
+		console.error('❌ クエスト履歴作成エラー:', error);
 		return NextResponse.json({ error: 'サーバーエラーが発生しました' }, { status: 500 });
 	}
 };
