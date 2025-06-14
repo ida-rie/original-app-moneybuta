@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
 
 		if (toCreate.length === 0) {
 			return NextResponse.json({
-				message: `${dateParam ?? '今日'}のクエストはすでに生成済みです`,
+				message: `${dateParam ?? '今日'}のクエストはすでに作成済みです`,
 			});
 		}
 
@@ -115,10 +115,10 @@ export async function POST(req: NextRequest) {
 		await prisma.questHistory.createMany({ data: toCreate });
 
 		return NextResponse.json({
-			message: `${dateParam ?? '今日'}のクエストを ${toCreate.length} 件生成しました`,
+			message: `${dateParam ?? '今日'}のクエストを ${toCreate.length} 件作成しました`,
 		});
 	} catch (error) {
-		console.error('クエスト履歴生成エラー:', error);
-		return NextResponse.json({ error: 'クエスト履歴の生成に失敗しました' }, { status: 500 });
+		console.error('クエスト履歴作成エラー:', error);
+		return NextResponse.json({ error: 'クエスト履歴の作成に失敗しました' }, { status: 500 });
 	}
 }
