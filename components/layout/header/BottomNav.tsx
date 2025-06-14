@@ -38,53 +38,56 @@ export const BottomNav = () => {
 						マイページ
 					</Link>
 				</li>
-				<li>
-					<Link href="/settings" className="flex flex-col items-center text-xs">
-						<Settings size={20} />
-						設定
-					</Link>
-				</li>
-				{/* 親ユーザーのみ子どもを選択を表示する */}
+				{/* 親ユーザーのみ設定＆子どもを選択を表示する */}
 				{user?.role === 'parent' && (
-					<li>
-						<Sheet>
-							<SheetTrigger asChild>
-								<button className="flex flex-col items-center text-xs">
-									<Smile size={20} />
-									こども
-								</button>
-							</SheetTrigger>
-							<SheetContent
-								side="bottom"
-								className="bg-[var(--color-background)] border-t border-gray-200 rounded-t-xl"
-							>
-								<SheetHeader>
-									<SheetTitle>こどもを選択</SheetTitle>
-								</SheetHeader>
-								<div className="flex flex-col space-y-4 py-4">
-									{user.children.length > 0 ? (
-										user.children.map((child) => (
-											<button
-												key={child.id}
-												onClick={() => setSelectedChild(child)}
-												className={`mx-4 px-4 py-3 text-center text-base font-bold rounded-lg transition ${
-													selectedChild?.id === child.id
-														? 'bg-[var(--color-accent)] text-white'
-														: 'bg-[var(--color-brand)] text-white'
-												}`}
-											>
-												{child.name}
-											</button>
-										))
-									) : (
-										<p className="text-center text-sm text-gray-500">
-											子どもアカウントがありません
-										</p>
-									)}
-								</div>
-							</SheetContent>
-						</Sheet>
-					</li>
+					<>
+						<li>
+							<Link href="/settings" className="flex flex-col items-center text-xs">
+								<Settings size={20} />
+								設定
+							</Link>
+						</li>
+
+						<li>
+							<Sheet>
+								<SheetTrigger asChild>
+									<button className="flex flex-col items-center text-xs">
+										<Smile size={20} />
+										こども
+									</button>
+								</SheetTrigger>
+								<SheetContent
+									side="bottom"
+									className="bg-[var(--color-background)] border-t border-gray-200 rounded-t-xl"
+								>
+									<SheetHeader>
+										<SheetTitle>こどもを選択</SheetTitle>
+									</SheetHeader>
+									<div className="flex flex-col space-y-4 py-4">
+										{user.children.length > 0 ? (
+											user.children.map((child) => (
+												<button
+													key={child.id}
+													onClick={() => setSelectedChild(child)}
+													className={`mx-4 px-4 py-3 text-center text-base font-bold rounded-lg transition ${
+														selectedChild?.id === child.id
+															? 'bg-[var(--color-accent)] text-white'
+															: 'bg-[var(--color-brand)] text-white'
+													}`}
+												>
+													{child.name}
+												</button>
+											))
+										) : (
+											<p className="text-center text-sm text-gray-500">
+												子どもアカウントがありません
+											</p>
+										)}
+									</div>
+								</SheetContent>
+							</Sheet>
+						</li>
+					</>
 				)}
 			</ul>
 		</nav>

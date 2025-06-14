@@ -11,7 +11,7 @@ const QuestPage = () => {
 	const { user, selectedChild } = useAuthStore();
 	const { quests, loading, fetchQuests } = useQuestList();
 
-	// 初回ロード／生成後に一覧取得
+	// 初回ロード／作成後に一覧取得
 	useEffect(() => {
 		if (selectedChild) {
 			fetchQuests();
@@ -19,10 +19,8 @@ const QuestPage = () => {
 	}, [selectedChild, fetchQuests]);
 
 	// 子アカウント未選択
-	if (user?.role === 'parent') {
-		if (!selectedChild) {
-			return <p className="mt-8 text-center">子どもアカウントを選択してください</p>;
-		}
+	if (!selectedChild && user?.role === 'parent') {
+		return <p className="mt-8 text-center">子どもアカウントを選択してください</p>;
 	}
 
 	// 読み込み中

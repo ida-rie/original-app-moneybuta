@@ -9,12 +9,6 @@ const notoSansJP = Noto_Sans_JP({
 	weight: '400', // 必要なウェイトを指定
 });
 
-// Quicksand フォントをインポート
-// const quicksand = Quicksand({
-// 	subsets: ['latin'],
-// 	weight: '400', // 必要なウェイトを指定
-// });
-
 export const metadata: Metadata = {
 	title: 'マネぶた おこづかいクエスト',
 	description: 'クエスト(お手伝い)をクリアしておこづかいを貯めていくアプリです。',
@@ -34,7 +28,7 @@ const RootLayout = ({
 				{/* Main コンテンツ */}
 				<div className="grow-1">{children}</div>
 				{/* トースター */}
-				<Toaster position="top-center" />
+				<Toaster position="top-left" />
 			</body>
 		</html>
 	);

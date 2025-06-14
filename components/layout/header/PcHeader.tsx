@@ -90,9 +90,11 @@ export const PcHeader = () => {
 						<li>
 							<Link href="/mypage">マイページ</Link>
 						</li>
-						<li>
-							<Link href="/settings">設定</Link>
-						</li>
+						{user?.role === 'parent' && (
+							<li>
+								<Link href="/settings">設定</Link>
+							</li>
+						)}
 						<li>
 							<Button variant="delete" onClick={handleSignOut}>
 								サインアウト

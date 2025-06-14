@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { startOfDay, endOfDay, addHours } from 'date-fns';
+import { startOfDay, endOfDay } from 'date-fns';
+// import { format } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 
-// クエストを取得
+// クエストの履歴を取得
 export async function GET(req: NextRequest) {
 	try {
 		const { searchParams } = new URL(req.url);
@@ -12,19 +13,16 @@ export async function GET(req: NextRequest) {
 			return NextResponse.json({ error: 'childIdが必要です' }, { status: 400 });
 		}
 
-		// 現在時刻をJSTで扱うため、9時間進める
-		const now = addHours(new Date(), 9);
-
-		// JSTでの当日の始まりと終わり（UTCに戻すため -9時間）
-		const jstStart = addHours(startOfDay(now), -9);
-		const jstEnd = addHours(endOfDay(now), -9);
+		// 当日の始まりと終わり
+		const start = startOfDay(new Date());
+		const end = endOfDay(new Date());
 
 		const quests = await prisma.questHistory.findMany({
 			where: {
 				childUserId: childId,
 				questDate: {
-					gte: jstStart,
-					lte: jstEnd,
+					gte: start,
+					lte: end,
 				},
 			},
 			orderBy: { createdAt: 'desc' },

@@ -16,11 +16,17 @@ import {
 } from '@/components/ui/form';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Trash2 } from 'lucide-react';
+import { useAuthStore } from '@/lib/zustand/authStore';
+import { toast } from 'sonner';
+
+type QuestCreateFormProps = {
+	mutate: () => void;
+};
 
 // お手伝いクエストのスキーマ
 const questSchema = z.object({
 	title: z.string().min(2, '2文字以上入力してください'),
-	amount: z
+	reward: z
 		.number({ invalid_type_error: '数値で入力してください' })
 		.min(1, '1以上の金額を入力してください'),
 });
@@ -32,12 +38,12 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const QuestCreateForm = () => {
+const QuestCreateForm = ({ mutate }: QuestCreateFormProps) => {
 	// フォーム初期化
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
-			quests: [{ title: '', amount: 0 }],
+			quests: [{ title: '', reward: 0 }],
 		},
 	});
 	// 動的フィールド管理
@@ -47,9 +53,49 @@ const QuestCreateForm = () => {
 	});
 
 	// フォーム送信処理
-	const onSubmit = (data: FormValues) => {
-		console.log('登録されたお手伝い:', data);
-		// 後でAPI連携
+	const onSubmit = async (data: FormValues) => {
+		try {
+			const accessToken = sessionStorage.getItem('access_token');
+			if (!accessToken) {
+				alert('アクセストークンが見つかりません');
+				return;
+			}
+
+			// ユーザー情報の取得
+			const user = useAuthStore.getState().user;
+			const selectedChild = useAuthStore.getState().selectedChild;
+
+			if (!user || !selectedChild) {
+				alert('ユーザー情報が不正です');
+				return;
+			}
+
+			const response = await fetch('/api/base-quests', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`,
+				},
+				body: JSON.stringify({
+					quests: data.quests,
+					childUserId: selectedChild.id,
+				}),
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json();
+				console.error('エラー内容:', errorData);
+				alert('登録に失敗しました');
+				return;
+			}
+
+			toast('クエストを登録しました');
+			await mutate();
+			form.reset(); // 初期化したい場合
+		} catch (error) {
+			console.error('送信エラー:', error);
+			toast('予期せぬエラーが発生しました');
+		}
 	};
 
 	return (
@@ -80,7 +126,7 @@ const QuestCreateForm = () => {
 						{/* 金額入力 */}
 						<FormField
 							control={form.control}
-							name={`quests.${index}.amount`}
+							name={`quests.${index}.reward`}
 							render={({ field }) => (
 								<FormItem>
 									<FormLabel>加算金額（円）</FormLabel>
@@ -124,7 +170,7 @@ const QuestCreateForm = () => {
 
 				{/* 追加ボタン */}
 				<div className="px-4">
-					<Button type="button" variant="add" onClick={() => append({ title: '', amount: 0 })}>
+					<Button type="button" variant="add" onClick={() => append({ title: '', reward: 0 })}>
 						＋追加する
 					</Button>
 				</div>

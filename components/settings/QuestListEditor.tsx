@@ -15,11 +15,14 @@ import {
 } from '@/components/ui/form';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { SquarePen, Trash2, Save } from 'lucide-react';
+import { useAuthStore } from '@/lib/zustand/authStore';
+import { useBaseQuests } from '@/hooks/useBasicQuests';
+import { toast } from 'sonner';
 
 type Quest = {
-	id: number;
+	id: string;
 	title: string;
-	amount: number;
+	reward: number;
 };
 
 type QuestListEditorProps = {
@@ -29,28 +32,96 @@ type QuestListEditorProps = {
 // お手伝いクエストのスキーマ
 const questSchema = z.object({
 	title: z.string().min(2, '2文字以上入力してください'),
-	amount: z
+	reward: z
 		.number({ invalid_type_error: '数値で入力してください' })
 		.min(1, '1以上の金額を入力してください'),
 });
 
 const QuestListEditor = ({ quest }: QuestListEditorProps) => {
 	const [isEdting, setIsEditing] = useState(false);
+	const { mutate } = useBaseQuests();
 
 	// フォーム初期化
 	const form = useForm<z.infer<typeof questSchema>>({
 		resolver: zodResolver(questSchema),
 		defaultValues: {
 			title: quest.title,
-			amount: quest.amount,
+			reward: quest.reward,
 		},
 	});
 
-	// フォーム送信処理
-	const onSubmit = (data: z.infer<typeof questSchema>) => {
-		console.log('登録されたお手伝い:', data);
-		setIsEditing(false);
-		// 後でAPI連携
+	// フォーム送信処理(更新)
+	const onSubmit = (questId: string) => async (data: z.infer<typeof questSchema>) => {
+		try {
+			const accessToken = sessionStorage.getItem('access_token');
+			if (!accessToken) {
+				toast('アクセストークンが見つかりません');
+				return;
+			}
+
+			const response = await fetch(`/api/base-quests/${questId}`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`,
+				},
+				body: JSON.stringify({
+					title: data.title,
+					reward: data.reward,
+				}),
+			});
+
+			if (!response.ok) {
+				const error = await response.json();
+				console.error('クエスト更新失敗:', error);
+				toast('クエストの更新に失敗しました');
+				return;
+			}
+
+			toast('クエストを更新しました');
+			await mutate();
+			setIsEditing(false);
+		} catch (error) {
+			console.error('送信エラー:', error);
+			toast('予期せぬエラーが発生しました');
+		}
+	};
+	// クエストの削除
+	const handleQuestDelete = async (id: string) => {
+		try {
+			const accessToken = sessionStorage.getItem('access_token');
+			if (!accessToken) {
+				toast('アクセストークンが見つかりません');
+				return;
+			}
+
+			// ユーザー情報の取得
+			const user = useAuthStore.getState().user;
+			const selectedChild = useAuthStore.getState().selectedChild;
+
+			if (!user || !selectedChild) {
+				toast('ユーザー情報が不正です');
+				return;
+			}
+			const res = await fetch(`/api/base-quests/${id}`, {
+				method: 'DELETE',
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			});
+
+			if (!res.ok) {
+				const error = await res.json();
+				toast(`クエストの削除に失敗しました: ${error.error}`);
+				return;
+			}
+
+			toast('クエストを削除しました');
+			mutate(); // クエスト一覧を再取得
+		} catch (error) {
+			console.error('削除エラー:', error);
+			toast('予期せぬエラーが発生しました');
+		}
 	};
 
 	return (
@@ -59,7 +130,7 @@ const QuestListEditor = ({ quest }: QuestListEditorProps) => {
 				<li>
 					{isEdting ? (
 						<Form {...form}>
-							<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+							<form onSubmit={form.handleSubmit(onSubmit(quest.id))} className="space-y-6">
 								<div className="grid gap-2 md:grid-cols-[1fr_230px_60px] items-center px-4 py-3 shadow-sm bg-white">
 									{/* タイトル入力 */}
 									<FormField
@@ -81,7 +152,7 @@ const QuestListEditor = ({ quest }: QuestListEditorProps) => {
 									{/* 金額入力 */}
 									<FormField
 										control={form.control}
-										name={`amount`}
+										name={`reward`}
 										render={({ field }) => (
 											<FormItem>
 												<FormLabel>加算金額（円）</FormLabel>
@@ -120,7 +191,7 @@ const QuestListEditor = ({ quest }: QuestListEditorProps) => {
 													<button
 														type="button"
 														className="cursor-pointer"
-														onClick={() => console.log(true)}
+														onClick={() => handleQuestDelete(quest.id)}
 														aria-label="削除"
 													>
 														<Trash2 size={23} />
@@ -140,7 +211,7 @@ const QuestListEditor = ({ quest }: QuestListEditorProps) => {
 							<div className="grid gap-2 md:grid-cols-[1fr_230px_60px] items-center px-4 py-3 shadow-sm bg-white">
 								<p className="font-medium text-base">{quest.title}</p>
 								<p className="text-sm text-center px-3 py-1 bg-[var(--color-secondary)] rounded-lg w-fit quicksand">
-									{quest.amount} 円
+									{quest.reward} 円
 								</p>
 								<div className="flex justify-end md:justify-center items-center">
 									<TooltipProvider>

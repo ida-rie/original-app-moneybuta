@@ -24,6 +24,7 @@ export const useQuestList = () => {
 				throw new Error('クエスト取得失敗');
 			}
 			const data = await res.json();
+			console.log('data', data);
 			setQuests(data);
 		} catch (error) {
 			console.error(error);
