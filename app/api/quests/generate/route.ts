@@ -34,7 +34,7 @@ type QuestHistoryCreateInput = {
 	questDate: Date;
 };
 
-export async function GET(req: NextRequest) {
+export default async function GET(req: NextRequest) {
 	try {
 		const { searchParams } = new URL(req.url);
 
