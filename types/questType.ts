@@ -5,4 +5,5 @@ export type QuestType = {
 	completed: boolean;
 	approved: boolean;
 	completedAt: string;
+	questDate: Date;
 };

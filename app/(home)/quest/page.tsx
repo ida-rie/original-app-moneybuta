@@ -13,13 +13,19 @@ const QuestPage = () => {
 
 	// 初回ロード／生成後に一覧取得
 	useEffect(() => {
-		fetchQuests();
-	}, [fetchQuests]);
+		if (selectedChild) {
+			fetchQuests();
+		}
+	}, [selectedChild, fetchQuests]);
 
-	// 子アカウント未選択 or 読み込み中
-	if (!selectedChild) {
-		return <p className="mt-8 text-center">子どもアカウントを選択してください</p>;
+	// 子アカウント未選択
+	if (user?.role === 'parent') {
+		if (!selectedChild) {
+			return <p className="mt-8 text-center">子どもアカウントを選択してください</p>;
+		}
 	}
+
+	// 読み込み中
 	if (loading) {
 		return <p className="mt-8 text-center">よみこみ中…</p>;
 	}

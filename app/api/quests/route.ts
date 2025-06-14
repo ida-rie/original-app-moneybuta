@@ -19,13 +19,10 @@ export async function GET(req: NextRequest) {
 		const jstStart = addHours(startOfDay(now), -9);
 		const jstEnd = addHours(endOfDay(now), -9);
 
-		console.log('JST Start (UTC):', jstStart.toISOString());
-		console.log('JST End (UTC):', jstEnd.toISOString());
-
 		const quests = await prisma.questHistory.findMany({
 			where: {
 				childUserId: childId,
-				createdAt: {
+				questDate: {
 					gte: jstStart,
 					lte: jstEnd,
 				},

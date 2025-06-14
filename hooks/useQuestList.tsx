@@ -1,32 +1,40 @@
 'use client';
+
+import { useEffect, useState, useCallback } from 'react';
 import { useAuthStore } from '@/lib/zustand/authStore';
 import { QuestType } from '@/types/questType';
-import { useCallback, useEffect, useState } from 'react';
 
-// クエストの状態を再レンダリングさせるため、カスタムフックを作成
+// クエスト一覧を取得するカスタムフック
 export const useQuestList = () => {
+	const { selectedChild, user } = useAuthStore();
 	const [quests, setQuests] = useState<QuestType[]>([]);
 	const [loading, setLoading] = useState(true);
-	const { selectedChild } = useAuthStore();
 
 	const fetchQuests = useCallback(async () => {
-		if (!selectedChild) return;
+		const childId = selectedChild?.id || (user?.role === 'child' ? user.id : null);
+		if (!childId) {
+			setLoading(false);
+			return;
+		}
 
 		setLoading(true);
 		try {
-			const res = await fetch(`/api/quests?childId=${selectedChild.id}`);
+			const res = await fetch(`/api/quests?childId=${childId}`);
+			if (!res.ok) {
+				throw new Error('クエスト取得失敗');
+			}
 			const data = await res.json();
 			setQuests(data);
 		} catch (error) {
-			console.error('クエスト取得エラー:', error);
+			console.error(error);
 		} finally {
 			setLoading(false);
 		}
-	}, [selectedChild]);
+	}, [selectedChild, user]);
 
 	useEffect(() => {
 		fetchQuests();
-	}, [fetchQuests]);
+	}, [fetchQuests, user]);
 
-	return { quests, loading, fetchQuests };
+	return { quests, fetchQuests, loading };
 };
