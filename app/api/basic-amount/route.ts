@@ -40,9 +40,9 @@ export async function GET(req: NextRequest) {
 				childUserId: childId,
 				userId: user.id,
 			},
-			// orderBy: {
-			// 	createdAt: 'desc',
-			// },
+			orderBy: {
+				createdAt: 'desc',
+			},
 		});
 
 		if (!basicAmount) {
