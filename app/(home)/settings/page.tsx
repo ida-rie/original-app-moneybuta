@@ -7,12 +7,13 @@ import QuestCreateForm from '@/components/settings/QuestCreateForm';
 import QuestListEditor from '@/components/settings/QuestListEditor';
 import BasicAmountEditor from '@/components/settings/BasicAmountEditor';
 import { useAuthStore } from '@/lib/zustand/authStore';
-import { useBaseQuests } from '@/hooks/useBasicQuests';
-
-const BasicAmount = { amount: 500 };
+import { useBaseQuests } from '@/hooks/useBaseQuests';
+import { useBasicAmount } from '@/hooks/useBasicAmount';
 
 const Setting = () => {
-	const { baseQuests, loading, mutate } = useBaseQuests();
+	const { baseQuests, isLoading: loadingQuests, mutate: mutateBaseQuests } = useBaseQuests();
+	const { basicAmount, isLoading: loadingAmount, mutate: mutateBasicAmount } = useBasicAmount();
+
 	const { user } = useAuthStore();
 
 	if (!user || user.role !== 'parent') {
@@ -20,7 +21,7 @@ const Setting = () => {
 	}
 
 	// 読み込み中
-	if (loading) {
+	if (loadingQuests || loadingAmount) {
 		return <p className="mt-8 text-center">よみこみ中…</p>;
 	}
 
@@ -36,7 +37,9 @@ const Setting = () => {
 						設定済みクエストの一覧
 					</p>
 					{baseQuests.length > 0 ? (
-						baseQuests.map((quest) => <QuestListEditor key={quest.id} quest={quest} />)
+						baseQuests.map((quest) => (
+							<QuestListEditor key={quest.id} quest={quest} mutate={mutateBaseQuests} />
+						))
 					) : (
 						<p>設定済みクエストがありません。</p>
 					)}
@@ -46,14 +49,14 @@ const Setting = () => {
 					<p className="text-lg pl-2 border-l-4 border-[var(--color-accent)] mb-4">
 						クエストの新規設定
 					</p>
-					<QuestCreateForm mutate={mutate} />
+					<QuestCreateForm mutate={mutateBaseQuests} />
 				</div>
 			</div>
 
 			<div className="mb-10">
 				<SubTitle title="基本金額の設定" icon={ReceiptJapaneseYen} />
 				<div>
-					<BasicAmountEditor basicAmount={BasicAmount} />
+					<BasicAmountEditor basicAmount={basicAmount ?? null} mutate={mutateBasicAmount} />
 				</div>
 			</div>
 		</>

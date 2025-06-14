@@ -16,17 +16,13 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { SquarePen, Trash2, Save } from 'lucide-react';
 import { useAuthStore } from '@/lib/zustand/authStore';
-import { useBaseQuests } from '@/hooks/useBasicQuests';
 import { toast } from 'sonner';
-
-type Quest = {
-	id: string;
-	title: string;
-	reward: number;
-};
+import { BaseQuestType } from '@/types/baseQuestType';
+import { KeyedMutator } from 'swr';
 
 type QuestListEditorProps = {
-	quest: Quest;
+	quest: BaseQuestType;
+	mutate: KeyedMutator<BaseQuestType[]>;
 };
 
 // お手伝いクエストのスキーマ
@@ -37,9 +33,14 @@ const questSchema = z.object({
 		.min(1, '1以上の金額を入力してください'),
 });
 
-const QuestListEditor = ({ quest }: QuestListEditorProps) => {
+const QuestListEditor = ({ quest, mutate }: QuestListEditorProps) => {
 	const [isEdting, setIsEditing] = useState(false);
-	const { mutate } = useBaseQuests();
+
+	// トークンの取得
+	const accessToken = sessionStorage.getItem('access_token');
+	// ユーザー情報の取得
+	const user = useAuthStore.getState().user;
+	const selectedChild = useAuthStore.getState().selectedChild;
 
 	// フォーム初期化
 	const form = useForm<z.infer<typeof questSchema>>({
@@ -53,7 +54,6 @@ const QuestListEditor = ({ quest }: QuestListEditorProps) => {
 	// フォーム送信処理(更新)
 	const onSubmit = (questId: string) => async (data: z.infer<typeof questSchema>) => {
 		try {
-			const accessToken = sessionStorage.getItem('access_token');
 			if (!accessToken) {
 				toast('アクセストークンが見つかりません');
 				return;
@@ -89,15 +89,10 @@ const QuestListEditor = ({ quest }: QuestListEditorProps) => {
 	// クエストの削除
 	const handleQuestDelete = async (id: string) => {
 		try {
-			const accessToken = sessionStorage.getItem('access_token');
 			if (!accessToken) {
 				toast('アクセストークンが見つかりません');
 				return;
 			}
-
-			// ユーザー情報の取得
-			const user = useAuthStore.getState().user;
-			const selectedChild = useAuthStore.getState().selectedChild;
 
 			if (!user || !selectedChild) {
 				toast('ユーザー情報が不正です');
@@ -117,7 +112,7 @@ const QuestListEditor = ({ quest }: QuestListEditorProps) => {
 			}
 
 			toast('クエストを削除しました');
-			mutate(); // クエスト一覧を再取得
+			await mutate(); // クエスト一覧を再取得
 		} catch (error) {
 			console.error('削除エラー:', error);
 			toast('予期せぬエラーが発生しました');

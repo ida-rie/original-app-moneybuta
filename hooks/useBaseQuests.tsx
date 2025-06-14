@@ -22,7 +22,7 @@ export const useBaseQuests = () => {
 
 	return {
 		baseQuests: data ?? [],
-		loading: isLoading,
+		isLoading,
 		error,
 		mutate, // 一覧再取得に使える
 	};
