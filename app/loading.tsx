@@ -1,7 +1,11 @@
 import React from 'react';
 
 const Loading = () => {
-	return <div>loading</div>;
+	return (
+		<div className="flex items-center justify-center h-full">
+			<p className="text-lg font-semibold">よみこみ中…</p>
+		</div>
+	);
 };
 
 export default Loading;

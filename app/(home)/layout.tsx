@@ -18,26 +18,28 @@ const RootLayout = ({
 	return (
 		<ClientProvider>
 			<AuthGuard>
-				<header>
-					{/* PC用 Header */}
-					<div className="hidden md:block">
-						<PcHeader />
-					</div>
-					{/* モバイル用 Header */}
-					<div className="md:hidden fixed top-0 left-0 right-0 p-2 border-b bg-[var(--color-background)] z-50">
-						<MobileHeader />
-					</div>
-				</header>
+				<div className="min-h-screen flex flex-col">
+					<header>
+						{/* PC用 Header */}
+						<div className="hidden md:block">
+							<PcHeader />
+						</div>
+						{/* モバイル用 Header */}
+						<div className="md:hidden fixed top-0 left-0 right-0 p-2 border-b bg-[var(--color-background)] z-50">
+							<MobileHeader />
+						</div>
+					</header>
 
-				{/* Main コンテンツ */}
-				<main className="container mx-auto px-4 pt-[60px] md:pt-4">{children}</main>
+					{/* Main コンテンツ */}
+					<main className="flex-grow container mx-auto px-4 pt-[60px] md:pt-4">{children}</main>
 
-				<footer className="m-6 pb-[50px] md:pb-0 text-center">
-					<small>© 2025 マネぶた おこづかいクエスト All rights reserved.</small>
-				</footer>
+					<footer className="m-6 pb-[50px] md:pb-0 text-center">
+						<small>© 2025 マネぶた おこづかいクエスト All rights reserved.</small>
+					</footer>
 
-				{/* モバイル用ナビ */}
-				<BottomNav />
+					{/* モバイル用ナビ */}
+					<BottomNav />
+				</div>
 			</AuthGuard>
 		</ClientProvider>
 	);
