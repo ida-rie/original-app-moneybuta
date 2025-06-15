@@ -33,7 +33,9 @@ export const ChartIncomeHistory = ({ data, userIconUrl }: ChartIncomeHistoryProp
 				.sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime()) // ★ 日付降順にソート
 				.map(([dateKey, items]) => {
 					const formattedDate = format(new Date(dateKey), 'yyyy年MM月d日', { locale: ja });
-					const total = items.reduce((sum, item) => sum + item.amount, 0);
+					// const total = items.reduce((sum, item) => sum + item.amount, 0);
+					const filteredItems = items.filter((item) => item.content !== '基本金額');
+					const total = filteredItems.reduce((sum, item) => sum + item.amount, 0);
 
 					return (
 						<div key={dateKey} className="md:w-2/3 md:mx-auto mt-8">
@@ -41,33 +43,36 @@ export const ChartIncomeHistory = ({ data, userIconUrl }: ChartIncomeHistoryProp
 								{formattedDate}
 							</p>
 							<div className="flex flex-col gap-3 py-2">
-								{items.map((item, index) => (
-									<div key={index} className="flex items-start gap-2 md:max-w-full">
-										{/* ユーザーアイコン */}
-										<div className="w-8 h-8 relative">
-											{userIconUrl ? (
-												<Image
-													src={userIconUrl}
-													alt="Icon"
-													fill
-													className="rounded-full object-cover"
-												/>
-											) : (
-												<div className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow text-gray-500">
-													<UserRound size={20} />
-												</div>
-											)}
+								{filteredItems
+									.filter((item) => item.content !== '基本金額')
+									.map((item, index) => (
+										<div key={index} className="flex items-start gap-2 md:max-w-full">
+											{/* ユーザーアイコン */}
+											<div className="w-8 h-8 relative">
+												{userIconUrl ? (
+													<Image
+														src={userIconUrl}
+														alt="Icon"
+														fill
+														className="rounded-full object-cover"
+													/>
+												) : (
+													<div className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow text-gray-500">
+														<UserRound size={20} />
+													</div>
+												)}
+											</div>
+											{/* 吹き出し */}
+											<div className="bg-[var(--color-card-bg)] p-4 rounded-2xl shadow-md">
+												<p className="text-sm leading-relaxed">
+													クエスト「{item.content}」をクリア！
+													<br />
+													<span className="quicksand font-semibold">{item.amount}</span>{' '}
+													円てにいれた
+												</p>
+											</div>
 										</div>
-										{/* 吹き出し */}
-										<div className="bg-[var(--color-card-bg)] p-4 rounded-2xl shadow-md">
-											<p className="text-sm leading-relaxed">
-												クエスト「{item.content}」をクリア！
-												<br />
-												<span className="quicksand font-semibold">{item.amount}</span> 円てにいれた
-											</p>
-										</div>
-									</div>
-								))}
+									))}
 
 								{/* 合計金額（右寄せ吹き出し＋Botアイコン） */}
 								<div className="flex flex-row-reverse items-start gap-2 md:max-w-full">

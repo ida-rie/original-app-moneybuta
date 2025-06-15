@@ -1,102 +1,102 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { parse, startOfMonth, endOfMonth, format } from 'date-fns';
-import type { MonthlyAmountType } from '@/types/MonthlyAmountType';
+import { format } from 'date-fns';
+import { prisma } from '@/lib/prisma';
 
-export async function GET(req: NextRequest) {
+export const dynamic = 'force-dynamic';
+
+export async function GET(req: Request) {
+	const { searchParams } = new URL(req.url);
+	const childId = searchParams.get('childId');
+	const month = searchParams.get('month');
+
+	if (!childId || !month) {
+		return NextResponse.json({ error: 'childIdとmonthは必須です' }, { status: 400 });
+	}
+
+	const accessToken = req.headers.get('Authorization')?.replace('Bearer ', '');
+
+	if (!accessToken) {
+		return NextResponse.json({ error: 'アクセストークンが必要です' }, { status: 401 });
+	}
+
+	const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+
+	const {
+		data: { user },
+		error: sessionError,
+	} = await supabase.auth.getUser(accessToken);
+
+	if (sessionError || !user) {
+		return NextResponse.json({ error: '認証エラー' }, { status: 401 });
+	}
+
 	try {
-		const { searchParams } = new URL(req.url);
-		const childId = searchParams.get('childId');
-		const month = searchParams.get('month'); // 形式: "2025-06"
-
-		if (!childId || !month) {
-			return NextResponse.json({ error: 'childIdとmonthが必要です' }, { status: 400 });
-		}
-
-		const accessToken = req.headers.get('Authorization')?.replace('Bearer ', '');
-		if (!accessToken) {
-			return NextResponse.json({ error: 'アクセストークンが必要です' }, { status: 401 });
-		}
-
-		const supabase = createClient(
-			process.env.SUPABASE_URL!,
-			process.env.SUPABASE_SERVICE_ROLE_KEY!
-		);
-
-		const {
-			data: { user },
-			error: sessionError,
-		} = await supabase.auth.getUser(accessToken);
-
-		if (sessionError || !user) {
-			return NextResponse.json({ error: '認証エラー' }, { status: 401 });
-		}
-
-		const parsedMonth = parse(`${month}-01`, 'yyyy-MM-dd', new Date());
-		const start = startOfMonth(parsedMonth);
-		const end = endOfMonth(parsedMonth);
-
-		// 基本金額（最新）
 		const basicAmount = await prisma.basicAmount.findFirst({
-			where: { childUserId: childId },
-			orderBy: { createdAt: 'desc' },
-		});
-		const base = basicAmount?.basicAmount ?? 0;
-
-		// クエスト履歴（その月）
-		const questHistories = await prisma.questHistory.findMany({
 			where: {
-				approved: true,
 				childUserId: childId,
-				approvedAt: {
-					gte: start,
-					lte: end,
-				},
+				month,
 			},
 		});
 
-		// 日別でgrouping
-		const breakdownMap: Record<
-			string,
-			{ total: number; items: { content: string; amount: number }[] }
-		> = {};
+		const questHistories = await prisma.questHistory.findMany({
+			where: {
+				childUserId: childId,
+				approved: true,
+				approvedAt: {
+					gte: new Date(`${month}-01T00:00:00.000Z`),
+					lte: new Date(`${month}-31T23:59:59.999Z`),
+				},
+			},
+			orderBy: {
+				approvedAt: 'asc',
+			},
+		});
 
-		for (const q of questHistories) {
-			const dateKey = format(q.approvedAt!, 'yyyy-MM-dd');
-			if (!breakdownMap[dateKey]) {
-				breakdownMap[dateKey] = { total: 0, items: [] };
-			}
-			breakdownMap[dateKey].total += q.reward;
-			breakdownMap[dateKey].items.push({
-				content: q.title,
-				amount: q.reward,
+		const groupedByDate: Record<string, typeof questHistories> = {};
+		questHistories.forEach((q) => {
+			const date = format(new Date(q.approvedAt!), 'yyyy-MM-dd');
+			if (!groupedByDate[date]) groupedByDate[date] = [];
+			groupedByDate[date].push(q);
+		});
+
+		let runningTotal = 0;
+
+		const breakdown = Object.entries(groupedByDate)
+			.sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+			.map(([date, quests], index) => {
+				const dailyTotal = quests.reduce((sum, q) => sum + q.reward, 0);
+
+				const items = quests.map((q) => ({
+					content: q.title,
+					amount: q.reward,
+				}));
+
+				// ✅ 初日のみ基本金額を加算
+				if (index === 0 && basicAmount?.basicAmount) {
+					items.unshift({
+						content: '基本金額',
+						amount: basicAmount.basicAmount,
+					});
+					runningTotal += basicAmount.basicAmount;
+				}
+
+				runningTotal += dailyTotal;
+
+				return {
+					date,
+					total: runningTotal,
+					items,
+				};
 			});
-		}
 
-		// breakdown配列化
-		const breakdown = Object.entries(breakdownMap)
-			.map(([date, value]) => ({
-				date,
-				total: value.total,
-				items: value.items,
-			}))
-			.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+		const total = breakdown.length
+			? breakdown[breakdown.length - 1].total
+			: basicAmount?.basicAmount ?? 0;
 
-		const rewardSum = questHistories.reduce((sum, q) => sum + q.reward, 0);
-		const totalAmount = base + rewardSum;
-
-		const response: MonthlyAmountType = {
-			month,
-			basicAmount: base,
-			rewardSum,
-			totalAmount,
-			breakdown,
-		};
-
-		return NextResponse.json(response);
+		return NextResponse.json({ total, breakdown });
 	} catch (error) {
-		console.error('月別金額取得エラー', error);
-		return NextResponse.json({ error: '内部サーバーエラー' }, { status: 500 });
+		console.error('月次金額取得エラー:', error);
+		return NextResponse.json({ error: 'サーバーエラー' }, { status: 500 });
 	}
 }

@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useAuthStore } from '@/lib/zustand/authStore';
+import { format, subDays } from 'date-fns';
+import { MonthlyAmountType } from '@/types/MonthlyAmountType';
 
 export const CurrentAmount = () => {
 	const { user, selectedChild } = useAuthStore();
@@ -17,30 +19,41 @@ export const CurrentAmount = () => {
 
 			if (!childId) return;
 
+			const today = new Date();
+			const month = format(today, 'yyyy-MM');
+			const todayStr = format(today, 'yyyy-MM-dd');
+			const yesterdayStr = format(subDays(today, 1), 'yyyy-MM-dd');
+
 			try {
-				const res = await fetch(`/api/amount/today?childId=${childId}`, {
+				const token = sessionStorage.getItem('access_token');
+				const res = await fetch(`/api/amount/monthly?childId=${childId}&month=${month}`, {
+					method: 'GET',
 					headers: {
-						Authorization: `Bearer ${sessionStorage.getItem('access_token')}`,
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${token}`,
 					},
 				});
+				const json: MonthlyAmountType = await res.json();
 
-				if (!res.ok) {
-					const errorData = await res.json();
-					if (res.status === 404) {
-						// basicAmount未設定 → 金額ゼロとして扱う
-						setAmount(0);
-						setDiff(0);
-						setLoading(false);
-						return;
-					}
-					throw new Error(errorData.error || 'APIエラー');
+				if (!json || !Array.isArray(json.breakdown)) {
+					console.error('レスポンスにbreakdownがありません', json);
+					setAmount(0);
+					setDiff(0);
+					return;
 				}
 
-				const data = await res.json();
-				setAmount(data.todayAmount);
-				setDiff(data.diff);
+				const todayEntry = json.breakdown.find((entry) => entry.date === todayStr);
+				const yesterdayEntry = json.breakdown.find((entry) => entry.date === yesterdayStr);
+
+				const todayTotal = todayEntry?.total ?? 0;
+				const yesterdayTotal = yesterdayEntry?.total ?? 0;
+
+				setAmount(todayTotal);
+				setDiff(todayTotal - yesterdayTotal);
 			} catch (error) {
 				console.error('金額取得エラー:', error);
+				setAmount(null);
+				setDiff(0);
 			} finally {
 				setLoading(false);
 			}
@@ -63,7 +76,7 @@ export const CurrentAmount = () => {
 					きのうより{' '}
 					<span className="quicksand">
 						{diff >= 0 ? '+' : ''}
-						{diff}
+						{Math.abs(diff)}
 					</span>
 					円
 				</p>

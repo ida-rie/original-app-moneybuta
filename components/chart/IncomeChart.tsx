@@ -44,6 +44,7 @@ export const IncomeChart = () => {
 						'Content-Type': 'application/json',
 						'Authorization': `Bearer ${sessionStorage.getItem('access_token')}`,
 					},
+					cache: 'no-store',
 				});
 
 				if (!res.ok) {
@@ -52,7 +53,6 @@ export const IncomeChart = () => {
 				}
 
 				const json: MonthlyAmountType = await res.json();
-				console.log(json);
 				setData(json);
 			} catch (err) {
 				console.error('月別データ取得エラー:', err);
@@ -73,17 +73,25 @@ export const IncomeChart = () => {
 	}
 
 	// ChartGraph 用データ整形
+	// const graphData = (() => {
+	// 	if (!data) return [];
+
+	// 	let cumulative = data.basicAmount;
+	// 	return data.breakdown.map((d) => {
+	// 		cumulative += d.total;
+	// 		return {
+	// 			date: d.date,
+	// 			amount: cumulative,
+	// 		};
+	// 	});
+	// })();
 	const graphData = (() => {
 		if (!data) return [];
 
-		let cumulative = data.basicAmount;
-		return data.breakdown.map((d) => {
-			cumulative += d.total;
-			return {
-				date: d.date,
-				amount: cumulative,
-			};
-		});
+		return data.breakdown.map((d) => ({
+			date: d.date,
+			amount: d.total, // ← ここで既に基本金額＋加算報酬の合計
+		}));
 	})();
 
 	return (
@@ -108,8 +116,7 @@ export const IncomeChart = () => {
 				</CardContent>
 
 				<CardFooter className="text-sm text-muted-foreground">
-					{/* <div>おてつだいクエストでもらった金がくのきろくが見られるよ！</div> */}
-					{`ごうけい: ¥${data?.totalAmount}（クエストぶん: ¥${data?.rewardSum}）`}
+					<div>おてつだいクエストでもらった金がくのきろくが見られるよ！</div>
 				</CardFooter>
 			</Card>
 		</div>
