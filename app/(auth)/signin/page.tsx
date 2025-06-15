@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/zustand/authStore';
+import { useState } from 'react';
 
 const FormSchema = z.object({
 	emailOrId: z.string().min(1, {
@@ -31,6 +32,7 @@ const FormSchema = z.object({
 
 const SignIn = () => {
 	const router = useRouter();
+	const [isLoading, setIsLoading] = useState(false);
 
 	const form = useForm<z.infer<typeof FormSchema>>({
 		resolver: zodResolver(FormSchema),
@@ -41,62 +43,69 @@ const SignIn = () => {
 	});
 
 	const onSubmit = async (data: z.infer<typeof FormSchema>) => {
+		setIsLoading(true);
 		const { emailOrId, password } = data;
 
-		// 子アカウントの場合、ユーザーIDを擬似的にメールアドレス形式にする
-		const email = emailOrId.includes('@') ? emailOrId : `${emailOrId}@moneybuta.local`;
+		try {
+			// 子アカウントの場合、ユーザーIDを擬似的にメールアドレス形式にする
+			const email = emailOrId.includes('@') ? emailOrId : `${emailOrId}@moneybuta.local`;
 
-		// supabase認証でサインイン
-		const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-			email,
-			password,
-		});
+			// supabase認証でサインイン
+			const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+				email,
+				password,
+			});
 
-		if (signInError || !signInData.user) {
-			toast.error('メールアドレスまたはパスワードが間違っています');
-			return;
-		}
+			if (signInError || !signInData.user) {
+				toast.error('メールアドレスまたはパスワードが間違っています');
+				return;
+			}
 
-		// トークンをセッションストレージに保存
+			// トークンをセッションストレージに保存
 
-		const accessToken = signInData.session.access_token;
+			const accessToken = signInData.session.access_token;
 
-		// cookie に保存（middleware 用）
-		document.cookie = `access_token=${accessToken}; path=/; max-age=86400`; // 有効期限1日
+			// cookie に保存（middleware 用）
+			document.cookie = `access_token=${accessToken}; path=/; max-age=86400`; // 有効期限1日
 
-		// sessionStorage に保存（画面用：Zustandと連携）
-		sessionStorage.setItem('access_token', accessToken);
+			// sessionStorage に保存（画面用：Zustandと連携）
+			sessionStorage.setItem('access_token', accessToken);
 
-		// idに紐づくuserの情報を取得
-		const user = signInData.user;
+			// idに紐づくuserの情報を取得
+			const user = signInData.user;
 
-		const res = await fetch(`/api/users/${user.id}`);
-		if (!res.ok) {
-			const errorText = await res.text(); // エラーメッセージを取得
-			console.error('APIエラー:', errorText);
-			toast.error('ユーザー情報の取得に失敗しました');
-			return;
-		}
+			const res = await fetch(`/api/users/${user.id}`);
+			if (!res.ok) {
+				const errorText = await res.text(); // エラーメッセージを取得
+				console.error('APIエラー:', errorText);
+				toast.error('ユーザー情報の取得に失敗しました');
+				setIsLoading(false);
+				return;
+			}
 
-		const userInfo = await res.json();
+			const userInfo = await res.json();
 
-		// Zustandに保存
-		const setUser = useAuthStore.getState().setUser;
-		setUser({
-			id: userInfo.id,
-			email: userInfo.email,
-			name: userInfo.name,
-			role: userInfo.role,
-			iconUrl: userInfo.iconUrl,
-			children: userInfo.role === 'parent' ? userInfo.children ?? [] : undefined,
-		});
+			// Zustandに保存
+			const setUser = useAuthStore.getState().setUser;
+			setUser({
+				id: userInfo.id,
+				email: userInfo.email,
+				name: userInfo.name,
+				role: userInfo.role,
+				iconUrl: userInfo.iconUrl,
+				children: userInfo.role === 'parent' ? userInfo.children ?? [] : undefined,
+			});
 
-		toast.success('サインインに成功しました🐷');
+			toast.success('サインインに成功しました🐷');
 
-		// 少し待ってからホーム画面に遷移
-		setTimeout(() => {
+			setIsLoading(false);
+
 			router.push('/');
-		}, 800);
+		} catch (error) {
+			console.error('サインイン処理中のエラー:', error);
+			toast.error('予期しないエラーが発生しました');
+			setIsLoading(false);
+		}
 	};
 
 	return (
@@ -140,7 +149,7 @@ const SignIn = () => {
 						)}
 					/>
 					<Button type="submit" variant="primary">
-						サインイン
+						{isLoading ? 'サインイン中…' : 'サインイン'}
 					</Button>
 				</form>
 			</Form>

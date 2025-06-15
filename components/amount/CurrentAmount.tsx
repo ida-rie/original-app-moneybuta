@@ -73,7 +73,7 @@ export const CurrentAmount = () => {
 				<p className="mb-4">おこづかいの金がく</p>
 				<p className="text-5xl mb-2 quicksand">¥{amount}</p>
 				<p>
-					きのうより{' '}
+					きのうより ＋
 					<span className="quicksand">
 						{diff >= 0 ? '+' : ''}
 						{Math.abs(diff)}

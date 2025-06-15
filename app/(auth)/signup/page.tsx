@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/zustand/authStore';
+import { useState } from 'react';
 
 const FormSchema = z.object({
 	email: z
@@ -40,6 +41,7 @@ const FormSchema = z.object({
 
 const SignUp = () => {
 	const router = useRouter();
+	const [isLoading, setIsLoading] = useState(false);
 
 	const form = useForm<z.infer<typeof FormSchema>>({
 		resolver: zodResolver(FormSchema),
@@ -51,6 +53,7 @@ const SignUp = () => {
 	});
 
 	const onSubmit = async (data: z.infer<typeof FormSchema>) => {
+		setIsLoading(true);
 		const { email, password, name } = data;
 
 		try {
@@ -63,6 +66,7 @@ const SignUp = () => {
 			if (signUpError) {
 				console.error(signUpError);
 				toast.error(`登録に失敗しました: ${signUpError.message}`);
+				setIsLoading(false);
 				return;
 			}
 
@@ -116,13 +120,13 @@ const SignUp = () => {
 
 			toast.success('サインアップに成功しました🐷');
 
-			// 少し待ってからホーム画面に遷移
-			setTimeout(() => {
-				router.push('/');
-			}, 800);
+			setIsLoading(false);
+
+			router.push('/');
 		} catch (error) {
 			console.error('サインアップ処理中のエラー:', error);
 			toast.error('予期しないエラーが発生しました');
+			setIsLoading(false);
 		}
 	};
 
@@ -177,7 +181,7 @@ const SignUp = () => {
 						)}
 					/>
 					<Button type="submit" variant="primary">
-						新規登録
+						{isLoading ? '登録中…' : '新規登録'}
 					</Button>
 				</form>
 			</Form>
