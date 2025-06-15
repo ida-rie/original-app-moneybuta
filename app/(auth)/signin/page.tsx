@@ -58,9 +58,14 @@ const SignIn = () => {
 		}
 
 		// トークンをセッションストレージに保存
-		if (signInData.session?.access_token) {
-			sessionStorage.setItem('access_token', signInData.session.access_token);
-		}
+
+		const accessToken = signInData.session.access_token;
+
+		// cookie に保存（middleware 用）
+		document.cookie = `access_token=${accessToken}; path=/; max-age=86400`; // 有効期限1日
+
+		// sessionStorage に保存（画面用：Zustandと連携）
+		sessionStorage.setItem('access_token', accessToken);
 
 		// idに紐づくuserの情報を取得
 		const user = signInData.user;

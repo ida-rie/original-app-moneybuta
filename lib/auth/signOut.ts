@@ -10,6 +10,7 @@ export const signOut = async (): Promise<boolean> => {
 		return false;
 	}
 
+	document.cookie = 'access_token=; path=/; max-age=0';
 	sessionStorage.removeItem('access_token');
 	useAuthStore.getState().clearUser();
 	return true;
