@@ -50,7 +50,7 @@ export const GET = async (req: NextRequest) => {
 	}
 };
 
-// 基本クエストの新規作成
+// 基本クエストの新規作成（当日分の履歴も作成）
 export async function POST(req: NextRequest) {
 	try {
 		const body: BaseQuestCreateRequest = await req.json();
@@ -71,27 +71,47 @@ export async function POST(req: NextRequest) {
 			return NextResponse.json({ error: '認証エラー' }, { status: 401 });
 		}
 
-		// 必要なデータの取得
 		const { quests, childUserId } = body;
 
 		if (!quests || !Array.isArray(quests) || !childUserId) {
 			return NextResponse.json({ error: '不正なリクエスト形式です' }, { status: 400 });
 		}
 
-		// DB登録用に整形
-		const createData = quests.map((quest) => ({
-			title: quest.title,
-			reward: quest.reward,
-			childUserId,
-			userId: user.id,
-		}));
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
 
-		const created = await prisma.baseQuest.createMany({
-			data: createData,
-		});
+		let createdCount = 0;
+
+		for (const quest of quests) {
+			const base = await prisma.baseQuest.create({
+				data: {
+					title: quest.title,
+					reward: quest.reward,
+					childUserId,
+					userId: user.id,
+				},
+			});
+
+			await prisma.questHistory.create({
+				data: {
+					baseQuestId: base.id,
+					childUserId,
+					title: base.title,
+					reward: base.reward,
+					completed: false,
+					approved: false,
+					// createdAt: new Date(),
+					questDate: new Date(),
+					// updatedAt: new Date(),
+				},
+			});
+			console.log('履歴作成完了');
+
+			createdCount++;
+		}
 
 		return NextResponse.json(
-			{ message: 'クエストを作成しました', count: created.count },
+			{ message: 'クエストを作成しました', count: createdCount },
 			{ status: 200 }
 		);
 	} catch (error) {
