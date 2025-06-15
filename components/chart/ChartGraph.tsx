@@ -3,14 +3,18 @@
 import { format } from 'date-fns';
 import { ResponsiveContainer, LineChart, Line, XAxis, CartesianGrid } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { ChartDataPoint } from '@/types/chartType';
+// import { ChartDataPoint } from '@/types/chartType';
 import { chartConfig } from '@/config/chartConfig';
+
+type ChartDataPoint = {
+	date: string;
+	amount: number;
+};
 
 type ChartGraphProps = {
 	data: ChartDataPoint[];
 	interval: number;
 };
-
 // rechartsを使った折れ線グラフコンポーネント
 export const ChartGraph = ({ data, interval }: ChartGraphProps) => {
 	return (

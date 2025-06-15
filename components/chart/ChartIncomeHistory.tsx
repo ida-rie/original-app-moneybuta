@@ -4,30 +4,33 @@ import Image from 'next/image';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { UserRound, Bot } from 'lucide-react';
-import { ChartDataPoint } from '@/types/chartType';
 
 type ChartIncomeHistoryProps = {
-	data: ChartDataPoint[];
-	userIconUrl?: string;
+	data: {
+		date: string; // "yyyy-mm-dd"
+		total: number;
+		items: {
+			content: string; // クエスト名
+			amount: number;
+		}[];
+	}[];
+	userIconUrl: string; // ユーザーアイコン（吹き出しの横に表示）
 };
 
-const groupByDate = (data: ChartDataPoint[]) => {
-	return data.reduce<Record<string, ChartDataPoint[]>>((acc, item) => {
-		const dateKey = format(new Date(item.date), 'yyyy-MM-dd');
-		if (!acc[dateKey]) acc[dateKey] = [];
-		acc[dateKey].push(item);
-		return acc;
-	}, {});
-};
-
-// 収入履歴
 export const ChartIncomeHistory = ({ data, userIconUrl }: ChartIncomeHistoryProps) => {
-	const grouped = groupByDate(data);
+	// breakdown を date ごとにまとめる
+	const grouped: Record<string, { content: string; amount: number }[]> = {};
+	data.forEach(({ date, items }) => {
+		if (!grouped[date]) {
+			grouped[date] = [];
+		}
+		grouped[date].push(...items);
+	});
 
 	return (
 		<div className="flex flex-col gap-6 px-4 pb-8">
 			{Object.entries(grouped)
-				.sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime()) // ← ★ ここがポイント
+				.sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime()) // ★ 日付降順にソート
 				.map(([dateKey, items]) => {
 					const formattedDate = format(new Date(dateKey), 'yyyy年MM月d日', { locale: ja });
 					const total = items.reduce((sum, item) => sum + item.amount, 0);
