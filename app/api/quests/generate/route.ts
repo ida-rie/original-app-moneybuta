@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { parseISO, isValid, startOfDay } from 'date-fns';
 
+export const dynamic = 'force-dynamic';
+
 /** 既存履歴のキー情報 */
 type ExistingHistory = {
 	baseQuestId: string;
@@ -33,6 +35,13 @@ type QuestHistoryCreateInput = {
 };
 
 export const GET = async (req: NextRequest) => {
+	const authHeader = req.headers.get('authorization');
+	if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+		return new Response('Unauthorized', {
+			status: 401,
+		});
+	}
+
 	try {
 		console.log('🚀 クエスト自動生成 cron 開始:', new Date().toISOString());
 
