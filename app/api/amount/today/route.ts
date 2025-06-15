@@ -3,12 +3,6 @@ import { prisma } from '@/lib/prisma';
 import { createClient } from '@supabase/supabase-js';
 import { startOfDay, endOfDay, subDays } from 'date-fns';
 
-// ここでしか使わないように！
-const supabase = createClient(
-	process.env.SUPABASE_URL!,
-	process.env.SUPABASE_SERVICE_ROLE_KEY! // server only
-);
-
 export async function GET(req: NextRequest) {
 	try {
 		const { searchParams } = new URL(req.url);
@@ -22,6 +16,11 @@ export async function GET(req: NextRequest) {
 		if (!accessToken) {
 			return NextResponse.json({ error: 'アクセストークンが必要です' }, { status: 401 });
 		}
+
+		const supabase = createClient(
+			process.env.SUPABASE_URL!,
+			process.env.SUPABASE_SERVICE_ROLE_KEY!
+		);
 		const {
 			data: { user },
 			error: sessionError,
@@ -31,14 +30,12 @@ export async function GET(req: NextRequest) {
 			return NextResponse.json({ error: '認証エラー' }, { status: 401 });
 		}
 
-		// 基本金額の取得（最新1件）
 		const basicAmount = await prisma.basicAmount.findFirst({
 			where: { childUserId: childId },
 			orderBy: { createdAt: 'desc' },
 		});
 		const base = basicAmount?.basicAmount ?? 0;
 
-		// 日付範囲
 		const today = new Date();
 		const yesterday = subDays(today, 1);
 		const todayStart = startOfDay(today);
@@ -46,7 +43,6 @@ export async function GET(req: NextRequest) {
 		const yesterdayStart = startOfDay(yesterday);
 		const yesterdayEnd = endOfDay(yesterday);
 
-		// クエスト履歴（今日）
 		const todayHistories = await prisma.questHistory.findMany({
 			where: {
 				approved: true,
@@ -59,7 +55,6 @@ export async function GET(req: NextRequest) {
 		});
 		const todayReward = todayHistories.reduce((sum, q) => sum + q.reward, 0);
 
-		// クエスト履歴（昨日）
 		const yesterdayHistories = await prisma.questHistory.findMany({
 			where: {
 				approved: true,
@@ -72,12 +67,38 @@ export async function GET(req: NextRequest) {
 		});
 		const yesterdayReward = yesterdayHistories.reduce((sum, q) => sum + q.reward, 0);
 
-		// 表示用 todayAmount ロジック
 		const todayAmount =
 			todayReward > 0 ? base + todayReward : yesterdayReward > 0 ? base + yesterdayReward : base;
 
 		const yesterdayAmount = base + yesterdayReward;
 		const diff = todayAmount - yesterdayAmount;
+
+		// ✅ 毎日0時台にAmountHistoryに保存（日本時間基準）
+		const now = new Date();
+		const jstHour = (now.getUTCHours() + 9) % 24;
+
+		if (jstHour === 0 && basicAmount) {
+			await prisma.amountHistory.upsert({
+				where: {
+					userId_date: {
+						userId: user.id,
+						date: startOfDay(today),
+					},
+				},
+				update: {
+					totalAmount: base + todayReward,
+					childUserId: childId,
+					basicAmountId: basicAmount.id,
+				},
+				create: {
+					userId: user.id,
+					childUserId: childId,
+					basicAmountId: basicAmount.id,
+					totalAmount: base + todayReward,
+					date: startOfDay(today),
+				},
+			});
+		}
 
 		return NextResponse.json({ todayAmount, yesterdayAmount, diff });
 	} catch (error) {

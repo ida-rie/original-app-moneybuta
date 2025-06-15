@@ -37,7 +37,6 @@ export const CurrentAmount = () => {
 				}
 
 				const data = await res.json();
-				console.log('APIレスポンス', data);
 				setAmount(data.todayAmount);
 				setDiff(data.diff);
 			} catch (error) {
