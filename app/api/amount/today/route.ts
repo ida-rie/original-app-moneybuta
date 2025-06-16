@@ -1,9 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { startOfDay } from 'date-fns';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
 	console.log('🟢 金額履歴作成バッチ開始');
+
+	const authHeader = req.headers.get('authorization');
+	if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+		return new Response('Unauthorized', {
+			status: 401,
+		});
+	}
 
 	try {
 		// 日本時間での「今日」の開始時刻（UTC 0時 → JST 9時補正不要）

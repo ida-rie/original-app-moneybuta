@@ -1,9 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { startOfDay } from 'date-fns';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
 	console.log('🟢 クエスト履歴作成バッチ開始');
+
+	const authHeader = req.headers.get('authorization');
+	if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+		return new Response('Unauthorized', {
+			status: 401,
+		});
+	}
 
 	try {
 		const today = startOfDay(new Date());
