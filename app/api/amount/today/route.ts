@@ -3,18 +3,19 @@ import { prisma } from '@/lib/prisma';
 import { startOfDay } from 'date-fns';
 
 export async function GET() {
-	try {
-		console.log('🚀 金額の履歴自動生成 cron 開始:', new Date().toISOString());
+	console.log('🟢 金額履歴作成バッチ開始');
 
-		// ✅ 認証を完全スキップし、全親ユーザーを対象に処理
-		const targetParents = await prisma.user.findMany({
+	try {
+		// 日本時間での「今日」の開始時刻（UTC 0時 → JST 9時補正不要）
+		const todayStart = startOfDay(new Date());
+
+		// 全親ユーザーを取得
+		const parents = await prisma.user.findMany({
 			where: { role: 'parent' },
 			select: { id: true },
 		});
 
-		const todayStart = startOfDay(new Date());
-
-		for (const parent of targetParents) {
+		for (const parent of parents) {
 			const children = await prisma.user.findMany({
 				where: {
 					parentId: parent.id,
@@ -24,13 +25,16 @@ export async function GET() {
 			});
 
 			for (const child of children) {
+				// 基本金額取得（なければスキップ）
 				const basicAmount = await prisma.basicAmount.findFirst({
 					where: { userId: child.id },
 					orderBy: { createdAt: 'desc' },
 				});
+				if (!basicAmount) continue;
 
-				const baseAmountValue = basicAmount?.basicAmount ?? 0;
+				const baseAmountValue = basicAmount.basicAmount;
 
+				// 今日承認されたクエスト報酬合計
 				const todayApproved = await prisma.questHistory.findMany({
 					where: {
 						childUserId: child.id,
@@ -42,7 +46,9 @@ export async function GET() {
 					},
 				});
 				const rewardTotal = todayApproved.reduce((sum, q) => sum + q.reward, 0);
+				const totalAmount = baseAmountValue + rewardTotal;
 
+				// 既存履歴があれば update、なければ create
 				const existing = await prisma.amountHistory.findFirst({
 					where: {
 						userId: parent.id,
@@ -51,33 +57,32 @@ export async function GET() {
 				});
 
 				if (existing) {
-					const updated = await prisma.amountHistory.update({
+					await prisma.amountHistory.update({
 						where: { id: existing.id },
 						data: {
-							totalAmount: baseAmountValue + rewardTotal,
+							totalAmount,
 							childUserId: child.id,
-							basicAmountId: basicAmount!.id ?? undefined,
+							basicAmountId: basicAmount.id,
 						},
 					});
-					console.log(`🔄 更新: ${parent.id} / ${child.id}`, updated);
 				} else {
-					const created = await prisma.amountHistory.create({
+					await prisma.amountHistory.create({
 						data: {
 							userId: parent.id,
 							childUserId: child.id,
-							basicAmountId: basicAmount!.id ?? undefined,
-							totalAmount: baseAmountValue + rewardTotal,
+							basicAmountId: basicAmount.id,
+							totalAmount,
 							date: todayStart,
 						},
 					});
-					console.log(`✅ 作成: ${parent.id} / ${child.id}`, created);
 				}
 			}
 		}
 
-		return NextResponse.json({ message: '金額履歴を作成しました（認証なし）' });
+		console.log('✅ 金額履歴作成バッチ正常終了');
+		return NextResponse.json({ message: '金額履歴作成完了' });
 	} catch (error) {
-		console.error('金額履歴作成エラー:', error);
+		console.error('❌ 金額履歴作成エラー:', error);
 		return NextResponse.json({ error: 'サーバーエラー' }, { status: 500 });
 	}
 }
