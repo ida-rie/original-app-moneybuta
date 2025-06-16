@@ -6,7 +6,7 @@ import { useAuthStore } from '@/lib/zustand/authStore';
 import { useState } from 'react';
 
 const Home = () => {
-	const { user, isInitialized } = useAuthStore();
+	const { user, isInitialized, selectedChild } = useAuthStore();
 	const [amountLoaded, setAmountLoaded] = useState(false);
 	const [chartLoaded, setChartLoaded] = useState(false);
 
@@ -14,6 +14,11 @@ const Home = () => {
 
 	// 復元中、リダイレクト処理中は何も描かない
 	if (!isInitialized || !user) return null;
+
+	// 子アカウント未選択
+	if (user?.role === 'parent' && !selectedChild) {
+		return <p className="mt-8 text-center text-base">子どもアカウントを選択してください</p>;
+	}
 
 	return (
 		<>

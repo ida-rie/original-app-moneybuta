@@ -61,10 +61,6 @@ export const IncomeChart = ({ onLoaded }: onLoadedType) => {
 		fetchMonthlyAmount();
 	}, [selectedMonth, selectedChild, user, onLoaded]);
 
-	if (user?.role === 'parent' && !selectedChild) {
-		return <p className="mt-4 text-center">子どもアカウントを選択してください</p>;
-	}
-
 	// ChartGraph 用データ整形
 	const graphData = (() => {
 		if (!data) return [];

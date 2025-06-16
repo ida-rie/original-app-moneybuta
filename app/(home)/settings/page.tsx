@@ -14,10 +14,15 @@ const Setting = () => {
 	const { baseQuests, isLoading: loadingQuests, mutate: mutateBaseQuests } = useBaseQuests();
 	const { basicAmount, isLoading: loadingAmount, mutate: mutateBasicAmount } = useBasicAmount();
 
-	const { user } = useAuthStore();
+	const { user, selectedChild } = useAuthStore();
 
 	if (!user || user.role !== 'parent') {
-		return <p>このページは親ユーザーのみ閲覧可能です。</p>;
+		return <p className="mt-8 text-center text-base">このページは親ユーザーのみ閲覧可能です</p>;
+	}
+
+	// 子アカウント未選択
+	if (user?.role === 'parent' && !selectedChild) {
+		return <p className="mt-8 text-center text-base">子どもアカウントを選択してください</p>;
 	}
 
 	// 読み込み中

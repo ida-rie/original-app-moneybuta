@@ -9,7 +9,7 @@ import { onLoadedType } from '@/types/onLoadedType';
 
 export const CurrentAmount = ({ onLoaded }: onLoadedType) => {
 	const { user, selectedChild } = useAuthStore();
-	const [amount, setAmount] = useState<number | null>(null);
+	const [amount, setAmount] = useState<number | null>(0);
 	const [diff, setDiff] = useState<number>(0);
 
 	useEffect(() => {
@@ -56,7 +56,7 @@ export const CurrentAmount = ({ onLoaded }: onLoadedType) => {
 				setDiff(todayTotal - yesterdayTotal);
 			} catch (error) {
 				console.error('金額取得エラー:', error);
-				setAmount(null);
+				setAmount(0);
 				setDiff(0);
 			} finally {
 				onLoaded();

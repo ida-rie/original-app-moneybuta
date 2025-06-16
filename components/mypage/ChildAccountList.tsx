@@ -36,7 +36,7 @@ const ChildAccountList = ({ childrenData }: Props) => {
 	return (
 		<div className="mt-10 space-y-6 w-2/3 mx-auto">
 			{childrenData.length === 0 ? (
-				<p className="text-sm text-gray-500">登録されている子どもアカウントはありません。</p>
+				<p className="text-sm text-gray-500">登録されている子どもアカウントはありません</p>
 			) : (
 				<ul className="space-y-3">
 					{childrenData.map((child) => (
