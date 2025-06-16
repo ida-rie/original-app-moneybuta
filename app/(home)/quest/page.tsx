@@ -39,7 +39,7 @@ const QuestPage = () => {
 
 			{/* クエスト一覧は親子共通 */}
 			{quests.length === 0 ? (
-				<p className="mt-8 text-center text-gray-500">きょうはまだクエストがありません。</p>
+				<p className="mt-8 text-center text-base">きょうはまだクエストがありません。</p>
 			) : (
 				<QuestCard user={user!} />
 			)}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useWindowSize } from '@/hooks/useWindowSize';
 import { ChartHeader } from '../chart/ChartHeader';
 import { ChartGraph } from '../chart/ChartGraph';
@@ -10,6 +10,7 @@ import { useAuthStore } from '@/lib/zustand/authStore';
 import { generateRecentMonths } from '@/lib/utils/generateRecentMonths';
 import { MonthlyAmountType } from '@/types/MonthlyAmountType';
 import { onLoadedType } from '@/types/onLoadedType';
+import Image from 'next/image';
 
 export const IncomeChart = ({ onLoaded }: onLoadedType) => {
 	const { user, selectedChild } = useAuthStore();
@@ -89,16 +90,30 @@ export const IncomeChart = ({ onLoaded }: onLoadedType) => {
 				</CardHeader>
 
 				<CardContent className="space-y-6">
-					{/* チャート */}
-					<ChartGraph data={graphData} interval={interval} />
+					{graphData.length === 0 ? (
+						<div className="text-center text-muted-foreground py-10">
+							<Image
+								src="/lamp_genie.png"
+								alt="豚の貯金箱"
+								width={150}
+								height={150}
+								className="mx-auto mb-4"
+							/>
+							<p className="text-base">まだきろくがありません。</p>
+							<p className="text-sm">
+								おてつだいクエストをクリアすると、ここにきろくがふえていくよ！
+							</p>
+						</div>
+					) : (
+						<>
+							{/* チャート */}
+							<ChartGraph data={graphData} interval={interval} />
 
-					{/* 収入履歴 */}
-					<ChartIncomeHistory data={data?.breakdown ?? []} userIconUrl="/logo.png" />
+							{/* 収入履歴 */}
+							<ChartIncomeHistory data={data?.breakdown ?? []} userIconUrl="/logo.png" />
+						</>
+					)}
 				</CardContent>
-
-				<CardFooter className="text-sm text-muted-foreground">
-					<div>おてつだいクエストでもらった金がくのきろくが見られるよ！</div>
-				</CardFooter>
 			</Card>
 		</div>
 	);
