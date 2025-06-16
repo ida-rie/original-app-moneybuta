@@ -1,138 +1,86 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { parseISO, isValid, startOfDay } from 'date-fns';
+import { format, startOfDay } from 'date-fns';
+import { createClient } from '@supabase/supabase-js';
 
-export const dynamic = 'force-dynamic';
+const supabase = createClient(
+	process.env.SUPABASE_URL!,
+	process.env.SUPABASE_SERVICE_ROLE_KEY! // server only
+);
 
-/** 既存履歴のキー情報 */
-type ExistingHistory = {
-	baseQuestId: string;
-	childUserId: string;
-};
-
-/** base_quests から取得するフィールド */
-type BaseQuestSelect = {
-	id: string;
-	childUserId: string;
-	title: string;
-	reward: number;
-};
-
-/** childUserId だけ取得するときの型 */
-type ChildSelect = {
-	childUserId: string;
-};
-
-/** QuestHistory.createMany 用のデータ型 */
-type QuestHistoryCreateInput = {
-	baseQuestId: string;
-	childUserId: string;
-	title: string;
-	reward: number;
-	completed: boolean;
-	approved: boolean;
-	questDate: Date;
-};
-
-export const GET = async (req: NextRequest) => {
-	const authHeader = req.headers.get('authorization');
-	if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-		return new Response('Unauthorized', {
-			status: 401,
-		});
-	}
-
+export async function GET(req: NextRequest) {
 	try {
-		console.log('🚀 クエスト自動生成 cron 開始:', new Date().toISOString());
+		const accessToken = req.headers.get('Authorization')?.replace('Bearer ', '');
 
-		const { searchParams } = new URL(req.url);
+		let targetParents: { id: string }[] = [];
 
-		// クエリから子ID取得 (optional)
-		const childParam: string | null = searchParams.get('childId');
-		let targetChildIds: string[];
+		// ✅ 手動実行時：認証された親ユーザーのみ対象
+		if (accessToken) {
+			const {
+				data: { user },
+				error,
+			} = await supabase.auth.getUser(accessToken);
 
-		if (childParam) {
-			targetChildIds = [childParam];
+			if (error || !user) {
+				return NextResponse.json({ error: '認証エラー' }, { status: 401 });
+			}
+
+			targetParents = [{ id: user.id }];
 		} else {
-			const allChildren: ChildSelect[] = await prisma.baseQuest.findMany({
-				select: { childUserId: true },
-				distinct: ['childUserId'], // 重複除去
+			// ✅ cron実行時：全親ユーザー対象
+			targetParents = await prisma.user.findMany({
+				where: { role: 'parent' },
+				select: { id: true },
 			});
-			targetChildIds = allChildren.map((c: ChildSelect) => c.childUserId);
 		}
 
-		if (targetChildIds.length === 0) {
-			console.warn('⚠️ 対象の childUserId が存在しません');
-			return NextResponse.json({ message: 'childUserId が見つかりません' });
-		}
+		const today = format(new Date(), 'yyyy-MM-dd');
 
-		// dateパラメータ取得・解析
-		const dateParam: string | null = searchParams.get('date');
-		const targetDate: Date = dateParam ? parseISO(dateParam) : new Date();
-		const questDate = startOfDay(targetDate); // 正規化
-
-		if (!isValid(targetDate)) {
-			console.warn('❌ 不正な日付パラメータ:', dateParam);
-			return NextResponse.json({ error: 'dateパラメータが不正です' }, { status: 400 });
-		}
-
-		const toCreate: QuestHistoryCreateInput[] = [];
-
-		for (const childId of targetChildIds) {
-			// 既存履歴取得
-			const existing: ExistingHistory[] = await prisma.questHistory.findMany({
+		for (const parent of targetParents) {
+			const children = await prisma.user.findMany({
 				where: {
-					childUserId: childId,
-					questDate,
+					parentId: parent.id,
+					role: 'child',
 				},
-				select: { baseQuestId: true, childUserId: true },
-			});
-			const existingSet: Set<string> = new Set(
-				existing.map((h: ExistingHistory) => `${h.baseQuestId}_${h.childUserId}`)
-			);
-
-			// 対象 base_quests を取得
-			const baseQuests: BaseQuestSelect[] = await prisma.baseQuest.findMany({
-				where: { childUserId: childId },
-				select: {
-					id: true,
-					childUserId: true,
-					title: true,
-					reward: true,
-				},
+				select: { id: true },
 			});
 
-			baseQuests.forEach((bq: BaseQuestSelect) => {
-				const key = `${bq.id}_${bq.childUserId}`;
-				if (!existingSet.has(key)) {
-					toCreate.push({
-						baseQuestId: bq.id,
-						childUserId: bq.childUserId,
-						title: bq.title,
-						reward: bq.reward,
-						completed: false,
-						approved: false,
-						questDate,
+			for (const child of children) {
+				// ✅ この子に紐づく全てのBaseQuestを取得
+				const baseQuests = await prisma.baseQuest.findMany({
+					where: { userId: child.id },
+				});
+
+				for (const base of baseQuests) {
+					// ✅ すでに今日の履歴があるか確認
+					const existing = await prisma.questHistory.findFirst({
+						where: {
+							baseQuestId: base.id,
+							childUserId: child.id,
+							questDate: startOfDay(today),
+						},
+					});
+
+					if (existing) continue; // ✅ 重複を防ぐためスキップ
+
+					await prisma.questHistory.create({
+						data: {
+							baseQuestId: base.id,
+							childUserId: child.id,
+							title: base.title,
+							reward: base.reward,
+							completed: false,
+							approved: false,
+							questDate: startOfDay(today),
+						},
 					});
 				}
-			});
+			}
 		}
 
-		if (toCreate.length === 0) {
-			console.log('🟡 クエスト作成なし（すでに作成済み）:', questDate.toISOString());
-			return NextResponse.json({
-				message: `${dateParam ?? '今日'}のクエストはすでに作成済みです`,
-			});
-		}
-
-		await prisma.questHistory.createMany({ data: toCreate });
-
-		console.log(`✅ クエスト作成成功: ${toCreate.length} 件 (${questDate.toISOString()})`);
-		return NextResponse.json({
-			message: `${dateParam ?? '今日'}のクエストを ${toCreate.length} 件作成しました`,
-		});
+		return NextResponse.json({ message: 'クエスト履歴を作成しました' });
 	} catch (error) {
-		console.error('❌ クエスト履歴作成エラー:', error);
-		return NextResponse.json({ error: 'サーバーエラーが発生しました' }, { status: 500 });
+		console.error('クエスト履歴作成エラー:', error);
+		return NextResponse.json({ error: 'サーバーエラー' }, { status: 500 });
 	}
-};
+}
