@@ -24,7 +24,7 @@ export async function GET() {
 
 			for (const child of children) {
 				const baseQuests = await prisma.baseQuest.findMany({
-					where: { userId: child.id },
+					where: { childUserId: child.id },
 				});
 
 				if (baseQuests.length === 0) {
