@@ -27,7 +27,7 @@ export async function GET() {
 			for (const child of children) {
 				// 基本金額取得（なければスキップ）
 				const basicAmount = await prisma.basicAmount.findFirst({
-					where: { userId: child.id },
+					where: { childUserId: child.id },
 					orderBy: { createdAt: 'desc' },
 				});
 				if (!basicAmount) {
