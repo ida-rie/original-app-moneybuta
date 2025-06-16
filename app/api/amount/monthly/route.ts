@@ -94,7 +94,20 @@ export async function GET(req: Request) {
 			? breakdown[breakdown.length - 1].total
 			: basicAmount?.basicAmount ?? 0;
 
-		return NextResponse.json({ total, breakdown });
+		console.log('【レスポンス確認】', {
+			month,
+			basicAmount: basicAmount?.basicAmount,
+			rewardSum: questHistories.reduce((sum, q) => sum + q.reward, 0),
+			breakdown,
+		});
+
+		return NextResponse.json({
+			month,
+			basicAmount: basicAmount?.basicAmount ?? 0,
+			rewardSum: questHistories.reduce((sum, q) => sum + q.reward, 0),
+			totalAmount: total, // ← これが total = breakdownの最後の値、または basicAmount
+			breakdown,
+		});
 	} catch (error) {
 		console.error('月次金額取得エラー:', error);
 		return NextResponse.json({ error: 'サーバーエラー' }, { status: 500 });

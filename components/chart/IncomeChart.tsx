@@ -73,24 +73,13 @@ export const IncomeChart = () => {
 	}
 
 	// ChartGraph 用データ整形
-	// const graphData = (() => {
-	// 	if (!data) return [];
-
-	// 	let cumulative = data.basicAmount;
-	// 	return data.breakdown.map((d) => {
-	// 		cumulative += d.total;
-	// 		return {
-	// 			date: d.date,
-	// 			amount: cumulative,
-	// 		};
-	// 	});
-	// })();
 	const graphData = (() => {
 		if (!data) return [];
 
+		// breakdown.total は既に累積されているので、そのまま使えばOK
 		return data.breakdown.map((d) => ({
 			date: d.date,
-			amount: d.total, // ← ここで既に基本金額＋加算報酬の合計
+			amount: d.total,
 		}));
 	})();
 

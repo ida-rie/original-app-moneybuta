@@ -36,8 +36,8 @@ export const CurrentAmount = () => {
 				const json: MonthlyAmountType = await res.json();
 
 				if (!json || !Array.isArray(json.breakdown)) {
-					console.error('レスポンスにbreakdownがありません', json);
-					setAmount(0);
+					console.warn('breakdownが存在しないため、今日の金額はtotalAmountで代用');
+					setAmount(json.totalAmount ?? 0);
 					setDiff(0);
 					return;
 				}
@@ -49,6 +49,8 @@ export const CurrentAmount = () => {
 				const todayTotal = todayEntry?.total ?? json.totalAmount ?? 0;
 				const yesterdayTotal = yesterdayEntry?.total ?? 0;
 
+				console.log(todayTotal);
+				console.log(yesterdayTotal);
 				setAmount(todayTotal);
 				setDiff(todayTotal - yesterdayTotal);
 			} catch (error) {
@@ -74,9 +76,9 @@ export const CurrentAmount = () => {
 				<p className="mb-4">おこづかいの金がく</p>
 				<p className="text-5xl mb-2 quicksand">¥{amount}</p>
 				<p>
-					きのうより ＋
+					きのうより{' '}
 					<span className="quicksand">
-						{diff >= 0 ? '+' : ''}
+						{diff >= 0 ? '＋' : ''}
 						{Math.abs(diff)}
 					</span>
 					円
