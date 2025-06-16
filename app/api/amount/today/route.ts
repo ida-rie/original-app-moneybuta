@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { format, startOfDay } from 'date-fns';
+import { startOfDay } from 'date-fns';
 
 export async function GET() {
 	try {
@@ -12,7 +12,7 @@ export async function GET() {
 			select: { id: true },
 		});
 
-		const today = format(new Date(), 'yyyy-MM-dd');
+		const todayStart = startOfDay(new Date());
 
 		for (const parent of targetParents) {
 			const children = await prisma.user.findMany({
@@ -24,36 +24,33 @@ export async function GET() {
 			});
 
 			for (const child of children) {
-				// ✅ 基本金額取得（なければ0円扱い）
 				const basicAmount = await prisma.basicAmount.findFirst({
 					where: { userId: child.id },
 					orderBy: { createdAt: 'desc' },
 				});
 				const base = basicAmount?.basicAmount ?? 0;
 
-				// ✅ 今日のクエスト報酬合計を算出
 				const todayApproved = await prisma.questHistory.findMany({
 					where: {
 						childUserId: child.id,
 						approved: true,
 						approvedAt: {
-							gte: new Date(`${today}T00:00:00.000Z`),
-							lte: new Date(`${today}T23:59:59.999Z`),
+							gte: new Date(`${todayStart.toISOString().slice(0, 10)}T00:00:00.000Z`),
+							lte: new Date(`${todayStart.toISOString().slice(0, 10)}T23:59:59.999Z`),
 						},
 					},
 				});
 				const rewardTotal = todayApproved.reduce((sum, q) => sum + q.reward, 0);
 
-				// ✅ すでにAmountHistoryが存在するか確認
 				const existing = await prisma.amountHistory.findFirst({
 					where: {
 						userId: parent.id,
-						date: startOfDay(today),
+						date: todayStart,
 					},
 				});
 
 				if (existing) {
-					await prisma.amountHistory.update({
+					const updated = await prisma.amountHistory.update({
 						where: { id: existing.id },
 						data: {
 							totalAmount: base + rewardTotal,
@@ -61,16 +58,18 @@ export async function GET() {
 							basicAmountId: basicAmount!.id ?? null,
 						},
 					});
+					console.log(`🔄 更新: ${parent.id} / ${child.id}`, updated);
 				} else {
-					await prisma.amountHistory.create({
+					const created = await prisma.amountHistory.create({
 						data: {
 							userId: parent.id,
 							childUserId: child.id,
 							basicAmountId: basicAmount!.id ?? null,
 							totalAmount: base + rewardTotal,
-							date: startOfDay(today),
+							date: todayStart,
 						},
 					});
+					console.log(`✅ 作成: ${parent.id} / ${child.id}`, created);
 				}
 			}
 		}

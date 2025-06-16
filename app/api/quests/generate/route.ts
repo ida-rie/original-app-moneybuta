@@ -53,7 +53,7 @@ export async function GET() {
 				}
 			}
 		}
-
+		console.log(`✅ 作成`);
 		return NextResponse.json({ message: 'クエスト履歴を作成しました（認証なし）' });
 	} catch (error) {
 		console.error('クエスト履歴作成エラー:', error);
