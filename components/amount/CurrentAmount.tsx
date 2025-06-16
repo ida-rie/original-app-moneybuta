@@ -45,7 +45,8 @@ export const CurrentAmount = () => {
 				const todayEntry = json.breakdown.find((entry) => entry.date === todayStr);
 				const yesterdayEntry = json.breakdown.find((entry) => entry.date === yesterdayStr);
 
-				const todayTotal = todayEntry?.total ?? 0;
+				// const todayTotal = todayEntry?.total ?? 0;
+				const todayTotal = todayEntry?.total ?? json.totalAmount ?? 0;
 				const yesterdayTotal = yesterdayEntry?.total ?? 0;
 
 				setAmount(todayTotal);
