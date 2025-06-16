@@ -30,7 +30,10 @@ export async function GET() {
 					where: { userId: child.id },
 					orderBy: { createdAt: 'desc' },
 				});
-				if (!basicAmount) continue;
+				if (!basicAmount) {
+					console.log(`⚠️ スキップ: 基本金額なし childId=${child.id}`);
+					continue;
+				}
 
 				const baseAmountValue = basicAmount.basicAmount;
 
@@ -65,6 +68,7 @@ export async function GET() {
 							basicAmountId: basicAmount.id,
 						},
 					});
+					console.log(`🔄 更新: 親 ${parent.id} / 子 ${child.id} total=${totalAmount}`);
 				} else {
 					await prisma.amountHistory.create({
 						data: {
@@ -75,6 +79,7 @@ export async function GET() {
 							date: todayStart,
 						},
 					});
+					console.log(`✅ 作成: 親 ${parent.id} / 子 ${child.id} total=${totalAmount}`);
 				}
 			}
 		}
