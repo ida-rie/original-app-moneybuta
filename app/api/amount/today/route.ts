@@ -28,7 +28,8 @@ export async function GET() {
 					where: { userId: child.id },
 					orderBy: { createdAt: 'desc' },
 				});
-				const base = basicAmount?.basicAmount ?? 0;
+
+				const baseAmountValue = basicAmount?.basicAmount ?? 0;
 
 				const todayApproved = await prisma.questHistory.findMany({
 					where: {
@@ -53,9 +54,9 @@ export async function GET() {
 					const updated = await prisma.amountHistory.update({
 						where: { id: existing.id },
 						data: {
-							totalAmount: base + rewardTotal,
+							totalAmount: baseAmountValue + rewardTotal,
 							childUserId: child.id,
-							basicAmountId: basicAmount!.id ?? null,
+							basicAmountId: basicAmount!.id ?? undefined,
 						},
 					});
 					console.log(`🔄 更新: ${parent.id} / ${child.id}`, updated);
@@ -64,8 +65,8 @@ export async function GET() {
 						data: {
 							userId: parent.id,
 							childUserId: child.id,
-							basicAmountId: basicAmount!.id ?? null,
-							totalAmount: base + rewardTotal,
+							basicAmountId: basicAmount!.id ?? undefined,
+							totalAmount: baseAmountValue + rewardTotal,
 							date: todayStart,
 						},
 					});
