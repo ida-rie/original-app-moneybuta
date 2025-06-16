@@ -4,6 +4,13 @@ import { createClient } from '@supabase/supabase-js';
 import { startOfDay, endOfDay, subDays } from 'date-fns';
 
 export async function GET(req: NextRequest) {
+	const authHeader = req.headers.get('authorization');
+	if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+		return new Response('Unauthorized', {
+			status: 401,
+		});
+	}
+
 	try {
 		const { searchParams } = new URL(req.url);
 		const childId = searchParams.get('childId');
