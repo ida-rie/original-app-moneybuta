@@ -74,10 +74,11 @@ export async function GET(req: NextRequest) {
 		const diff = todayAmount - yesterdayAmount;
 
 		// ✅ 毎日0時台にAmountHistoryに保存（日本時間基準）
-		const now = new Date();
-		const jstHour = (now.getUTCHours() + 9) % 24;
+		// const now = new Date();
+		// const jstHour = (now.getUTCHours() + 9) % 24;
 
-		if (jstHour === 0 && basicAmount) {
+		// if (jstHour === 0 && basicAmount) {
+		if (basicAmount) {
 			await prisma.amountHistory.upsert({
 				where: {
 					userId_date: {
