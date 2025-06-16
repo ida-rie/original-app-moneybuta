@@ -1,40 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { format, startOfDay } from 'date-fns';
-import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-	process.env.SUPABASE_URL!,
-	process.env.SUPABASE_SERVICE_ROLE_KEY! // server only
-);
-
-// ✅ 金額履歴作成API（手動・cron両対応）
-export async function GET(req: NextRequest) {
+export async function GET() {
 	try {
-		const accessToken = req.headers.get('Authorization')?.replace('Bearer ', '');
+		console.log('🚀 金額の履歴自動生成 cron 開始:', new Date().toISOString());
 
-		let targetParents: { id: string }[] = [];
-
-		// ✅ 認証あり（手動呼び出し）なら対象親はその1人だけ
-		if (accessToken) {
-			const {
-				data: { user },
-				error,
-			} = await supabase.auth.getUser(accessToken);
-
-			if (error || !user) {
-				return NextResponse.json({ error: '認証エラー' }, { status: 401 });
-			}
-
-			targetParents = [{ id: user.id }];
-		} else {
-			console.log('🚀 金額の履歴自動生成 cron 開始:', new Date().toISOString());
-			// ✅ cron実行時：全親ユーザー対象
-			targetParents = await prisma.user.findMany({
-				where: { role: 'parent' },
-				select: { id: true },
-			});
-		}
+		// ✅ 認証を完全スキップし、全親ユーザーを対象に処理
+		const targetParents = await prisma.user.findMany({
+			where: { role: 'parent' },
+			select: { id: true },
+		});
 
 		const today = format(new Date(), 'yyyy-MM-dd');
 
@@ -55,7 +31,7 @@ export async function GET(req: NextRequest) {
 				});
 				const base = basicAmount?.basicAmount ?? 0;
 
-				// ✅ 今日承認されたクエスト報酬
+				// ✅ 今日のクエスト報酬合計を算出
 				const todayApproved = await prisma.questHistory.findMany({
 					where: {
 						childUserId: child.id,
@@ -68,7 +44,7 @@ export async function GET(req: NextRequest) {
 				});
 				const rewardTotal = todayApproved.reduce((sum, q) => sum + q.reward, 0);
 
-				// ✅ 既存の履歴があるか確認
+				// ✅ すでにAmountHistoryが存在するか確認
 				const existing = await prisma.amountHistory.findFirst({
 					where: {
 						userId: parent.id,
@@ -82,7 +58,7 @@ export async function GET(req: NextRequest) {
 						data: {
 							totalAmount: base + rewardTotal,
 							childUserId: child.id,
-							basicAmountId: basicAmount!.id,
+							basicAmountId: basicAmount!.id ?? null,
 						},
 					});
 				} else {
@@ -90,7 +66,7 @@ export async function GET(req: NextRequest) {
 						data: {
 							userId: parent.id,
 							childUserId: child.id,
-							basicAmountId: basicAmount!.id,
+							basicAmountId: basicAmount!.id ?? null,
 							totalAmount: base + rewardTotal,
 							date: startOfDay(today),
 						},
@@ -99,9 +75,9 @@ export async function GET(req: NextRequest) {
 			}
 		}
 
-		return NextResponse.json({ message: '金額履歴を作成しました' });
-	} catch (e) {
-		console.error('金額履歴の作成エラー:', e);
+		return NextResponse.json({ message: '金額履歴を作成しました（認証なし）' });
+	} catch (error) {
+		console.error('金額履歴作成エラー:', error);
 		return NextResponse.json({ error: 'サーバーエラー' }, { status: 500 });
 	}
 }
