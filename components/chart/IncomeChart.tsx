@@ -9,8 +9,9 @@ import { ChartIncomeHistory } from './ChartIncomeHistory';
 import { useAuthStore } from '@/lib/zustand/authStore';
 import { generateRecentMonths } from '@/lib/utils/generateRecentMonths';
 import { MonthlyAmountType } from '@/types/MonthlyAmountType';
+import { onLoadedType } from '@/types/onLoadedType';
 
-export const IncomeChart = () => {
+export const IncomeChart = ({ onLoaded }: onLoadedType) => {
 	const { user, selectedChild } = useAuthStore();
 
 	// 直近6ヶ月の月を取得
@@ -20,23 +21,18 @@ export const IncomeChart = () => {
 	// 表示するデータ
 	const [data, setData] = useState<MonthlyAmountType | null>(null);
 
-	const [loading, setLoading] = useState(true);
-
 	// ウィンドウサイズ取得
 	const { width } = useWindowSize();
 	const interval = width <= 768 ? 2 : 0;
 
 	// 月が変更されたときにデータを再生成
-	// useEffect(() => {
-	// 	const data = generateChartData(selectedMonth);
-	// 	setChartData(data);
-	// }, [selectedMonth]);
-
 	useEffect(() => {
 		const fetchMonthlyAmount = async () => {
-			setLoading(true);
 			const childId = user?.role === 'child' ? user.id : selectedChild?.id;
-			if (!childId) return;
+			if (!childId) {
+				onLoaded();
+				return;
+			}
 
 			try {
 				const res = await fetch(`/api/amount/monthly?childId=${childId}&month=${selectedMonth}`, {
@@ -57,19 +53,15 @@ export const IncomeChart = () => {
 			} catch (err) {
 				console.error('月別データ取得エラー:', err);
 			} finally {
-				setLoading(false);
+				onLoaded();
 			}
 		};
 
 		fetchMonthlyAmount();
-	}, [selectedMonth, selectedChild, user]);
+	}, [selectedMonth, selectedChild, user, onLoaded]);
 
 	if (user?.role === 'parent' && !selectedChild) {
 		return <p className="mt-4 text-center">子どもアカウントを選択してください</p>;
-	}
-
-	if (loading) {
-		return <p className="mt-4 text-center">よみこみ中…</p>;
 	}
 
 	// ChartGraph 用データ整形

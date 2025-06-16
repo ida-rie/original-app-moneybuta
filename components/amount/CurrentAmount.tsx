@@ -5,19 +5,22 @@ import Image from 'next/image';
 import { useAuthStore } from '@/lib/zustand/authStore';
 import { format, subDays } from 'date-fns';
 import { MonthlyAmountType } from '@/types/MonthlyAmountType';
+import { onLoadedType } from '@/types/onLoadedType';
 
-export const CurrentAmount = () => {
+export const CurrentAmount = ({ onLoaded }: onLoadedType) => {
 	const { user, selectedChild } = useAuthStore();
 	const [amount, setAmount] = useState<number | null>(null);
 	const [diff, setDiff] = useState<number>(0);
-	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
 		const fetchAmount = async () => {
 			// 子ユーザーなら自分のIDを使う
 			const childId = user?.role === 'child' ? user.id : selectedChild?.id;
 
-			if (!childId) return;
+			if (!childId) {
+				onLoaded();
+				return;
+			}
 
 			const today = new Date();
 			const month = format(today, 'yyyy-MM');
@@ -39,6 +42,7 @@ export const CurrentAmount = () => {
 					console.warn('breakdownが存在しないため、今日の金額はtotalAmountで代用');
 					setAmount(json.totalAmount ?? 0);
 					setDiff(0);
+					onLoaded();
 					return;
 				}
 
@@ -49,8 +53,6 @@ export const CurrentAmount = () => {
 				const todayTotal = todayEntry?.total ?? json.totalAmount ?? 0;
 				const yesterdayTotal = yesterdayEntry?.total ?? 0;
 
-				console.log(todayTotal);
-				console.log(yesterdayTotal);
 				setAmount(todayTotal);
 				setDiff(todayTotal - yesterdayTotal);
 			} catch (error) {
@@ -58,16 +60,12 @@ export const CurrentAmount = () => {
 				setAmount(null);
 				setDiff(0);
 			} finally {
-				setLoading(false);
+				onLoaded();
 			}
 		};
 
 		fetchAmount();
-	}, [user, selectedChild]);
-
-	if (loading) {
-		return <p className="text-center mt-4">よみこみ中…</p>;
-	}
+	}, [user, selectedChild, onLoaded]);
 
 	return (
 		<div className="flex justify-center items-center gap-6 flex-wrap w-full mx-auto mb-6">
