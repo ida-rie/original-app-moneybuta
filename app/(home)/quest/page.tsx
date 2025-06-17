@@ -9,14 +9,14 @@ import QuestCard from '@/components/quest/QuestCard';
 
 const QuestPage = () => {
 	const { user, selectedChild } = useAuthStore();
-	const { quests, loading, fetchQuests } = useQuestList();
+	const { quests, loading, mutateQuests } = useQuestList();
 
 	// 初回ロード／作成後に一覧取得
 	useEffect(() => {
 		if (selectedChild) {
-			fetchQuests();
+			mutateQuests(); // SWRのキャッシュを再取得
 		}
-	}, [selectedChild, fetchQuests]);
+	}, [selectedChild, mutateQuests]);
 
 	// 子アカウント未選択
 	if (user?.role === 'parent' && !selectedChild) {

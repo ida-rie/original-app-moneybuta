@@ -1,40 +1,28 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+// import { useEffect, useState, useCallback } from 'react';
+import useSWR from 'swr';
 import { useAuthStore } from '@/lib/zustand/authStore';
 import { QuestType } from '@/types/questType';
 
 // クエスト一覧を取得するカスタムフック
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
 export const useQuestList = () => {
 	const { selectedChild, user } = useAuthStore();
-	const [quests, setQuests] = useState<QuestType[]>([]);
-	const [loading, setLoading] = useState(true);
 
-	const fetchQuests = useCallback(async () => {
-		const childId = selectedChild?.id || (user?.role === 'child' ? user.id : null);
-		if (!childId) {
-			setLoading(false);
-			return;
-		}
+	const childId = selectedChild?.id || (user?.role === 'child' ? user.id : null);
 
-		setLoading(true);
-		try {
-			const res = await fetch(`/api/quests?childId=${childId}`);
-			if (!res.ok) {
-				throw new Error('クエスト取得失敗');
-			}
-			const data = await res.json();
-			setQuests(data);
-		} catch (error) {
-			console.error(error);
-		} finally {
-			setLoading(false);
-		}
-	}, [selectedChild, user]);
+	const shouldFetch = !!childId;
+	const { data, isLoading, mutate, error } = useSWR<QuestType[]>(
+		shouldFetch ? `/api/quests?childId=${childId}` : null,
+		fetcher
+	);
 
-	useEffect(() => {
-		fetchQuests();
-	}, [fetchQuests, user]);
-
-	return { quests, fetchQuests, loading };
+	return {
+		quests: data ?? [],
+		loading: isLoading,
+		mutateQuests: mutate,
+		error,
+	};
 };
