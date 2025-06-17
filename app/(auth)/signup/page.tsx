@@ -191,7 +191,7 @@ const SignUp = () => {
 			</div>
 
 			<div className="mt-4 flex items-center justify-center text-sm text-muted-foreground">
-				<Link href="/guide" className="flex items-center gap-1 hover:underline">
+				<Link href="/guide?from=signup" className="flex items-center gap-1 hover:underline">
 					<BookOpenText size={20} />
 					アプリのつかいかたを見る
 				</Link>

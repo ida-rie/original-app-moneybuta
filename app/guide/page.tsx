@@ -1,8 +1,13 @@
 'use client';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 // アプリの使い方紹介ページ
 const GuidePage = () => {
+	const searchParams = useSearchParams();
+	const from = searchParams.get('from');
+	const context = from === 'mypage' ? 'mypage' : 'auth';
+
 	return (
 		<main className="max-w-3xl mx-auto py-10 px-4">
 			<h1 className="text-2xl font-bold mb-6">マネぶたアプリの使い方</h1>
@@ -26,14 +31,20 @@ const GuidePage = () => {
 				</ul>
 			</section>
 
-			<div className="mt-10 flex gap-4">
-				<Link href="/signin" className="text-[var(--color-primary)] hover:underline">
-					サインインへ戻る
-				</Link>
-				<Link href="/signup" className="text-[var(--color-primary)] hover:underline">
-					アカウントを作成する
-				</Link>
-			</div>
+			{context === 'auth' ? (
+				<div className="mt-10 flex gap-4">
+					<Link href="/signin" className="text-[var(--color-primary)] hover:underline">
+						サインインへもどる
+					</Link>
+					<Link href="/signup" className="text-[var(--color-primary)] hover:underline">
+						アカウントを作成する
+					</Link>
+				</div>
+			) : (
+				<div className="text-sm text-blue-600 underline">
+					<Link href="/mypage">マイページへもどる</Link>
+				</div>
+			)}
 		</main>
 	);
 };
