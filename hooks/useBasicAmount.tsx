@@ -33,8 +33,8 @@ export const useBasicAmount = () => {
 
 	return {
 		basicAmount: data,
-		isLoading,
+		loadingAmount: isLoading,
 		error,
-		mutate,
+		mutateBasicAmount: mutate,
 	};
 };

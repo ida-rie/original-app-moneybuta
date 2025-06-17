@@ -10,7 +10,7 @@ import { useAuthStore } from '@/lib/zustand/authStore';
 import Link from 'next/link';
 
 const MyPage = () => {
-	const user = useAuthStore((state) => state.user);
+	const { user } = useAuthStore();
 
 	return (
 		<>

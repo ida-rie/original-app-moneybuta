@@ -11,8 +11,8 @@ import { useBaseQuests } from '@/hooks/useBaseQuests';
 import { useBasicAmount } from '@/hooks/useBasicAmount';
 
 const Setting = () => {
-	const { baseQuests, isLoading: loadingQuests, mutate: mutateBaseQuests } = useBaseQuests();
-	const { basicAmount, isLoading: loadingAmount, mutate: mutateBasicAmount } = useBasicAmount();
+	const { baseQuests, loadingQuests, mutateBaseQuests } = useBaseQuests();
+	const { basicAmount, loadingAmount, mutateBasicAmount } = useBasicAmount();
 
 	const { user, selectedChild } = useAuthStore();
 
