@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PiggyBank, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserType } from '@/types/userType';
@@ -11,8 +11,11 @@ type QuestCardProps = {
 
 const QuestCard = ({ user }: QuestCardProps) => {
 	const { quests, mutateQuests } = useQuestList();
+	const [completeLoading, setCompleteLoading] = useState(false);
+	const [approveLoading, setApproveLoading] = useState(false);
 
 	const handleClickComplete = async (questId: string) => {
+		setCompleteLoading(true);
 		const token = sessionStorage.getItem('access_token');
 		const res = await fetch(`/api/quests/${questId}/complete`, {
 			method: 'PUT',
@@ -31,9 +34,11 @@ const QuestCard = ({ user }: QuestCardProps) => {
 
 		toast.success('クエストをかんりょうしました！');
 		await mutateQuests();
+		setCompleteLoading(false);
 	};
 
 	const handleClickApprove = async (questId: string) => {
+		setApproveLoading(true);
 		const token = sessionStorage.getItem('access_token');
 		const res = await fetch(`/api/quests/${questId}/approve`, {
 			method: 'PUT',
@@ -52,6 +57,7 @@ const QuestCard = ({ user }: QuestCardProps) => {
 
 		toast.success('クエストを承認しました！');
 		await mutateQuests();
+		setApproveLoading(false);
 	};
 
 	return (
@@ -84,8 +90,9 @@ const QuestCard = ({ user }: QuestCardProps) => {
 										type="button"
 										variant="complete"
 										onClick={() => handleClickApprove(quest.id)}
+										disabled={approveLoading}
 									>
-										承認
+										{approveLoading ? '送信中…' : '承認'}
 									</Button>
 								) : (
 									// 3. 親が承認済み
@@ -107,8 +114,9 @@ const QuestCard = ({ user }: QuestCardProps) => {
 									type="button"
 									variant="incomplete"
 									onClick={() => handleClickComplete(quest.id)}
+									disabled={completeLoading}
 								>
-									やったよ
+									{completeLoading ? 'そうしん中' : 'やったよ'}
 								</Button>
 							)}
 						</div>

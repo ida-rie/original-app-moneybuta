@@ -181,7 +181,7 @@ const SignUp = () => {
 							</FormItem>
 						)}
 					/>
-					<Button type="submit" variant="primary">
+					<Button type="submit" variant="primary" disabled={isLoading}>
 						{isLoading ? '登録中…' : '新規登録'}
 					</Button>
 				</form>

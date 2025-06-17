@@ -149,7 +149,7 @@ const SignIn = () => {
 							</FormItem>
 						)}
 					/>
-					<Button type="submit" variant="primary">
+					<Button type="submit" variant="primary" disabled={isLoading}>
 						{isLoading ? 'サインイン中…' : 'サインイン'}
 					</Button>
 				</form>
