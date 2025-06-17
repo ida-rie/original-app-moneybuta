@@ -10,7 +10,7 @@ type QuestCardProps = {
 };
 
 const QuestCard = ({ user }: QuestCardProps) => {
-	const { quests, fetchQuests } = useQuestList();
+	const { quests, mutateQuests } = useQuestList();
 
 	const handleClickComplete = async (questId: string) => {
 		const token = sessionStorage.getItem('access_token');
@@ -30,7 +30,7 @@ const QuestCard = ({ user }: QuestCardProps) => {
 		}
 
 		toast.success('クエストをかんりょうしました！');
-		await fetchQuests();
+		await mutateQuests();
 	};
 
 	const handleClickApprove = async (questId: string) => {
@@ -51,7 +51,7 @@ const QuestCard = ({ user }: QuestCardProps) => {
 		}
 
 		toast.success('クエストを承認しました！');
-		await fetchQuests();
+		await mutateQuests();
 	};
 
 	return (
