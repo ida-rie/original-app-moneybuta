@@ -30,18 +30,22 @@
   - メール: `parent@moneybuta.local`
   - パスワード: `test000_2025`
 
-  - **親アカウント（子ども設定無し）**
+- **親アカウント（子ども設定無し）**
+
   - メール: `parent02@moneybuta.local`
   - パスワード: `test000_2025`
 
 - **子アカウント**
 
+  - **子ども１**
   - メール: `child01`
   - パスワード: `test000_2025`
 
+  - **子ども２**
   - メール: `child02`
   - パスワード: `test000_2025`
 
+  - **子ども３**
   - メール: `child03`
   - パスワード: `test000_2025`
 
@@ -126,9 +130,6 @@
 ---
 
 ## 🧾 データベーススキーマ（ER 図）
-
-> Supabase + Prisma ベース  
-> ER 図は [dbdiagram.io](https://dbdiagram.io/) などで管理
 
 ![ER図](./supabase-schema-moneybuta.png)
 
