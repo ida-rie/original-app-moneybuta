@@ -39,8 +39,6 @@ export const CurrentAmount = ({ onLoaded }: onLoadedType) => {
 				});
 				const json: MonthlyAmountType = await res.json();
 
-				console.log(json);
-
 				if (!json || !Array.isArray(json.breakdown)) {
 					console.warn('breakdownが存在しないため、今日の金額はtotalAmountで代用');
 					setAmount(json.totalAmount ?? 0);
@@ -50,14 +48,11 @@ export const CurrentAmount = ({ onLoaded }: onLoadedType) => {
 				}
 
 				const todayEntry = json.breakdown?.find((entry) => entry.date === todayStr);
-				console.log(todayEntry);
 				const todayTotal = todayEntry?.total ?? json.totalAmount ?? 0;
 				const todayRewardTotal =
 					todayEntry?.items?.reduce((sum, item) => sum + item.amount, 0) ?? 0;
 
 				setAmount(todayTotal);
-				console.log(todayRewardTotal);
-
 				setDiff(todayRewardTotal);
 			} catch (error) {
 				console.error('金額取得エラー:', error);
