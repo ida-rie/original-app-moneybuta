@@ -94,13 +94,6 @@ export async function GET(req: Request) {
 			? breakdown[breakdown.length - 1].total
 			: basicAmount?.basicAmount ?? 0;
 
-		console.log('【レスポンス確認】', {
-			month,
-			basicAmount: basicAmount?.basicAmount,
-			rewardSum: questHistories.reduce((sum, q) => sum + q.reward, 0),
-			breakdown,
-		});
-
 		return NextResponse.json({
 			month,
 			basicAmount: basicAmount?.basicAmount ?? 0,

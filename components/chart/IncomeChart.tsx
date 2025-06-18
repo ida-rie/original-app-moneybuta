@@ -16,7 +16,7 @@ export const IncomeChart = ({ onLoaded }: onLoadedType) => {
 	const { user, selectedChild } = useAuthStore();
 
 	// 直近6ヶ月の月を取得
-	const months = generateRecentMonths(6);
+	const months = generateRecentMonths(3);
 	// 今月が先頭
 	const [selectedMonth, setSelectedMonth] = useState(months[0]);
 	// 表示するデータ
@@ -50,6 +50,7 @@ export const IncomeChart = ({ onLoaded }: onLoadedType) => {
 				}
 
 				const json: MonthlyAmountType = await res.json();
+				console.log(json);
 				setData(json);
 			} catch (err) {
 				console.error('月別データ取得エラー:', err);

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useAuthStore } from '@/lib/zustand/authStore';
-import { format, subDays } from 'date-fns';
+import { format } from 'date-fns';
 import { MonthlyAmountType } from '@/types/MonthlyAmountType';
 import { onLoadedType } from '@/types/onLoadedType';
 
@@ -25,10 +25,11 @@ export const CurrentAmount = ({ onLoaded }: onLoadedType) => {
 			const today = new Date();
 			const month = format(today, 'yyyy-MM');
 			const todayStr = format(today, 'yyyy-MM-dd');
-			const yesterdayStr = format(subDays(today, 1), 'yyyy-MM-dd');
 
 			try {
 				const token = sessionStorage.getItem('access_token');
+
+				// 金額取得
 				const res = await fetch(`/api/amount/monthly?childId=${childId}&month=${month}`, {
 					method: 'GET',
 					headers: {
@@ -38,6 +39,8 @@ export const CurrentAmount = ({ onLoaded }: onLoadedType) => {
 				});
 				const json: MonthlyAmountType = await res.json();
 
+				console.log(json);
+
 				if (!json || !Array.isArray(json.breakdown)) {
 					console.warn('breakdownが存在しないため、今日の金額はtotalAmountで代用');
 					setAmount(json.totalAmount ?? 0);
@@ -46,14 +49,16 @@ export const CurrentAmount = ({ onLoaded }: onLoadedType) => {
 					return;
 				}
 
-				const todayEntry = json.breakdown.find((entry) => entry.date === todayStr);
-				const yesterdayEntry = json.breakdown.find((entry) => entry.date === yesterdayStr);
-
+				const todayEntry = json.breakdown?.find((entry) => entry.date === todayStr);
+				console.log(todayEntry);
 				const todayTotal = todayEntry?.total ?? json.totalAmount ?? 0;
-				const yesterdayTotal = yesterdayEntry?.total ?? 0;
+				const todayRewardTotal =
+					todayEntry?.items?.reduce((sum, item) => sum + item.amount, 0) ?? 0;
 
 				setAmount(todayTotal);
-				setDiff(todayTotal - yesterdayTotal);
+				console.log(todayRewardTotal);
+
+				setDiff(todayRewardTotal);
 			} catch (error) {
 				console.error('金額取得エラー:', error);
 				setAmount(0);
@@ -73,12 +78,7 @@ export const CurrentAmount = ({ onLoaded }: onLoadedType) => {
 				<p className="mb-4">おこづかいの金がく</p>
 				<p className="text-5xl mb-2 quicksand">¥{amount}</p>
 				<p>
-					きのうより{' '}
-					<span className="quicksand">
-						{diff >= 0 ? '＋' : ''}
-						{Math.abs(diff)}
-					</span>
-					円
+					きのうより <span className="quicksand">＋{diff}</span>円
 				</p>
 			</div>
 		</div>
