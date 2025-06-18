@@ -11,11 +11,11 @@ type QuestCardProps = {
 
 const QuestCard = ({ user }: QuestCardProps) => {
 	const { quests, mutateQuests } = useQuestList();
-	const [completeLoading, setCompleteLoading] = useState(false);
-	const [approveLoading, setApproveLoading] = useState(false);
+	const [approveLoading, setApproveLoading] = useState<Record<string, boolean>>({});
+	const [completeLoading, setCompleteLoading] = useState<Record<string, boolean>>({});
 
 	const handleClickComplete = async (questId: string) => {
-		setCompleteLoading(true);
+		setCompleteLoading((prev) => ({ ...prev, [questId]: true }));
 		const token = sessionStorage.getItem('access_token');
 		const res = await fetch(`/api/quests/${questId}/complete`, {
 			method: 'PUT',
@@ -34,11 +34,11 @@ const QuestCard = ({ user }: QuestCardProps) => {
 
 		toast.success('クエストをかんりょうしました！');
 		await mutateQuests();
-		setCompleteLoading(false);
+		setCompleteLoading((prev) => ({ ...prev, [questId]: false }));
 	};
 
 	const handleClickApprove = async (questId: string) => {
-		setApproveLoading(true);
+		setApproveLoading((prev) => ({ ...prev, [questId]: true }));
 		const token = sessionStorage.getItem('access_token');
 		const res = await fetch(`/api/quests/${questId}/approve`, {
 			method: 'PUT',
@@ -57,7 +57,7 @@ const QuestCard = ({ user }: QuestCardProps) => {
 
 		toast.success('クエストを承認しました！');
 		await mutateQuests();
-		setApproveLoading(false);
+		setCompleteLoading((prev) => ({ ...prev, [questId]: false }));
 	};
 
 	return (
@@ -90,9 +90,9 @@ const QuestCard = ({ user }: QuestCardProps) => {
 										type="button"
 										variant="complete"
 										onClick={() => handleClickApprove(quest.id)}
-										disabled={approveLoading}
+										disabled={approveLoading[quest.id]}
 									>
-										{approveLoading ? '送信中…' : '承認'}
+										{approveLoading[quest.id] ? '送信中…' : '承認'}
 									</Button>
 								) : (
 									// 3. 親が承認済み
@@ -114,9 +114,9 @@ const QuestCard = ({ user }: QuestCardProps) => {
 									type="button"
 									variant="incomplete"
 									onClick={() => handleClickComplete(quest.id)}
-									disabled={completeLoading}
+									disabled={completeLoading[quest.id]}
 								>
-									{completeLoading ? 'そうしん中' : 'やったよ'}
+									{completeLoading[quest.id] ? '送信中…' : 'やったよ'}
 								</Button>
 							)}
 						</div>
