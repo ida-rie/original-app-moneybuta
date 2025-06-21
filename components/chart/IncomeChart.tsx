@@ -50,7 +50,6 @@ export const IncomeChart = ({ onLoaded }: onLoadedType) => {
 				}
 
 				const json: MonthlyAmountType = await res.json();
-				console.log(json);
 				setData(json);
 			} catch (err) {
 				console.error('月別データ取得エラー:', err);

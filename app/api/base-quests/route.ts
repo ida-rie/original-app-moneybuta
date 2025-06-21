@@ -105,7 +105,6 @@ export async function POST(req: NextRequest) {
 					// updatedAt: new Date(),
 				},
 			});
-			console.log('履歴作成完了');
 
 			createdCount++;
 		}
