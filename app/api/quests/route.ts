@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { startOfDay, endOfDay } from 'date-fns';
-// import { format } from 'date-fns';
+import { zonedTimeToUtc, utcToZonedTime } from 'date-fns-tz';
 import { prisma } from '@/lib/prisma';
 
 // クエストの履歴を取得
@@ -14,8 +14,20 @@ export async function GET(req: NextRequest) {
 		}
 
 		// 当日の始まりと終わり
-		const start = startOfDay(new Date());
-		const end = endOfDay(new Date());
+		// const start = startOfDay(new Date());
+		// const end = endOfDay(new Date());
+
+		// 日本時間を明示的に指定
+		const JAPAN_TZ = 'Asia/Tokyo';
+		const nowInJapan = utcToZonedTime(new Date(), JAPAN_TZ);
+
+		// 日本時間での当日の開始・終了時刻を取得
+		const startInJapan = startOfDay(nowInJapan);
+		const endInJapan = endOfDay(nowInJapan);
+
+		// UTCに変換してデータベース検索に使用
+		const start = zonedTimeToUtc(startInJapan, JAPAN_TZ);
+		const end = zonedTimeToUtc(endInJapan, JAPAN_TZ);
 
 		const quests = await prisma.questHistory.findMany({
 			where: {
