@@ -40,7 +40,6 @@ export const CurrentAmount = ({ onLoaded }: onLoadedType) => {
 				const json: MonthlyAmountType = await res.json();
 
 				if (!json || !Array.isArray(json.breakdown)) {
-					console.warn('breakdownが存在しないため、今日の金額はtotalAmountで代用');
 					setAmount(json.totalAmount ?? 0);
 					setDiff(0);
 					onLoaded();
