@@ -27,5 +27,5 @@ export const middleware = (req: NextRequest) => {
 
 // middlewareを有効にするパス
 export const config = {
-	matcher: ['/mypage/:path*', '/quests/:path*', '/dashboard/:path*'], // 調整可能
+	matcher: ['/', '/mypage/:path*', '/quests/:path*', '/settings/:path*'], // 調整可能
 };
