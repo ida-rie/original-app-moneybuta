@@ -6,10 +6,10 @@ import { BasicAmountType } from '@/types/basicAmountType';
 
 // 基本金額データを取得するカスタムフック
 export const useBasicAmount = () => {
-	// const { selectedChild, user } = useAuthStore();
-	// 必要な state のみを取得（プリミティブ値にする）
-	const selectedChild = useAuthStore((state) => state.selectedChild?.id);
+	// 必要な state のみを取得
 	const user = useAuthStore((state) => state.user?.id);
+	const selectedChild = useAuthStore((state) => state.selectedChild?.id);
+
 	const token = sessionStorage.getItem('access_token');
 
 	const shouldFetch = Boolean(selectedChild && user && token);

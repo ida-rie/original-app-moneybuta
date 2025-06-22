@@ -7,7 +7,9 @@ import { useAuthStore } from '@/lib/zustand/authStore';
 type Props = { children: ReactNode };
 
 const AuthGuard = ({ children }: Props) => {
-	const { user, isInitialized } = useAuthStore();
+	// 必要な state のみを取得
+	const user = useAuthStore((state) => state.user);
+	const isInitialized = useAuthStore((state) => state.isInitialized);
 	const router = useRouter();
 
 	// セッション復元後、未ログインならサインインへ飛ばす

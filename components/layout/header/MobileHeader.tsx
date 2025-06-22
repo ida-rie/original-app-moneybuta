@@ -14,7 +14,11 @@ import { LogOut } from 'lucide-react';
 // タブレット・スマホ幅（767px以下）の時に表示するヘッダー
 export const MobileHeader = () => {
 	const router = useRouter();
-	const { user, selectedChild, setSelectedChild } = useAuthStore();
+
+	// 必要な state のみを取得
+	const user = useAuthStore((state) => state.user);
+	const selectedChild = useAuthStore((state) => state.selectedChild);
+	const setSelectedChild = useAuthStore((state) => state.setSelectedChild);
 
 	const handleSignOut = async () => {
 		const success = await signOut();

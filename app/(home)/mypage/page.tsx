@@ -10,7 +10,8 @@ import { useAuthStore } from '@/lib/zustand/authStore';
 import Link from 'next/link';
 
 const MyPage = () => {
-	const { user } = useAuthStore();
+	// 必要な state のみを取得
+	const user = useAuthStore((state) => state.user);
 
 	return (
 		<>

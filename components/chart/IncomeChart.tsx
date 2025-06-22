@@ -13,7 +13,9 @@ import { onLoadedType } from '@/types/onLoadedType';
 import Image from 'next/image';
 
 export const IncomeChart = ({ onLoaded }: onLoadedType) => {
-	const { user, selectedChild } = useAuthStore();
+	// 必要な state のみを取得
+	const user = useAuthStore((state) => state.user);
+	const selectedChild = useAuthStore((state) => state.selectedChild);
 
 	// 直近6ヶ月の月を取得
 	const months = generateRecentMonths(3);

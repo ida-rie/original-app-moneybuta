@@ -12,7 +12,8 @@ const fetcher = (url: string) =>
 
 // BaseQuest一覧を取得するカスタムフック
 export const useBaseQuests = () => {
-	const { selectedChild } = useAuthStore();
+	// 必要な state のみを取得
+	const selectedChild = useAuthStore((state) => state.selectedChild);
 	const childId = selectedChild?.id;
 
 	const { data, error, isLoading, mutate } = useSWR<BaseQuestType[]>(

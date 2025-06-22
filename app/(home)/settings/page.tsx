@@ -16,7 +16,7 @@ const Setting = () => {
 	const { basicAmount, loadingAmount, amountError, mutateBasicAmount, amountReady } =
 		useBasicAmount();
 
-	// 必要な user 情報だけを監視
+	// 必要な state のみを取得
 	const user = useAuthStore((state) => state.user);
 	const selectedChild = useAuthStore((state) => state.selectedChild);
 

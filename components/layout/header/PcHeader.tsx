@@ -20,7 +20,10 @@ import { Button } from '@/components/ui/button';
 export const PcHeader = () => {
 	const router = useRouter();
 
-	const { user, selectedChild, setSelectedChild } = useAuthStore();
+	// 必要な state のみを取得
+	const user = useAuthStore((state) => state.user);
+	const selectedChild = useAuthStore((state) => state.selectedChild);
+	const setSelectedChild = useAuthStore((state) => state.setSelectedChild);
 
 	// 初期表示時に自動で0番目の子を選択
 	useEffect(() => {

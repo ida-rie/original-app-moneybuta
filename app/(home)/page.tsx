@@ -6,7 +6,11 @@ import { useAuthStore } from '@/lib/zustand/authStore';
 import { useState } from 'react';
 
 const Home = () => {
-	const { user, isInitialized, selectedChild } = useAuthStore();
+	// 必要な state のみを取得
+	const user = useAuthStore((state) => state.user);
+	const isInitialized = useAuthStore((state) => state.isInitialized);
+	const selectedChild = useAuthStore((state) => state.selectedChild);
+
 	const [amountLoaded, setAmountLoaded] = useState(false);
 	const [chartLoaded, setChartLoaded] = useState(false);
 

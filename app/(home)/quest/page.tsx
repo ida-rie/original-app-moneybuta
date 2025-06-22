@@ -9,7 +9,9 @@ import MainTitle from '@/components/layout/header/headline/MainTitle';
 import QuestCard from '@/components/quest/QuestCard';
 
 const QuestPage = () => {
-	const { user, selectedChild } = useAuthStore();
+	// 必要な state のみを取得
+	const user = useAuthStore((state) => state.user);
+	const selectedChild = useAuthStore((state) => state.selectedChild);
 	const { quests, loading } = useQuestList();
 
 	// 子アカウント未選択

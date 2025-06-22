@@ -9,7 +9,9 @@ import { QuestType } from '@/types/questType';
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export const useQuestList = () => {
-	const { selectedChild, user } = useAuthStore();
+	// 必要な state のみを取得
+	const user = useAuthStore((state) => state.user);
+	const selectedChild = useAuthStore((state) => state.selectedChild);
 
 	const childId = selectedChild?.id || (user?.role === 'child' ? user.id : null);
 

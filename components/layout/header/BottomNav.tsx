@@ -8,7 +8,10 @@ import { useAuthStore } from '@/lib/zustand/authStore';
 
 // タブレット幅〜（767px以下）の時に表示するナビ
 export const BottomNav = () => {
-	const { user, selectedChild, setSelectedChild } = useAuthStore();
+	// 必要な state のみを取得
+	const user = useAuthStore((state) => state.user);
+	const selectedChild = useAuthStore((state) => state.selectedChild);
+	const setSelectedChild = useAuthStore((state) => state.setSelectedChild);
 
 	// 初期表示時に自動で0番目の子を選択
 	useEffect(() => {

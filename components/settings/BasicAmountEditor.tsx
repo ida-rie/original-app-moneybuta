@@ -35,9 +35,10 @@ const BasicAmountEditor = ({ basicAmount, mutate }: BasicAmountProps) => {
 
 	// トークンの取得
 	const accessToken = sessionStorage.getItem('access_token');
-	// ユーザー情報の取得
-	const user = useAuthStore.getState().user;
-	const selectedChild = useAuthStore.getState().selectedChild;
+
+	// 必要な state のみを取得
+	const user = useAuthStore((state) => state.user);
+	const selectedChild = useAuthStore((state) => state.selectedChild);
 
 	// フォーム初期化
 	const form = useForm<z.infer<typeof basinAmontSchema>>({

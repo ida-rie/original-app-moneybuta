@@ -8,7 +8,9 @@ import { MonthlyAmountType } from '@/types/MonthlyAmountType';
 import { onLoadedType } from '@/types/onLoadedType';
 
 export const CurrentAmount = ({ onLoaded }: onLoadedType) => {
-	const { user, selectedChild } = useAuthStore();
+	// 必要な state のみを取得
+	const user = useAuthStore((state) => state.user);
+	const selectedChild = useAuthStore((state) => state.selectedChild);
 	const [amount, setAmount] = useState<number | null>(0);
 	const [diff, setDiff] = useState<number>(0);
 

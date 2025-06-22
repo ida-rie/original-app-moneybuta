@@ -41,6 +41,12 @@ type QuestCreateFormProps = {
 };
 
 const QuestCreateForm = ({ mutate }: QuestCreateFormProps) => {
+	// 必要な state のみを取得
+	const user = useAuthStore((state) => state.user);
+	const selectedChild = useAuthStore((state) => state.selectedChild);
+
+	const accessToken = sessionStorage.getItem('access_token');
+
 	// フォーム初期化
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
@@ -57,15 +63,10 @@ const QuestCreateForm = ({ mutate }: QuestCreateFormProps) => {
 	// フォーム送信処理
 	const onSubmit = async (data: FormValues) => {
 		try {
-			const accessToken = sessionStorage.getItem('access_token');
 			if (!accessToken) {
 				alert('アクセストークンが見つかりません');
 				return;
 			}
-
-			// ユーザー情報の取得
-			const user = useAuthStore.getState().user;
-			const selectedChild = useAuthStore.getState().selectedChild;
 
 			if (!user || !selectedChild) {
 				alert('ユーザー情報が不正です');

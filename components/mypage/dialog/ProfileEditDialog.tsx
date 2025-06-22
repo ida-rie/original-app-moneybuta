@@ -132,7 +132,9 @@ const ProfileEditDialog = ({
 		},
 	});
 
-	const { user } = useAuthStore();
+	// 必要な state のみを取得
+	const user = useAuthStore((state) => state.user);
+
 	const token = sessionStorage.getItem('access_token');
 
 	// モードによってタイトルとボタン文言を変更

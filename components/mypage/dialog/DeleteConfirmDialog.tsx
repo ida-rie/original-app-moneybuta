@@ -15,7 +15,9 @@ type Props = {
 const DeleteConfirmDialog = ({ open, onClose, onCloseAll, targetUserId }: Props) => {
 	const router = useRouter();
 
-	const { user } = useAuthStore();
+	// 必要な state のみを取得
+	const user = useAuthStore((state) => state.user);
+
 	const token = sessionStorage.getItem('access_token');
 
 	// ユーザー情報を削除
