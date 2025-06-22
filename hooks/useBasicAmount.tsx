@@ -28,7 +28,11 @@ export const useBasicAmount = () => {
 
 	const { data, error, isLoading, mutate } = useSWR(
 		shouldFetch ? `/api/basic-amount?childId=${selectedChild?.id}` : null,
-		fetcher
+		fetcher,
+		{
+			revalidateOnFocus: false, // フォーカス時の再検証を無効化
+			revalidateOnReconnect: false, // 再接続時の再検証を無効化
+		}
 	);
 
 	return {

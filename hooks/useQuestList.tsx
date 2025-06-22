@@ -16,7 +16,11 @@ export const useQuestList = () => {
 	const shouldFetch = !!childId;
 	const { data, isLoading, mutate, error } = useSWR<QuestType[]>(
 		shouldFetch ? `/api/quests?childId=${childId}` : null,
-		fetcher
+		fetcher,
+		{
+			revalidateOnFocus: false, // フォーカス時の再検証を無効化
+			revalidateOnReconnect: false, // 再接続時の再検証を無効化
+		}
 	);
 
 	return {

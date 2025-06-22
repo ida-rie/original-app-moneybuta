@@ -17,7 +17,11 @@ export const useBaseQuests = () => {
 
 	const { data, error, isLoading, mutate } = useSWR<BaseQuestType[]>(
 		childId ? `/api/base-quests?childId=${childId}` : null,
-		fetcher
+		fetcher,
+		{
+			revalidateOnFocus: false, // フォーカス時の再検証を無効化
+			revalidateOnReconnect: false, // 再接続時の再検証を無効化
+		}
 	);
 
 	return {
