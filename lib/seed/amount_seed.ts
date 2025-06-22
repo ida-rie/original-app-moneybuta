@@ -55,6 +55,12 @@ const run = async () => {
 	const startDate = new Date(Date.UTC(2025, 4, 6)); // 5/6 JST 0:00
 	const endDate = new Date(Date.UTC(2025, 5, 21)); // 6/21 JST 0:00
 
+	// ここから 今日の JST 0:00 を起点に開始・終了とも同じにする
+	// const jstTodayMidnight = startOfDay(utcToZonedTime(new Date(), 'Asia/Tokyo'));
+	// const startDate = zonedTimeToUtc(jstTodayMidnight, 'Asia/Tokyo');
+	// const endDate = startDate;
+	// ここまで
+
 	const inserts: AmountHistoryInsert[] = [];
 
 	for (let day = new Date(startDate); !isBefore(endDate, day); day = addDays(day, 1)) {
