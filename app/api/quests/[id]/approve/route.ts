@@ -8,7 +8,7 @@ export async function PUT(req: NextRequest, context: any) {
 		const { id } = context.params;
 
 		// 認証トークン取得
-		const accessToken = req.headers.get('authorization')?.replace('Bearer ', '');
+		const accessToken = req.headers.get('Authorization')?.replace('Bearer ', '');
 		if (!accessToken) {
 			return NextResponse.json({ error: '認証情報がありません' }, { status: 401 });
 		}
