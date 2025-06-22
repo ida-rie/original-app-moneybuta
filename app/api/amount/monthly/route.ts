@@ -79,8 +79,6 @@ export async function GET(req: Request) {
 			(groupedByDate[key] ??= []).push(q);
 		});
 
-		console.log('groupedByDate', groupedByDate);
-
 		let runningTotal = 0;
 
 		// const breakdown = Object.entries(groupedByDate)
