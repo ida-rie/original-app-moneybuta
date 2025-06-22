@@ -41,7 +41,6 @@ export const IncomeChart = ({ onLoaded }: onLoadedType) => {
 						'Content-Type': 'application/json',
 						'Authorization': `Bearer ${sessionStorage.getItem('access_token')}`,
 					},
-					// cache: 'no-store',
 				});
 
 				if (!res.ok) {
