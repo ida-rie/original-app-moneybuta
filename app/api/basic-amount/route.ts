@@ -30,6 +30,8 @@ export async function GET(req: NextRequest) {
 			error: sessionError,
 		} = await supabase.auth.getUser(accessToken);
 
+		console.log(user, sessionError);
+
 		if (sessionError || !user) {
 			return NextResponse.json({ error: '認証エラー' }, { status: 401 });
 		}
@@ -44,6 +46,8 @@ export async function GET(req: NextRequest) {
 				createdAt: 'desc',
 			},
 		});
+
+		console.log(basicAmount);
 
 		if (!basicAmount) {
 			return NextResponse.json({ message: 'データが見つかりません', data: null }, { status: 200 });

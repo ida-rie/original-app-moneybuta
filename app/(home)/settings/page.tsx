@@ -9,12 +9,16 @@ import BasicAmountEditor from '@/components/settings/BasicAmountEditor';
 import { useAuthStore } from '@/lib/zustand/authStore';
 import { useBaseQuests } from '@/hooks/useBaseQuests';
 import { useBasicAmount } from '@/hooks/useBasicAmount';
+import { toast } from 'sonner';
 
 const Setting = () => {
 	const { baseQuests, loadingQuests, mutateBaseQuests } = useBaseQuests();
-	const { basicAmount, loadingAmount, mutateBasicAmount } = useBasicAmount();
+	const { basicAmount, loadingAmount, amountError, mutateBasicAmount, amountReady } =
+		useBasicAmount();
 
-	const { user, selectedChild } = useAuthStore();
+	// 必要な user 情報だけを監視
+	const user = useAuthStore((state) => state.user);
+	const selectedChild = useAuthStore((state) => state.selectedChild);
 
 	if (!user || user.role !== 'parent') {
 		return <p className="mt-8 text-center text-base">このページは親ユーザーのみ閲覧可能です</p>;
@@ -26,12 +30,17 @@ const Setting = () => {
 	}
 
 	// 読み込み中
-	if (loadingQuests || loadingAmount) {
+	if (loadingQuests || (amountReady && loadingAmount)) {
 		return (
 			<div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-80 z-50">
 				<p className="text-xl font-semibold">よみこみ中...</p>
 			</div>
 		);
+	}
+
+	if (amountError) {
+		toast('基本金額の取得に失敗しました');
+		return;
 	}
 
 	return (
