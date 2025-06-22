@@ -69,7 +69,7 @@ export const CurrentAmount = ({ onLoaded }: onLoadedType) => {
 		<div className="flex justify-center items-center gap-6 flex-wrap w-full mx-auto mb-6">
 			<Image src="/piggy_bank.png" alt="豚の貯金箱" width={180} height={180} />
 			<div>
-				<p className="mb-4">おこづかいの金がく</p>
+				<p className="mb-4">こん月のおこづかいの金がく</p>
 				<p className="text-5xl mb-2 quicksand">¥{amount}</p>
 				<p>
 					きのうより <span className="quicksand">＋{diff}</span>円

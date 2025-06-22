@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { startOfDay } from 'date-fns';
+import { getTodayUtc } from '@/lib/utils/getTodayUtc';
 
 export async function GET(req: NextRequest) {
 	console.log('🟢 金額履歴作成バッチ開始');
@@ -13,8 +13,8 @@ export async function GET(req: NextRequest) {
 	}
 
 	try {
-		// 日本時間での「今日」の開始時刻（UTC 0時 → JST 9時補正不要）
-		const todayStart = startOfDay(new Date());
+		// 日本時間を明示的に指定してUTCに変換
+		const { start, end } = getTodayUtc();
 
 		// 全親ユーザーを取得
 		const parents = await prisma.user.findMany({
@@ -50,8 +50,8 @@ export async function GET(req: NextRequest) {
 						childUserId: child.id,
 						approved: true,
 						approvedAt: {
-							gte: new Date(`${todayStart.toISOString().slice(0, 10)}T00:00:00.000Z`),
-							lte: new Date(`${todayStart.toISOString().slice(0, 10)}T23:59:59.999Z`),
+							gte: start,
+							lte: end,
 						},
 					},
 				});
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
 				const existing = await prisma.amountHistory.findFirst({
 					where: {
 						userId: parent.id,
-						date: todayStart,
+						date: start,
 					},
 				});
 
@@ -83,7 +83,7 @@ export async function GET(req: NextRequest) {
 							childUserId: child.id,
 							basicAmountId: basicAmount.id,
 							totalAmount,
-							date: todayStart,
+							date: start,
 						},
 					});
 					console.log(`✅ 作成: 親 ${parent.id} / 子 ${child.id} total=${totalAmount}`);

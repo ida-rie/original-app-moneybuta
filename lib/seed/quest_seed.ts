@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import { addDays, isBefore, startOfDay } from 'date-fns';
+import { utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz';
 
 dotenv.config();
 
@@ -7,6 +9,9 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+/**
+ * クエスト履歴挿入用の型定義
+ */
 type QuestHistoryInsert = {
 	baseQuestId: string;
 	childUserId: string;
@@ -23,61 +28,94 @@ type QuestHistoryInsert = {
 	updatedAt: Date;
 };
 
+/**
+ * BaseQuest情報マップ用型（リワード含む）
+ */
 type QuestInfo = {
 	id: string;
 	title: string;
+	reward: number;
 };
 
-// ✅ 正しいIDを使用
+// ✅ 実際の親ユーザーID
 const parentUserId = '87a5097e-0cac-4757-8741-827f2422f6fd';
 
+// ✅ テスト用子ユーザーID一覧
 const childUserIds = [
 	'b65261b8-33ab-4199-92a5-c5ec891a0370',
 	'ca4586ff-695a-4ca7-92ab-20f056717f85',
 ];
 
-// 指定した確率で true を返す関数
-const getRandomBoolean = (trueRatio: number): boolean => {
-	return Math.random() < trueRatio;
-};
+/**
+ * 指定確率で真を返す
+ * @param trueRatio - 真を返す確率 (0〜1)
+ */
+const getRandomBoolean = (trueRatio: number): boolean => Math.random() < trueRatio;
 
-// 日付を生成する関数（JSは月が0始まり）
-const getDate = (year: number, month: number, day: number): Date => {
-	return new Date(year, month - 1, day);
-};
-
-// クエスト履歴を生成
+/**
+ * 指定日付範囲内の日毎に QuestHistoryInsert レコードを生成する
+ * @param baseQuestMap - childUserId ごとの BaseQuest 情報マップ
+ * @param startDate - 範囲開始日 (JST 0:00)
+ * @param endDate - 範囲終了日 (JST 0:00)
+ */
 const generateQuestHistories = (
 	baseQuestMap: Record<string, QuestInfo[]>,
 	startDate: Date,
 	endDate: Date
-) => {
+): QuestHistoryInsert[] => {
 	const data: QuestHistoryInsert[] = [];
-	const days = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
-	for (let i = 0; i < days; i++) {
-		const questDate = new Date(startDate);
-		questDate.setDate(startDate.getDate() + i);
+	for (let day = new Date(startDate); !isBefore(endDate, day); day = addDays(day, 1)) {
+		// UTC→JST 0:00→UTC
+		const jstDayMidnight = startOfDay(utcToZonedTime(day, 'Asia/Tokyo'));
+		const questDate = zonedTimeToUtc(jstDayMidnight, 'Asia/Tokyo');
 
 		for (const childId of childUserIds) {
-			const baseQuestInfos = baseQuestMap[childId] || [];
-			for (const { id: baseQuestId, title } of baseQuestInfos) {
+			const baseInfos = baseQuestMap[childId] ?? [];
+			for (const { id: baseQuestId, title, reward } of baseInfos) {
 				const completed = getRandomBoolean(0.8);
-				const approved = completed ? getRandomBoolean(0.8) : false;
+				const completedHour = completed ? Math.floor(Math.random() * 5) + 9 : 0;
+				const completedAt = completed
+					? zonedTimeToUtc(
+							new Date(
+								jstDayMidnight.getFullYear(),
+								jstDayMidnight.getMonth(),
+								jstDayMidnight.getDate(),
+								completedHour
+							),
+							'Asia/Tokyo'
+					  )
+					: null;
+
+				const approved = completed && getRandomBoolean(0.8);
+				const approvedHour = approved
+					? Math.min(completedHour + Math.floor(Math.random() * 4) + 1, 23)
+					: 0;
+				const approvedAt = approved
+					? zonedTimeToUtc(
+							new Date(
+								jstDayMidnight.getFullYear(),
+								jstDayMidnight.getMonth(),
+								jstDayMidnight.getDate(),
+								approvedHour
+							),
+							'Asia/Tokyo'
+					  )
+					: null;
 
 				data.push({
 					baseQuestId,
 					childUserId: childId,
 					title,
-					reward: 100,
+					reward, // BaseQuestに紐づく正しいrewardを使用
 					completed,
-					completedAt: completed ? questDate : null,
+					completedAt,
 					completedBy: completed ? childId : null,
 					approved,
-					approvedAt: approved ? new Date(questDate.getTime() + 86400000) : null,
+					approvedAt,
 					approvedBy: approved ? parentUserId : null,
 					questDate,
-					createdAt: questDate,
+					createdAt: new Date(),
 					updatedAt: new Date(),
 				});
 			}
@@ -87,33 +125,36 @@ const generateQuestHistories = (
 	return data;
 };
 
-// 実行用関数
+// 実行用エントリポイント
 const main = async () => {
+	// BaseQuest テーブルから id, childUserId, title, reward を取得
 	const { data: baseQuests, error } = await supabase
 		.from('BaseQuest')
-		.select('id, childUserId, title');
-
+		.select('id, childUserId, title, reward');
 	if (error || !baseQuests) {
-		console.error('❌ BaseQuestの取得に失敗:', error?.message);
+		console.error('❌ BaseQuest の取得に失敗:', error?.message);
 		process.exit(1);
 	}
 
+	// childUserId ごとにマップを生成
 	const baseQuestMap: Record<string, QuestInfo[]> = {};
-	for (const quest of baseQuests) {
-		if (!baseQuestMap[quest.childUserId]) {
-			baseQuestMap[quest.childUserId] = [];
-		}
-		baseQuestMap[quest.childUserId].push({ id: quest.id, title: quest.title });
+	for (const q of baseQuests) {
+		(baseQuestMap[q.childUserId] ??= []).push({
+			id: q.id,
+			title: q.title,
+			reward: q.reward,
+		});
 	}
 
-	const startDate = getDate(2025, 5, 6); // ✅ 5月6日から
-	const endDate = getDate(2025, 6, 14); // ✅ 6月14日まで
+	// テストデータ期間: 2025年5月6日〜2025年6月21日 (JST)
+	const startDate = new Date(Date.UTC(2025, 4, 6));
+	const endDate = new Date(Date.UTC(2025, 5, 21));
+
 	const data = generateQuestHistories(baseQuestMap, startDate, endDate);
 
 	const { error: insertError } = await supabase.from('QuestHistory').insert(data);
-
 	if (insertError) {
-		console.error('❌ データ挿入に失敗:', insertError.message);
+		console.error('❌ QuestHistory の挿入に失敗:', insertError.message);
 	} else {
 		console.log(`✅ QuestHistory テストデータを ${data.length} 件挿入しました！`);
 	}

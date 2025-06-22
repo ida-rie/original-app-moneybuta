@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { startOfDay } from 'date-fns';
-// import { zonedTimeToUtc, utcToZonedTime } from 'date-fns-tz';
+import { getTodayUtc } from '@/lib/utils/getTodayUtc';
 
 export async function GET(req: NextRequest) {
 	console.log('🟢 クエスト履歴作成バッチ開始');
@@ -14,16 +13,9 @@ export async function GET(req: NextRequest) {
 	}
 
 	try {
-		const today = startOfDay(new Date());
-		// // 日本時間を明示的に指定
-		// const JAPAN_TZ = 'Asia/Tokyo';
-		// const nowInJapan = utcToZonedTime(new Date(), JAPAN_TZ);
-
-		// // 日本時間を取得
-		// const startInJapan = startOfDay(nowInJapan);
-
-		// // UTCに変換
-		// const today = zonedTimeToUtc(startInJapan, JAPAN_TZ);
+		// 日本時間を明示的に指定してUTCに変換
+		const { start } = getTodayUtc();
+		const today = start;
 
 		const parents = await prisma.user.findMany({
 			where: { role: 'parent' },
