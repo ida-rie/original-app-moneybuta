@@ -4,6 +4,6 @@ export type BasicAmountType = {
 	childUserId: string;
 	basicAmount: number;
 	month: string;
-	createdAt: string;
-	updatedAt: string;
+	createdAt: Date;
+	updatedAt: Date;
 };

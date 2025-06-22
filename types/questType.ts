@@ -4,6 +4,6 @@ export type QuestType = {
 	reward: number;
 	completed: boolean;
 	approved: boolean;
-	completedAt: string;
+	completedAt: Date;
 	questDate: Date;
 };
