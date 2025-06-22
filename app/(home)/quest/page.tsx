@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect } from 'react';
+// import React, { useEffect } from 'react';
+import React from 'react';
 import { Swords } from 'lucide-react';
 import { useAuthStore } from '@/lib/zustand/authStore';
 import { useQuestList } from '@/hooks/useQuestList';
@@ -9,14 +10,15 @@ import QuestCard from '@/components/quest/QuestCard';
 
 const QuestPage = () => {
 	const { user, selectedChild } = useAuthStore();
-	const { quests, loading, mutateQuests } = useQuestList();
+	// const { quests, loading, mutateQuests } = useQuestList();
+	const { quests, loading } = useQuestList();
 
 	// 初回ロード／作成後に一覧取得
-	useEffect(() => {
-		if (selectedChild) {
-			mutateQuests(); // SWRのキャッシュを再取得
-		}
-	}, [selectedChild, mutateQuests]);
+	// useEffect(() => {
+	// 	if (selectedChild) {
+	// 		mutateQuests(); // SWRのキャッシュを再取得
+	// 	}
+	// }, [selectedChild, mutateQuests]);
 
 	// 子アカウント未選択
 	if (user?.role === 'parent' && !selectedChild) {
