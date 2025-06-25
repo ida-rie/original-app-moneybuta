@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/prisma/supabaseCreateClient';
 import { BaseQuestType } from '@/types/baseQuestType';
-
-// ここでしか使わないように！
-const supabase = createClient(
-	process.env.SUPABASE_URL!,
-	process.env.SUPABASE_SERVICE_ROLE_KEY! // server only
-);
 
 // クエスト作成時の型定義
 type BaseQuestItem = {

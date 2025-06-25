@@ -1,13 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/prisma/supabaseCreateClient';
 import dotenv from 'dotenv';
 import { addDays, isBefore, startOfDay } from 'date-fns';
 import { utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz';
 
 dotenv.config();
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, serviceRoleKey);
 
 /**
  * クエスト履歴挿入用の型定義

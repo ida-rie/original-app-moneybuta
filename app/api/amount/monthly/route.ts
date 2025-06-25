@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/prisma/supabaseCreateClient';
 import { format } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 import { utcToZonedTime } from 'date-fns-tz';
@@ -27,8 +27,6 @@ export async function GET(req: Request) {
 	if (!accessToken) {
 		return NextResponse.json({ error: 'アクセストークンが必要です' }, { status: 401 });
 	}
-
-	const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
 	const {
 		data: { user },
@@ -64,13 +62,6 @@ export async function GET(req: Request) {
 			},
 		});
 
-		// const groupedByDate: Record<string, typeof questHistories> = {};
-		// questHistories.forEach((q) => {
-		// 	const date = format(new Date(q.approvedAt!), 'yyyy-MM-dd');
-		// 	if (!groupedByDate[date]) groupedByDate[date] = [];
-		// 	groupedByDate[date].push(q);
-		// });
-
 		// JST 日付でグループ化
 		const groupedByDate: Record<string, typeof questHistories> = {};
 		questHistories.forEach((q) => {
@@ -80,34 +71,6 @@ export async function GET(req: Request) {
 		});
 
 		let runningTotal = 0;
-
-		// const breakdown = Object.entries(groupedByDate)
-		// 	.sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
-		// 	.map(([date, quests], index) => {
-		// 		const dailyTotal = quests.reduce((sum, q) => sum + q.reward, 0);
-
-		// 		const items = quests.map((q) => ({
-		// 			content: q.title,
-		// 			amount: q.reward,
-		// 		}));
-
-		// 		// ✅ 初日のみ基本金額を加算
-		// 		if (index === 0 && basicAmount?.basicAmount) {
-		// 			items.unshift({
-		// 				content: '基本金額',
-		// 				amount: basicAmount.basicAmount,
-		// 			});
-		// 			runningTotal += basicAmount.basicAmount;
-		// 		}
-
-		// 		runningTotal += dailyTotal;
-
-		// 		return {
-		// 			date,
-		// 			total: runningTotal,
-		// 			items,
-		// 		};
-		// 	});
 
 		const breakdown: BreakdownItemType[] = Object.keys(groupedByDate)
 			.sort() // "YYYY-MM-DD" なら文字列ソートで OK

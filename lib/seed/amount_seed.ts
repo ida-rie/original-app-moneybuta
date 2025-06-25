@@ -1,14 +1,10 @@
 import dotenv from 'dotenv';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/prisma/supabaseCreateClient';
 import { addDays, isBefore, startOfDay } from 'date-fns';
 import { utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz';
 import { format } from 'date-fns';
 
 dotenv.config();
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, serviceRoleKey);
 
 /**
  * テストデータ作成: AmountHistory レコード
