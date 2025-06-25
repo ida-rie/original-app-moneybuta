@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -65,7 +66,6 @@ const getSchemaByMode = (mode: Mode) => {
 	return mode === 'create' ? createUserSchema : editUserSchema;
 };
 
-// type FormData = z.infer<ReturnType<typeof getSchemaByMode>>;
 type CreateFormData = z.infer<typeof createUserSchema>;
 type EditFormData = z.infer<typeof editUserSchema>;
 
@@ -136,6 +136,8 @@ const ProfileEditDialog = ({
 	const user = useAuthStore((state) => state.user);
 
 	const token = sessionStorage.getItem('access_token');
+
+	const router = useRouter();
 
 	// モードによってタイトルとボタン文言を変更
 	const dialogTitleMap: Record<Mode, string> = {
@@ -290,8 +292,26 @@ const ProfileEditDialog = ({
 			setUser(updatedUser);
 		}
 
-		toast.success('ユーザー情報を更新しました🐷');
+		// 対象が自分自身かどうかを判定
+		if (email || password) {
+			if (user?.id === targetUserId) {
+				sessionStorage.removeItem('access_token');
+				const { clearUser, setSelectedChild } = useAuthStore.getState();
+				clearUser();
+				setSelectedChild(null);
 
+				toast.success('サインイン画面に移動します🐷');
+
+				// onCloseと競合して？か待ってくれない状態のため、要検証
+				setTimeout(() => {
+					router.push('/signin');
+				}, 5000);
+			} else {
+				toast.success('ユーザー情報を更新しました🐷');
+			}
+		} else {
+			toast.success('ユーザー情報を更新しました🐷');
+		}
 		return true;
 	};
 
@@ -300,14 +320,16 @@ const ProfileEditDialog = ({
 		if (mode === 'create') {
 			// 子どもアカウントの作成処理
 			success = await handleCreate(data as CreateFormData);
+			if (success) onClose();
 		} else if (mode === 'edit') {
 			// 自分の編集処理
 			success = await handleEdit(data as EditFormData);
 		} else if (mode === 'childEdit') {
 			// 子どもアカウントの編集処理
 			success = await handleEdit(data as EditFormData);
+			if (success) onClose();
 		}
-		if (success) onClose();
+		// if (success)onClose();
 	};
 
 	return (
