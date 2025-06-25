@@ -12,7 +12,12 @@ export const signOut = async (): Promise<boolean> => {
 
 	document.cookie = 'access_token=; path=/; max-age=0';
 	sessionStorage.removeItem('access_token');
-	useAuthStore.getState().clearUser();
+
+	// Zustand のストアをリセット
+	const { clearUser, setSelectedChild } = useAuthStore.getState();
+	clearUser();
+	setSelectedChild(null);
+
 	return true;
 };
 
