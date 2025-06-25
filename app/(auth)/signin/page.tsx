@@ -59,6 +59,7 @@ const SignIn = () => {
 
 			if (signInError || !signInData.user) {
 				toast.error('メールアドレスまたはパスワードが間違っています');
+				setIsLoading(false);
 				return;
 			}
 

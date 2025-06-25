@@ -85,6 +85,7 @@ const SignUp = () => {
 
 			if (!user) {
 				toast.error('ユーザー情報が取得できませんでした');
+				setIsLoading(false);
 				return;
 			}
 
@@ -105,6 +106,7 @@ const SignUp = () => {
 				const errorText = await res.text(); // エラーメッセージを取得
 				console.error('APIエラー:', errorText);
 				toast.error('ユーザー情報の登録に失敗しました');
+				setIsLoading(false);
 				return;
 			}
 
