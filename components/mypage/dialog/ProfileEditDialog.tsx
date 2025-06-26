@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -137,8 +136,6 @@ const ProfileEditDialog = ({
 
 	const token = sessionStorage.getItem('access_token');
 
-	const router = useRouter();
-
 	// モードによってタイトルとボタン文言を変更
 	const dialogTitleMap: Record<Mode, string> = {
 		create: '子どもアカウント追加',
@@ -248,8 +245,10 @@ const ProfileEditDialog = ({
 					? emailOrId
 					: `${emailOrId}@moneybuta.local`
 				: undefined;
+
 		// 送信データを構築
 		const updateData: Record<string, string> = {};
+
 		// 入力（変更）があれば更新データに含める
 		if (email) updateData.email = email;
 		if (name?.trim()) updateData.name = name.trim();
@@ -276,6 +275,36 @@ const ProfileEditDialog = ({
 		// 更新されたユーザー情報を取得
 		const updatedUser = await res.json();
 
+		// 自分自身ならセッション再取得
+		if (user?.id === targetUserId) {
+			if (password) {
+				// パスワードを変更した場合は再ログイン
+				const { data: siData, error: siErr } = await supabase.auth.signInWithPassword({
+					email: updatedUser.email as string,
+					password,
+				});
+				console.log('siData', siData);
+				if (siErr || !siData.session) {
+					console.error('再ログイン失敗:', siErr);
+					toast.error('再ログインに失敗しました');
+					return false;
+				}
+				sessionStorage.setItem('access_token', siData.session.access_token);
+				toast.success('パスワードを更新しました🐷');
+			} else {
+				// パスワードを変更しない場合はセッションだけリフレッシュ
+				const { data: refData, error: refErr } = await supabase.auth.refreshSession();
+				console.log('refData', refData);
+				if (refErr) {
+					console.error('セッションリフレッシュ失敗:', refErr);
+					toast.error('セッションを更新できませんでした');
+					return false;
+				}
+				toast.success('ユーザー情報を更新しました🐷');
+			}
+		}
+
+		// zustand更新
 		const { setUser } = useAuthStore.getState();
 
 		if (user?.role === 'parent') {
@@ -286,32 +315,13 @@ const ProfileEditDialog = ({
 				const updatedChildren =
 					user.children?.map((c) => (c.id === updatedUser.id ? updatedUser : c)) ?? [];
 				setUser({ ...user, children: updatedChildren });
+				toast.success('こどもユーザー情報を更新しました🐷');
 			}
 		} else {
 			// 子アカウント自身
 			setUser(updatedUser);
 		}
 
-		// 対象が自分自身かどうかを判定
-		if (email || password) {
-			if (user?.id === targetUserId) {
-				sessionStorage.removeItem('access_token');
-				const { clearUser, setSelectedChild } = useAuthStore.getState();
-				clearUser();
-				setSelectedChild(null);
-
-				toast.success('サインイン画面に移動します🐷');
-
-				// onCloseと競合して？か待ってくれない状態のため、要検証
-				setTimeout(() => {
-					router.push('/signin');
-				}, 5000);
-			} else {
-				toast.success('ユーザー情報を更新しました🐷');
-			}
-		} else {
-			toast.success('ユーザー情報を更新しました🐷');
-		}
 		return true;
 	};
 
@@ -320,16 +330,14 @@ const ProfileEditDialog = ({
 		if (mode === 'create') {
 			// 子どもアカウントの作成処理
 			success = await handleCreate(data as CreateFormData);
-			if (success) onClose();
 		} else if (mode === 'edit') {
 			// 自分の編集処理
 			success = await handleEdit(data as EditFormData);
 		} else if (mode === 'childEdit') {
 			// 子どもアカウントの編集処理
 			success = await handleEdit(data as EditFormData);
-			if (success) onClose();
 		}
-		// if (success)onClose();
+		if (success) onClose();
 	};
 
 	return (

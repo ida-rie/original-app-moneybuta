@@ -72,9 +72,10 @@ export async function PUT(req: NextRequest, context: any) {
 
 		// ① Supabase認証情報（email/password）を更新
 		if (body.email || body.password) {
-			const updateParams: { email?: string; password?: string } = {};
+			const updateParams: { email?: string; password?: string; email_confirm?: boolean } = {};
 			if (body.email) updateParams.email = body.email;
 			if (body.password) updateParams.password = body.password;
+			if (body.email) updateParams.email_confirm = true;
 
 			const { error: updateAuthError } = await supabase.auth.admin.updateUserById(id, updateParams);
 
