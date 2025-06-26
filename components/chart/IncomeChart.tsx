@@ -30,16 +30,10 @@ export const IncomeChart = ({ onLoaded }: onLoadedType) => {
 
 	// 月が変更されたときにデータを再生成
 	useEffect(() => {
-		const childId = user?.role === 'child' ? user.id : selectedChild?.id;
-		if (!childId) {
-			onLoaded();
-			return;
-		}
 		const fetchMonthlyAmount = async () => {
-			const token = sessionStorage.getItem('access_token');
 			const childId = user?.role === 'child' ? user.id : selectedChild?.id;
 
-			if (!childId || !token) {
+			if (!childId) {
 				onLoaded();
 				return;
 			}
@@ -52,6 +46,7 @@ export const IncomeChart = ({ onLoaded }: onLoadedType) => {
 					},
 				});
 
+				if (res.status === 401) return;
 				if (!res.ok) {
 					const error = await res.json();
 					throw new Error(error.message || 'APIエラー');

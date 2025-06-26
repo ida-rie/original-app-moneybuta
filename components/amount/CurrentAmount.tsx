@@ -39,6 +39,13 @@ export const CurrentAmount = ({ onLoaded }: onLoadedType) => {
 						'Authorization': `Bearer ${token}`,
 					},
 				});
+
+				if (res.status === 401) return;
+				if (!res.ok) {
+					const error = await res.json();
+					throw new Error(error.message || 'APIエラー');
+				}
+
 				const json: MonthlyAmountType = await res.json();
 
 				if (!json || !Array.isArray(json.breakdown)) {
