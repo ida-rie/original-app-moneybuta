@@ -33,8 +33,20 @@ export async function GET(req: Request) {
 		error: sessionError,
 	} = await supabase.auth.getUser(accessToken);
 
+	// if (sessionError || !user) {
+	// 	return NextResponse.json({ error: '認証エラー' }, { status: 401 });
+	// }
 	if (sessionError || !user) {
-		return NextResponse.json({ error: '認証エラー' }, { status: 401 });
+		return NextResponse.json(
+			{
+				month,
+				basicAmount: 0,
+				rewardSum: 0,
+				totalAmount: 0,
+				breakdown: [] as BreakdownItemType[],
+			},
+			{ status: 200 }
+		);
 	}
 
 	try {
