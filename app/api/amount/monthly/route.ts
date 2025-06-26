@@ -33,6 +33,7 @@ export async function GET(req: Request) {
 		error: sessionError,
 	} = await supabase.auth.getUser(accessToken);
 
+	// 一時的に認証エラーを回避
 	// if (sessionError || !user) {
 	// 	return NextResponse.json({ error: '認証エラー' }, { status: 401 });
 	// }
