@@ -26,8 +26,14 @@ const Home = () => {
 
 	return (
 		<>
-			<CurrentAmount onLoaded={() => setAmountLoaded(true)} />
-			<IncomeChart onLoaded={() => setChartLoaded(true)} />
+			{user ? (
+				<>
+					<CurrentAmount onLoaded={() => setAmountLoaded(true)} />
+					<IncomeChart onLoaded={() => setChartLoaded(true)} />
+				</>
+			) : (
+				<p>サインインしてください。</p>
+			)}
 
 			{/* ✅ ローディング中ならオーバーレイ表示 */}
 			{!isAllLoaded && (
