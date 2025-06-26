@@ -31,8 +31,15 @@ export const IncomeChart = ({ onLoaded }: onLoadedType) => {
 	// 月が変更されたときにデータを再生成
 	useEffect(() => {
 		const fetchMonthlyAmount = async () => {
+			// サインアウト直後に user が null なら即リターン
+			if (!user) {
+				onLoaded();
+				return;
+			}
+			const token = sessionStorage.getItem('access_token');
 			const childId = user?.role === 'child' ? user.id : selectedChild?.id;
-			if (!childId) {
+
+			if (!childId || !token) {
 				onLoaded();
 				return;
 			}
