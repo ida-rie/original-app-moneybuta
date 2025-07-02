@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
 		});
 
 		for (const parent of parents) {
+			// 子ユーザーを取得
 			const children = await prisma.user.findMany({
 				where: {
 					parentId: parent.id,
@@ -30,41 +31,50 @@ export async function GET(req: NextRequest) {
 				},
 				select: { id: true },
 			});
+			const childIds = children.map((c) => c.id);
+
+			// 子ごとの最新基本金額をまとめて取得
+			const allBasics = await prisma.basicAmount.findMany({
+				where: { childUserId: { in: childIds } },
+				orderBy: { createdAt: 'desc' },
+			});
+			const latestBasicMap = new Map<string, (typeof allBasics)[0]>();
+			for (const b of allBasics) {
+				if (!latestBasicMap.has(b.childUserId)) {
+					latestBasicMap.set(b.childUserId, b);
+				}
+			}
+
+			// 本日承認されたクエスト報酬をまとめて取得
+			const todayQuests = await prisma.questHistory.findMany({
+				where: {
+					childUserId: { in: childIds },
+					approved: true,
+					approvedAt: { gte: start, lte: end },
+				},
+				select: { childUserId: true, reward: true },
+			});
+			const rewardMap = new Map<string, number>();
+			for (const q of todayQuests) {
+				rewardMap.set(q.childUserId, (rewardMap.get(q.childUserId) ?? 0) + q.reward);
+			}
+
+			// 親ごとの既存履歴をまとめてチェック（一件だけ）
+			const existing = await prisma.amountHistory.findFirst({
+				where: { userId: parent.id, date: start },
+			});
 
 			for (const child of children) {
-				// 基本金額取得（なければスキップ）
-				const basicAmount = await prisma.basicAmount.findFirst({
-					where: { childUserId: child.id },
-					orderBy: { createdAt: 'desc' },
-				});
+				// 最新基本金額がなければスキップ
+				const basicAmount = latestBasicMap.get(child.id);
 				if (!basicAmount) {
 					console.log(`⚠️ スキップ: 基本金額なし childId=${child.id}`);
 					continue;
 				}
 
 				const baseAmountValue = basicAmount.basicAmount;
-
-				// 今日承認されたクエスト報酬合計
-				const todayApproved = await prisma.questHistory.findMany({
-					where: {
-						childUserId: child.id,
-						approved: true,
-						approvedAt: {
-							gte: start,
-							lte: end,
-						},
-					},
-				});
-				const rewardTotal = todayApproved.reduce((sum, q) => sum + q.reward, 0);
+				const rewardTotal = rewardMap.get(child.id) ?? 0;
 				const totalAmount = baseAmountValue + rewardTotal;
-
-				// 既存履歴があれば update、なければ create
-				const existing = await prisma.amountHistory.findFirst({
-					where: {
-						userId: parent.id,
-						date: start,
-					},
-				});
 
 				if (existing) {
 					await prisma.amountHistory.update({
