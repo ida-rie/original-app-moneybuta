@@ -79,6 +79,14 @@ export const IncomeChart = ({ onLoaded }: onLoadedType) => {
 			<Card className="border-[var(--color-secondary)]">
 				<CardHeader>
 					<CardTitle>おこづかいのきろく</CardTitle>
+					{/* 月初基本金額をヘッダーに表示 */}
+					{data && (
+						<div className="mt-2 flex items-center gap-2">
+							<p className="text-sm">
+								きほん金がく: <span className="quicksand font-semibold">{data.basicAmount}</span>円
+							</p>
+						</div>
+					)}
 					{/* 月を選択 */}
 					<ChartHeader
 						selectedMonth={selectedMonth}

@@ -56,8 +56,7 @@ export const CurrentAmount = ({ onLoaded }: onLoadedType) => {
 
 				const todayEntry = json.breakdown?.find((entry) => entry.date === todayStr);
 				const todayTotal = todayEntry?.total ?? json.totalAmount ?? 0;
-				const todayRewardTotal =
-					todayEntry?.items?.reduce((sum, item) => sum + item.amount, 0) ?? 0;
+				const todayRewardTotal = json.rewardSum ?? 0;
 
 				setAmount(todayTotal);
 				setDiff(todayRewardTotal);

@@ -57,8 +57,9 @@ export async function GET(req: Request) {
 		const basicAmount = await prisma.basicAmount.findFirst({
 			where: {
 				childUserId: childId,
-				month,
+				month: { lte: month }, // 指定月以前
 			},
+			orderBy: { month: 'desc' },
 		});
 
 		const questHistories = await prisma.questHistory.findMany({
