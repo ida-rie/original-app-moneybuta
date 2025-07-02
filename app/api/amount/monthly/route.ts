@@ -18,9 +18,6 @@ export async function GET(req: Request) {
 	const childId = searchParams.get('childId');
 	const month = searchParams.get('month');
 
-	// route.ts の先頭に入れてみる
-	console.log('■ /api/amount/monthly token:', req.headers.get('Authorization'));
-
 	if (!childId || !month) {
 		return NextResponse.json({ error: 'childIdとmonthは必須です' }, { status: 400 });
 	}
