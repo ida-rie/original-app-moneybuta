@@ -20,7 +20,7 @@ export const signOut = async (): Promise<boolean> => {
 	setSelectedChild(null);
 
 	// SWR 全キャッシュをクリア（再フェッチなし）
-	await mutate((key) => typeof key === 'string', undefined, { revalidate: false });
+	await mutate(() => true, undefined, { revalidate: false });
 
 	return true;
 };
