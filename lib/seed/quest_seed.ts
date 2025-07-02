@@ -1,9 +1,12 @@
 import { supabase } from '@/lib/prisma/supabaseCreateClient';
+// import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import { addDays, isBefore, startOfDay } from 'date-fns';
 import { utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz';
 
 dotenv.config();
+
+// const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
 /**
  * クエスト履歴挿入用の型定義
@@ -143,8 +146,8 @@ const main = async () => {
 	}
 
 	// テストデータ期間: 2025年5月6日〜2025年6月21日 (JST)
-	const startDate = new Date(Date.UTC(2025, 4, 6));
-	const endDate = new Date(Date.UTC(2025, 5, 21));
+	const startDate = new Date(Date.UTC(2025, 5, 30));
+	const endDate = new Date(Date.UTC(2025, 6, 1));
 
 	// ここから 今日の JST 0:00 を起点に開始・終了とも同じにする
 	// const jstTodayMidnight = startOfDay(utcToZonedTime(new Date(), 'Asia/Tokyo'));

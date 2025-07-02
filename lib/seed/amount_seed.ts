@@ -1,10 +1,17 @@
 import dotenv from 'dotenv';
 import { supabase } from '@/lib/prisma/supabaseCreateClient';
+// import { createClient } from '@supabase/supabase-js';
 import { addDays, isBefore, startOfDay } from 'date-fns';
 import { utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz';
 import { format } from 'date-fns';
 
 dotenv.config();
+
+// const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+
+console.log('✅ ENV確認');
+console.log('SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+console.log('SERVICE_ROLE:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'OK' : 'MISSING');
 
 /**
  * テストデータ作成: AmountHistory レコード
@@ -48,8 +55,8 @@ const run = async () => {
 	}
 
 	// テストデータ期間: 2025年5月6日〜2025年6月21日 (JST)
-	const startDate = new Date(Date.UTC(2025, 4, 6)); // 5/6 JST 0:00
-	const endDate = new Date(Date.UTC(2025, 5, 21)); // 6/21 JST 0:00
+	const startDate = new Date(Date.UTC(2025, 5, 30)); // 5/6 JST 0:00
+	const endDate = new Date(Date.UTC(2025, 6, 1)); // 6/21 JST 0:00
 
 	// ここから 今日の JST 0:00 を起点に開始・終了とも同じにする
 	// const jstTodayMidnight = startOfDay(utcToZonedTime(new Date(), 'Asia/Tokyo'));
