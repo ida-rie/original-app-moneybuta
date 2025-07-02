@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Noto_Sans_JP } from 'next/font/google';
 import { Toaster } from 'sonner';
-import { SWRConfig } from 'swr';
 import './globals.css';
 
 // Noto Sans JP フォントをインポート
@@ -26,16 +25,8 @@ const RootLayout = ({
 	return (
 		<html lang="ja">
 			<body className={`${notoSansJP.className} antialiased flex flex-col min-h-svh`}>
-				<SWRConfig
-					value={{
-						revalidateOnFocus: false,
-						revalidateOnReconnect: false,
-						revalidateOnMount: false,
-					}}
-				>
-					{/* Main コンテンツ */}
-					<div className="grow-1">{children}</div>
-				</SWRConfig>
+				{/* Main コンテンツ */}
+				<div className="grow-1">{children}</div>
 				{/* トースター */}
 				<Toaster position="top-left" />
 			</body>
