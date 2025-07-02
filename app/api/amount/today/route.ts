@@ -13,17 +13,17 @@ export async function GET(req: NextRequest) {
 	}
 
 	try {
-		// 日本時間を明示的に指定してUTCに変換
+		// --- 今日の UTC 開始／終了 を取得 ---
 		const { start, end } = getTodayUtc();
 
-		// 全親ユーザーを取得
+		// --- 全親ユーザーを取得 ---
 		const parents = await prisma.user.findMany({
 			where: { role: 'parent' },
 			select: { id: true },
 		});
 
 		for (const parent of parents) {
-			// 子ユーザーを取得
+			// --- 子ユーザー一覧を取得 ---
 			const children = await prisma.user.findMany({
 				where: {
 					parentId: parent.id,
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 			});
 			const childIds = children.map((c) => c.id);
 
-			// 子ごとの最新基本金額をまとめて取得
+			// --- 基本金額を一括取得 & 最新のみ Map 化 ---
 			const allBasics = await prisma.basicAmount.findMany({
 				where: { childUserId: { in: childIds } },
 				orderBy: { createdAt: 'desc' },
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
 				}
 			}
 
-			// 本日承認されたクエスト報酬をまとめて取得
+			// --- 当日承認済みクエスト報酬を一括取得 & 合計 Map 化 ---
 			const todayQuests = await prisma.questHistory.findMany({
 				where: {
 					childUserId: { in: childIds },
@@ -59,45 +59,38 @@ export async function GET(req: NextRequest) {
 				rewardMap.set(q.childUserId, (rewardMap.get(q.childUserId) ?? 0) + q.reward);
 			}
 
-			// 親ごとの既存履歴をまとめてチェック（一件だけ）
-			const existing = await prisma.amountHistory.findFirst({
-				where: { userId: parent.id, date: start },
-			});
-
+			// --- 子ループ：upsert で重複なく create/update ---
 			for (const child of children) {
-				// 最新基本金額がなければスキップ
-				const basicAmount = latestBasicMap.get(child.id);
-				if (!basicAmount) {
+				const basic = latestBasicMap.get(child.id);
+				if (!basic) {
 					console.log(`⚠️ スキップ: 基本金額なし childId=${child.id}`);
 					continue;
 				}
-
-				const baseAmountValue = basicAmount.basicAmount;
 				const rewardTotal = rewardMap.get(child.id) ?? 0;
-				const totalAmount = baseAmountValue + rewardTotal;
+				const totalAmount = basic.basicAmount + rewardTotal;
 
-				if (existing) {
-					await prisma.amountHistory.update({
-						where: { id: existing.id },
-						data: {
-							totalAmount,
-							childUserId: child.id,
-							basicAmountId: basicAmount.id,
-						},
-					});
-					console.log(`🔄 更新: 親 ${parent.id} / 子 ${child.id} total=${totalAmount}`);
-				} else {
-					await prisma.amountHistory.create({
-						data: {
+				await prisma.amountHistory.upsert({
+					where: {
+						userId_date: {
 							userId: parent.id,
-							childUserId: child.id,
-							basicAmountId: basicAmount.id,
-							totalAmount,
 							date: start,
 						},
-					});
-					console.log(`✅ 作成: 親 ${parent.id} / 子 ${child.id} total=${totalAmount}`);
-				}
+					},
+					create: {
+						userId: parent.id,
+						childUserId: child.id,
+						basicAmountId: basic.id,
+						totalAmount,
+						date: start,
+					},
+					update: {
+						totalAmount,
+						childUserId: child.id,
+						basicAmountId: basic.id,
+					},
+				});
+
+				console.log(`🔄 upsert: 親 ${parent.id} / 子 ${child.id} total=${totalAmount}`);
 			}
 		}
 
