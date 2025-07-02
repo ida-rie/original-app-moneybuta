@@ -283,7 +283,7 @@ const ProfileEditDialog = ({
 					email: updatedUser.email as string,
 					password,
 				});
-				console.log('siData', siData);
+
 				if (siErr || !siData.session) {
 					console.error('再ログイン失敗:', siErr);
 					toast.error('再ログインに失敗しました');
@@ -293,8 +293,8 @@ const ProfileEditDialog = ({
 				toast.success('パスワードを更新しました🐷');
 			} else {
 				// パスワードを変更しない場合はセッションだけリフレッシュ
-				const { data: refData, error: refErr } = await supabase.auth.refreshSession();
-				console.log('refData', refData);
+				const { error: refErr } = await supabase.auth.refreshSession();
+
 				if (refErr) {
 					console.error('セッションリフレッシュ失敗:', refErr);
 					toast.error('セッションを更新できませんでした');
