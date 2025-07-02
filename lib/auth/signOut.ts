@@ -2,6 +2,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/zustand/authStore';
+import { mutate } from 'swr';
 
 export const signOut = async (): Promise<boolean> => {
 	const { error } = await supabase.auth.signOut();
@@ -17,6 +18,9 @@ export const signOut = async (): Promise<boolean> => {
 	const { clearUser, setSelectedChild } = useAuthStore.getState();
 	clearUser();
 	setSelectedChild(null);
+
+	// SWR 全キャッシュをクリア（再フェッチなし）
+	await mutate((key) => typeof key === 'string', undefined, { revalidate: false });
 
 	return true;
 };

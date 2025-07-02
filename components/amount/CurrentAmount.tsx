@@ -40,8 +40,6 @@ export const CurrentAmount = ({ onLoaded }: onLoadedType) => {
 					},
 				});
 
-				// 一時的に認証エラーを回避
-				if (res.status === 401) return;
 				if (!res.ok) {
 					const error = await res.json();
 					throw new Error(error.message || 'APIエラー');
