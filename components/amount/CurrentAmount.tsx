@@ -8,19 +8,20 @@ import { MonthlyAmountType } from '@/types/MonthlyAmountType';
 import { onLoadedType } from '@/types/onLoadedType';
 
 export const CurrentAmount = ({ onLoaded }: onLoadedType) => {
-	// 必要な state のみを取得
 	const user = useAuthStore((state) => state.user);
 	const selectedChild = useAuthStore((state) => state.selectedChild);
-	const [amount, setAmount] = useState<number | null>(0);
+	const [amount, setAmount] = useState<number | null>(null);
 	const [diff, setDiff] = useState<number | null>(null);
+	const [isLoading, setIsLoading] = useState(true);
 
 	useEffect(() => {
 		const fetchAmount = async () => {
-			// 子ユーザーなら自分のIDを使う
+			setIsLoading(true);
 			const childId = user?.role === 'child' ? user.id : selectedChild?.id;
 
 			if (!childId) {
-				onLoaded();
+				setIsLoading(false);
+				onLoaded?.();
 				return;
 			}
 
@@ -34,7 +35,6 @@ export const CurrentAmount = ({ onLoaded }: onLoadedType) => {
 			try {
 				const token = sessionStorage.getItem('access_token');
 
-				// 金額取得
 				const res = await fetch(`/api/amount/monthly?childId=${childId}&month=${month}`, {
 					method: 'GET',
 					headers: {
@@ -53,18 +53,14 @@ export const CurrentAmount = ({ onLoaded }: onLoadedType) => {
 				if (!json || !Array.isArray(json.breakdown)) {
 					setAmount(json.totalAmount ?? 0);
 					setDiff(null);
-					onLoaded();
 					return;
 				}
 
 				const todayEntry = json.breakdown?.find((entry) => entry.date === todayStr);
 				const yesterdayEntry = json.breakdown?.find((entry) => entry.date === yesterdayStr);
 				const todayTotal = todayEntry?.total ?? json.totalAmount ?? 0;
-				// 昨日のデータがない場合（月初・初日など）は diff を null にして非表示にする
 				const diffAmount =
-					todayEntry && yesterdayEntry
-						? todayTotal - yesterdayEntry.total
-						: null;
+					todayEntry && yesterdayEntry ? todayTotal - yesterdayEntry.total : null;
 
 				setAmount(todayTotal);
 				setDiff(diffAmount);
@@ -73,12 +69,26 @@ export const CurrentAmount = ({ onLoaded }: onLoadedType) => {
 				setAmount(0);
 				setDiff(null);
 			} finally {
-				onLoaded();
+				setIsLoading(false);
+				onLoaded?.();
 			}
 		};
 
 		fetchAmount();
 	}, [user, selectedChild, onLoaded]);
+
+	if (isLoading) {
+		return (
+			<div className="flex justify-center items-center gap-6 flex-wrap w-full mx-auto mb-6 animate-pulse">
+				<div className="w-[180px] h-[180px] rounded-full bg-gray-200" />
+				<div className="space-y-3">
+					<div className="h-4 w-40 bg-gray-200 rounded" />
+					<div className="h-10 w-32 bg-gray-200 rounded" />
+					<div className="h-4 w-28 bg-gray-200 rounded" />
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="flex justify-center items-center gap-6 flex-wrap w-full mx-auto mb-6">

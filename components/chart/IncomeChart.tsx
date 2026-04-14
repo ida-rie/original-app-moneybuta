@@ -13,28 +13,25 @@ import { onLoadedType } from '@/types/onLoadedType';
 import Image from 'next/image';
 
 export const IncomeChart = ({ onLoaded }: onLoadedType) => {
-	// 必要な state のみを取得
 	const user = useAuthStore((state) => state.user);
 	const selectedChild = useAuthStore((state) => state.selectedChild);
 
-	// 直近6ヶ月の月を取得
 	const months = generateRecentMonths(3);
-	// 今月が先頭
 	const [selectedMonth, setSelectedMonth] = useState(months[0]);
-	// 表示するデータ
 	const [data, setData] = useState<MonthlyAmountType | null>(null);
+	const [isLoading, setIsLoading] = useState(true);
 
-	// ウィンドウサイズ取得
 	const { width } = useWindowSize();
 	const interval = width <= 768 ? 2 : 0;
 
-	// 月が変更されたときにデータを再生成
 	useEffect(() => {
 		const fetchMonthlyAmount = async () => {
+			setIsLoading(true);
 			const childId = user?.role === 'child' ? user.id : selectedChild?.id;
 
 			if (!childId) {
-				onLoaded();
+				setIsLoading(false);
+				onLoaded?.();
 				return;
 			}
 
@@ -56,18 +53,16 @@ export const IncomeChart = ({ onLoaded }: onLoadedType) => {
 			} catch (err) {
 				console.error('月別データ取得エラー:', err);
 			} finally {
-				onLoaded();
+				setIsLoading(false);
+				onLoaded?.();
 			}
 		};
 
 		fetchMonthlyAmount();
 	}, [selectedMonth, selectedChild, user, onLoaded]);
 
-	// ChartGraph 用データ整形
 	const graphData = (() => {
 		if (!data) return [];
-
-		// breakdown.total は既に累積されているので、そのまま使えばOK
 		return data.breakdown.map((d) => ({
 			date: d.date,
 			amount: d.total,
@@ -79,7 +74,6 @@ export const IncomeChart = ({ onLoaded }: onLoadedType) => {
 			<Card className="border-[var(--color-secondary)]">
 				<CardHeader>
 					<CardTitle>おこづかいのきろく</CardTitle>
-					{/* 月初基本金額をヘッダーに表示 */}
 					{data && (
 						<div className="mt-2 flex items-center gap-2">
 							<p className="text-sm">
@@ -87,7 +81,6 @@ export const IncomeChart = ({ onLoaded }: onLoadedType) => {
 							</p>
 						</div>
 					)}
-					{/* 月を選択 */}
 					<ChartHeader
 						selectedMonth={selectedMonth}
 						onMonthChange={setSelectedMonth}
@@ -96,7 +89,17 @@ export const IncomeChart = ({ onLoaded }: onLoadedType) => {
 				</CardHeader>
 
 				<CardContent className="space-y-6">
-					{graphData.length === 0 ? (
+					{isLoading ? (
+						<div className="animate-pulse space-y-4">
+							<div className="h-4 w-32 bg-gray-200 rounded" />
+							<div className="h-40 bg-gray-200 rounded" />
+							<div className="space-y-2">
+								{[...Array(3)].map((_, i) => (
+									<div key={i} className="h-4 bg-gray-200 rounded" />
+								))}
+							</div>
+						</div>
+					) : graphData.length === 0 ? (
 						<div className="text-center text-muted-foreground py-10">
 							<Image
 								src="/lamp_genie.png"
@@ -112,10 +115,7 @@ export const IncomeChart = ({ onLoaded }: onLoadedType) => {
 						</div>
 					) : (
 						<>
-							{/* チャート */}
 							<ChartGraph data={graphData} interval={interval} />
-
-							{/* 収入履歴 */}
 							<ChartIncomeHistory data={data?.breakdown ?? []} userIconUrl="/logo.png" />
 						</>
 					)}

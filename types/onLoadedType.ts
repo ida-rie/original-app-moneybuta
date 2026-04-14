@@ -1,3 +1,3 @@
 export type onLoadedType = {
-	onLoaded: () => void;
+	onLoaded?: () => void;
 };

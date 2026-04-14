@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/prisma/supabaseCreateClient';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 // 基本金額の更新
 export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
 	try {

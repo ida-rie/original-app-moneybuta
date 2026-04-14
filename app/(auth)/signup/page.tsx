@@ -18,9 +18,9 @@ import {
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useAuthStore } from '@/lib/zustand/authStore';
 import { useState } from 'react';
-import { BookOpenText } from 'lucide-react';
+import { BookOpenText, MailCheck } from 'lucide-react';
+import { useAuthStore } from '@/lib/zustand/authStore';
 
 const FormSchema = z.object({
 	email: z
@@ -43,6 +43,7 @@ const FormSchema = z.object({
 const SignUp = () => {
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState(false);
+	const [sentEmail, setSentEmail] = useState<string | null>(null);
 
 	const form = useForm<z.infer<typeof FormSchema>>({
 		resolver: zodResolver(FormSchema),
@@ -58,7 +59,7 @@ const SignUp = () => {
 		const { email, password, name } = data;
 
 		try {
-			// supabase認証でサインアップ
+			// supabase認証でサインアップ（メール確認あり）
 			const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
 				email,
 				password,
@@ -71,16 +72,6 @@ const SignUp = () => {
 				return;
 			}
 
-			// トークンをセッションストレージに保存
-			const accessToken = signUpData.session!.access_token;
-
-			// cookie に保存（middleware 用）
-			document.cookie = `access_token=${accessToken}; path=/; max-age=86400`; // 有効期限1日
-
-			// sessionStorage に保存（画面用：Zustandと連携）
-			sessionStorage.setItem('access_token', accessToken);
-
-			// userテーブルに登録するためにidを取得
 			const user = signUpData.user;
 
 			if (!user) {
@@ -89,12 +80,12 @@ const SignUp = () => {
 				return;
 			}
 
-			// userテーブルにuser情報を登録
+			// userテーブルにuser情報を登録（メール確認前でも先に作成しておく）
 			const res = await fetch('/api/users/signup', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					id: user.id, // Supabaseのauth.user.idをUserテーブルのidに利用
+					id: user.id,
 					email,
 					name,
 					role: 'parent',
@@ -103,14 +94,26 @@ const SignUp = () => {
 			});
 
 			if (!res.ok) {
-				const errorText = await res.text(); // エラーメッセージを取得
+				const errorText = await res.text();
 				console.error('APIエラー:', errorText);
 				toast.error('ユーザー情報の登録に失敗しました');
 				setIsLoading(false);
 				return;
 			}
 
-			// Zustandに保存
+			// セッションが null = メール確認が必要（Supabase の Email Confirmation が ON）
+			if (!signUpData.session) {
+				setSentEmail(email);
+				setIsLoading(false);
+				return;
+			}
+
+			// セッションがある場合（Email Confirmation が OFF の開発環境など）はそのままログイン
+			const accessToken = signUpData.session.access_token;
+			document.cookie = `access_token=${accessToken}; path=/; max-age=86400`;
+			sessionStorage.setItem('access_token', accessToken);
+
+			// Zustand にユーザー情報を保存（sessionStorage への書き込みも内部で行われる）
 			const setUser = useAuthStore.getState().setUser;
 			setUser({
 				id: user.id,
@@ -122,9 +125,7 @@ const SignUp = () => {
 			});
 
 			toast.success('サインアップに成功しました🐷');
-
 			setIsLoading(false);
-
 			router.push('/');
 		} catch (error) {
 			console.error('サインアップ処理中のエラー:', error);
@@ -132,6 +133,30 @@ const SignUp = () => {
 			setIsLoading(false);
 		}
 	};
+
+	// メール確認待ち画面
+	if (sentEmail) {
+		return (
+			<div className="flex flex-col items-center gap-6 py-8 text-center">
+				<MailCheck size={64} className="text-[var(--color-primary)]" />
+				<h2 className="text-xl font-bold">確認メールを送信しました</h2>
+				<p className="text-muted-foreground text-sm max-w-sm">
+					<span className="font-semibold">{sentEmail}</span> に確認メールを送りました。
+					<br />
+					メール内のリンクをクリックして登録を完了してください。
+				</p>
+				<p className="text-muted-foreground text-xs">
+					メールが届かない場合は、迷惑メールフォルダをご確認ください。
+				</p>
+				<Link
+					href="/signin"
+					className="text-[var(--color-primary)] hover:underline text-sm mt-2"
+				>
+					サインインページへ
+				</Link>
+			</div>
+		);
+	}
 
 	return (
 		<>
@@ -149,7 +174,7 @@ const SignUp = () => {
 						name="email"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>ユーザーID</FormLabel>
+								<FormLabel>メールアドレス</FormLabel>
 								<FormControl>
 									<Input placeholder="メールアドレスを入力してください" {...field} />
 								</FormControl>

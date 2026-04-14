@@ -58,7 +58,13 @@ const SignIn = () => {
 			});
 
 			if (signInError || !signInData.user) {
-				toast.error('メールアドレスまたはパスワードが間違っています');
+				if (signInError?.message === 'Email not confirmed') {
+					toast.error(
+						'メールアドレスの確認が完了していません。登録時に送られた確認メールをご確認ください。'
+					);
+				} else {
+					toast.error('メールアドレスまたはパスワードが間違っています');
+				}
 				setIsLoading(false);
 				return;
 			}

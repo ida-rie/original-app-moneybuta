@@ -68,6 +68,17 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 			return NextResponse.json({ error: '権限がありません' }, { status: 403 });
 		}
 
+		// 子アカウント自身は名前・アイコンのみ変更可（ID・パスワード変更は親のみ）
+		const requestingUser = await prisma.user.findUnique({ where: { id: user.id } });
+		if (requestingUser?.role === 'child' && isOwnAccount) {
+			if (body.email || body.password) {
+				return NextResponse.json(
+					{ error: '子アカウントではユーザーIDとパスワードを変更できません' },
+					{ status: 403 }
+				);
+			}
+		}
+
 		// ① Supabase認証情報（email/password）を更新
 		if (body.email || body.password) {
 			const updateParams: { email?: string; password?: string; email_confirm?: boolean } = {};
@@ -150,22 +161,22 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
 
 		// 自分自身を削除する場合（=親自身）
 		if (authUser.id === id) {
-			// 子ユーザーを全削除
+			// 子ユーザーを全削除（並列処理）
 			const childUsers = await prisma.user.findMany({
 				where: { parentId: id },
 				select: { id: true },
 			});
 
-			for (const child of childUsers) {
-				await deleteRelatedUserData(child.id, 'child');
-
-				const { error } = await supabase.auth.admin.deleteUser(child.id);
-				if (error) {
-					console.error(`子アカウント（${child.id}）の認証削除失敗:`, error);
-				}
-
-				await prisma.user.delete({ where: { id: child.id } });
-			}
+			await Promise.all(
+				childUsers.map(async (child) => {
+					await deleteRelatedUserData(child.id, 'child');
+					const { error } = await supabase.auth.admin.deleteUser(child.id);
+					if (error) {
+						console.error(`子アカウント（${child.id}）の認証削除失敗:`, error);
+					}
+					await prisma.user.delete({ where: { id: child.id } });
+				})
+			);
 
 			// 親のデータも削除
 			await deleteRelatedUserData(id, 'parent');

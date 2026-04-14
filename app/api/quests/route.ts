@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getTodayUtc } from '@/lib/utils/getTodayUtc';
 
+export const dynamic = 'force-dynamic';
+
 // クエストの履歴を取得
 export async function GET(req: NextRequest) {
 	try {
