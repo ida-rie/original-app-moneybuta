@@ -57,6 +57,8 @@ model BasicAmount {
   amountHistories AmountHistory[]
 
   @@unique([childUserId, month])
+  @@index([childUserId])
+  @@index([childUserId, month])
 }
 
 model AmountHistory {
@@ -87,6 +89,8 @@ model BaseQuest {
   childUser User @relation("ChildBaseQuests", fields: [childUserId], references: [id])
 
   questHistories QuestHistory[]
+
+  @@index([childUserId])
 }
 
 model QuestHistory {
@@ -110,5 +114,8 @@ model QuestHistory {
   completedByUser User?     @relation("CompletedByUser", fields: [completedBy], references: [id])
   approvedByUser  User?     @relation("ApprovedByUser", fields: [approvedBy], references: [id])
 
-   @@unique([baseQuestId, childUserId, questDate])
+  @@unique([baseQuestId, childUserId, questDate])
+  @@index([childUserId])
+  @@index([childUserId, questDate])
+  @@index([approved, approvedAt])
 }

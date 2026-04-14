@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/prisma/supabaseCreateClient';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 type UpdateBaseQuestRequest = {
 	title?: string;
 	reward?: number;

@@ -3,6 +3,8 @@ import { supabase } from '@/lib/prisma/supabaseCreateClient';
 import { prisma } from '@/lib/prisma';
 import { utcToZonedTime } from 'date-fns-tz';
 
+export const dynamic = 'force-dynamic';
+
 // 基本金額の取得
 export async function GET(req: NextRequest) {
 	try {

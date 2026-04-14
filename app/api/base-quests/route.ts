@@ -4,6 +4,8 @@ import { supabase } from '@/lib/prisma/supabaseCreateClient';
 import { BaseQuestType } from '@/types/baseQuestType';
 import { getTodayUtc } from '@/lib/utils/getTodayUtc';
 
+export const dynamic = 'force-dynamic';
+
 // クエスト作成時の型定義
 type BaseQuestItem = {
 	title: string;

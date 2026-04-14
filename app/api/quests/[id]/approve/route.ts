@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
 
+export const dynamic = 'force-dynamic';
+
 export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
 	try {
 		const { id } = await context.params;

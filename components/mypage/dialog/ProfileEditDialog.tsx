@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase'; // パスワード変更後の再ログインに使用
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -152,6 +152,9 @@ const ProfileEditDialog = ({
 	// 削除ボタンは編集モードかつ親アカウントの場合のみ表示
 	const showDeleteButton = (mode === 'edit' || mode === 'childEdit') && user?.role === 'parent';
 
+	// 子アカウント自身が編集する場合はID/PWフィールドを非表示
+	const isChildSelfEdit = mode === 'edit' && user?.role === 'child';
+
 	useEffect(() => {
 		if (open) {
 			const values = getInitialValues(mode, defaultValues);
@@ -171,40 +174,20 @@ const ProfileEditDialog = ({
 		form.setValue('iconUrl', iconUrl, { shouldValidate: true });
 	};
 
-	// 子アカウント作成
+	// 子アカウント作成（サーバーサイドで Auth ユーザーを作成してメール確認をスキップ）
 	const handleCreate = async (data: CreateFormData) => {
 		const { emailOrId, password, name, iconUrl } = data;
 
 		// 子アカウントの場合、ユーザーIDを擬似的にメールアドレス形式にする
 		const email = emailOrId.includes('@') ? emailOrId : `${emailOrId}@moneybuta.local`;
 
-		// supabase認証でサインアップ
-		const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-			email,
-			password,
-		});
-
-		if (signUpError) {
-			console.error(signUpError);
-			toast.error(`登録に失敗しました: ${signUpError.message}`);
-			return false;
-		}
-
-		// userテーブルに登録するためにidを取得
-		const childUser = signUpData.user;
-
-		if (!childUser) {
-			toast.error('ユーザー情報が取得できませんでした');
-			return false;
-		}
-
-		// userテーブルにuser情報を登録
+		// サーバーサイドで Auth 作成 + DB 登録を一括処理
 		const res = await fetch('/api/users/signup', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
-				id: childUser.id, // Supabaseのauth.user.idをUserテーブルのidに利用
 				email,
+				password,
 				name,
 				role: 'child',
 				parentId: user!.id,
@@ -213,16 +196,18 @@ const ProfileEditDialog = ({
 		});
 
 		if (!res.ok) {
-			const errorText = await res.text(); // エラーメッセージを取得
-			console.error('APIエラー:', errorText);
-			toast.error('ユーザー情報の登録に失敗しました');
+			const errorData = await res.json().catch(() => ({}));
+			console.error('APIエラー:', errorData);
+			toast.error(`登録に失敗しました: ${errorData.error ?? 'エラーが発生しました'}`);
 			return false;
 		}
+
+		const createdChild = await res.json();
 
 		// 作成した子ユーザーの情報を親ユーザーに追加
 		const { addChild } = useAuthStore.getState();
 		addChild({
-			id: childUser.id,
+			id: createdChild.id,
 			email,
 			name,
 			role: 'child',
@@ -403,36 +388,45 @@ const ProfileEditDialog = ({
 								</FormItem>
 							)}
 						/>
-						<FormField
-							control={form.control}
-							name="emailOrId"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>ユーザーID</FormLabel>
-									<FormControl>
-										<Input placeholder="ユーザーIDを入力してください" {...field} />
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<FormField
-							control={form.control}
-							name="password"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>新しいパスワード</FormLabel>
-									<FormControl>
-										<Input
-											placeholder="新しいパスワードを入力してください"
-											{...field}
-											type="password"
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+						{!isChildSelfEdit && (
+							<FormField
+								control={form.control}
+								name="emailOrId"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>ユーザーID</FormLabel>
+										<FormControl>
+											<Input placeholder="ユーザーIDを入力してください" {...field} />
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						)}
+						{!isChildSelfEdit && (
+							<FormField
+								control={form.control}
+								name="password"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>新しいパスワード</FormLabel>
+										<FormControl>
+											<Input
+												placeholder="新しいパスワードを入力してください"
+												{...field}
+												type="password"
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						)}
+						{isChildSelfEdit && (
+							<p className="text-xs text-muted-foreground text-center">
+								ユーザーIDとパスワードのへんこうはお父さん・お母さんにおねがいしよう！
+							</p>
+						)}
 						<div className="flex items-center justify-center gap-4">
 							<Button type="submit" variant="primary">
 								{submitButtonTextMap[mode]}

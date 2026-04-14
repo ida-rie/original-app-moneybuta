@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
 
+export const dynamic = 'force-dynamic';
+
 // クエスト完了API（子が「やったよ」を押す）
 export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
 	try {

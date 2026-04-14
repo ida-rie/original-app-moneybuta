@@ -16,82 +16,80 @@ export async function GET(req: NextRequest) {
 		// --- 今日の UTC 開始／終了 を取得 ---
 		const { start, end } = getTodayUtc();
 
-		// --- 全親ユーザーを取得 ---
+		// --- 全親ユーザーを子・基本金額ごと一括取得（N+1 解消） ---
 		const parents = await prisma.user.findMany({
 			where: { role: 'parent' },
-			select: { id: true },
+			select: {
+				id: true,
+				children: {
+					where: { role: 'child' },
+					select: {
+						id: true,
+						basicAmountsAsChild: {
+							orderBy: { createdAt: 'desc' },
+							take: 1,
+							select: { id: true, basicAmount: true, childUserId: true },
+						},
+					},
+				},
+			},
 		});
 
+		// --- 全子IDを収集 ---
+		const allChildIds = parents.flatMap((p) => p.children.map((c) => c.id));
+
+		// --- 当日承認済みクエスト報酬を一括取得 ---
+		const todayQuests = await prisma.questHistory.findMany({
+			where: {
+				childUserId: { in: allChildIds },
+				approved: true,
+				approvedAt: { gte: start, lte: end },
+			},
+			select: { childUserId: true, reward: true },
+		});
+
+		// 子IDごとの報酬合計 Map
+		const rewardMap = new Map<string, number>();
+		for (const q of todayQuests) {
+			rewardMap.set(q.childUserId, (rewardMap.get(q.childUserId) ?? 0) + q.reward);
+		}
+
+		// --- 各子に AmountHistory を upsert ---
+		const upsertPromises: Promise<unknown>[] = [];
+
 		for (const parent of parents) {
-			// --- 子ユーザー一覧を取得 ---
-			const children = await prisma.user.findMany({
-				where: {
-					parentId: parent.id,
-					role: 'child',
-				},
-				select: { id: true },
-			});
-			const childIds = children.map((c) => c.id);
-
-			// --- 基本金額を一括取得 & 最新のみ Map 化 ---
-			const allBasics = await prisma.basicAmount.findMany({
-				where: { childUserId: { in: childIds } },
-				orderBy: { createdAt: 'desc' },
-			});
-			const latestBasicMap = new Map<string, (typeof allBasics)[0]>();
-			for (const b of allBasics) {
-				if (!latestBasicMap.has(b.childUserId)) {
-					latestBasicMap.set(b.childUserId, b);
-				}
-			}
-
-			// --- 当日承認済みクエスト報酬を一括取得 & 合計 Map 化 ---
-			const todayQuests = await prisma.questHistory.findMany({
-				where: {
-					childUserId: { in: childIds },
-					approved: true,
-					approvedAt: { gte: start, lte: end },
-				},
-				select: { childUserId: true, reward: true },
-			});
-			const rewardMap = new Map<string, number>();
-			for (const q of todayQuests) {
-				rewardMap.set(q.childUserId, (rewardMap.get(q.childUserId) ?? 0) + q.reward);
-			}
-
-			// --- 子ループ：upsert で重複なく create/update ---
-			for (const child of children) {
-				const basic = latestBasicMap.get(child.id);
+			for (const child of parent.children) {
+				const basic = child.basicAmountsAsChild[0];
 				if (!basic) {
 					console.log(`⚠️ スキップ: 基本金額なし childId=${child.id}`);
 					continue;
 				}
+
 				const rewardTotal = rewardMap.get(child.id) ?? 0;
 				const totalAmount = basic.basicAmount + rewardTotal;
 
-				await prisma.amountHistory.upsert({
-					where: {
-						childUserId_date: {
-							childUserId: child.id,
-							date: start,
-						},
-					},
-					create: {
-						userId: parent.id,
-						childUserId: child.id,
-						basicAmountId: basic.id,
-						totalAmount,
-						date: start,
-					},
-					update: {
-						totalAmount,
-						basicAmountId: basic.id,
-					},
-				});
-
-				console.log(`🔄 upsert: 親 ${parent.id} / 子 ${child.id} total=${totalAmount}`);
+				upsertPromises.push(
+					prisma.amountHistory
+						.upsert({
+							where: { childUserId_date: { childUserId: child.id, date: start } },
+							create: {
+								userId: parent.id,
+								childUserId: child.id,
+								basicAmountId: basic.id,
+								totalAmount,
+								date: start,
+							},
+							update: { totalAmount, basicAmountId: basic.id },
+						})
+						.then(() => {
+							console.log(`🔄 upsert: 親 ${parent.id} / 子 ${child.id} total=${totalAmount}`);
+						})
+				);
 			}
 		}
+
+		// 全 upsert を並列実行
+		await Promise.all(upsertPromises);
 
 		console.log('✅ 金額履歴作成バッチ正常終了');
 		return NextResponse.json({ message: '金額履歴作成完了' });
