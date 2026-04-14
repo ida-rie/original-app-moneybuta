@@ -8,11 +8,22 @@ declare global {
 	var __supabase: SupabaseClient | undefined;
 }
 
-export const supabase =
-	globalThis.__supabase ??
-	createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-
-// HMR（ホットリロード）時にも同じインスタンスを再利用
-if (!globalThis.__supabase) {
-	globalThis.__supabase = supabase;
+// ビルド時にモジュールが読み込まれても環境変数がなくてもクラッシュしないよう
+// 実際にアクセスされた瞬間にクライアントを生成する（遅延初期化）
+function getClient(): SupabaseClient {
+	if (!globalThis.__supabase) {
+		globalThis.__supabase = createClient(
+			process.env.SUPABASE_URL!,
+			process.env.SUPABASE_SERVICE_ROLE_KEY!
+		);
+	}
+	return globalThis.__supabase;
 }
+
+export const supabase = new Proxy({} as SupabaseClient, {
+	get(_, prop) {
+		const client = getClient();
+		const value = Reflect.get(client, prop);
+		return typeof value === 'function' ? value.bind(client) : value;
+	},
+});
