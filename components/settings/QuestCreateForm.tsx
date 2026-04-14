@@ -136,7 +136,7 @@ const QuestCreateForm = ({ mutate }: QuestCreateFormProps) => {
 									<FormControl>
 										<Input
 											type="number"
-											value={field.value}
+											value={field.value === 0 ? '' : field.value}
 											onChange={(e) => field.onChange(Number(e.target.value))}
 											className="bg-white"
 										/>

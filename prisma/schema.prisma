@@ -55,6 +55,8 @@ model BasicAmount {
   childUser User @relation("ChildBasicAmounts", fields: [childUserId], references: [id])
 
   amountHistories AmountHistory[]
+
+  @@unique([childUserId, month])
 }
 
 model AmountHistory {
@@ -70,7 +72,7 @@ model AmountHistory {
   childUser   User        @relation("ChildAmountHistories", fields: [childUserId], references: [id])
   basicAmount BasicAmount @relation(fields: [basicAmountId], references: [id])
 
-  @@unique([userId, date])
+  @@unique([childUserId, date])
 }
 
 model BaseQuest {
@@ -99,7 +101,7 @@ model QuestHistory {
   approved    Boolean   @default(false)
   approvedAt  DateTime?
   approvedBy  String?
-  questDate   DateTime?
+  questDate   DateTime
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 

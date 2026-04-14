@@ -144,7 +144,7 @@ const SignIn = () => {
 							<FormItem>
 								<FormLabel>パスワード</FormLabel>
 								<FormControl>
-									<Input placeholder="パスワードを入力してください" {...field} />
+									<Input type="password" placeholder="パスワードを入力してください" {...field} />
 								</FormControl>
 								<FormMessage />
 							</FormItem>

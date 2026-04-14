@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Settings, ClipboardCheck, ReceiptJapaneseYen } from 'lucide-react';
 import MainTitle from '@/components/layout/header/headline/MainTitle';
 import SubTitle from '@/components/layout/header/headline/SubTitle';
@@ -12,16 +14,27 @@ import { useBasicAmount } from '@/hooks/useBasicAmount';
 import { toast } from 'sonner';
 
 const Setting = () => {
+	const router = useRouter();
 	const { baseQuests, loadingQuests, mutateBaseQuests } = useBaseQuests();
 	const { basicAmount, loadingAmount, amountError, mutateBasicAmount, amountReady } =
 		useBasicAmount();
 
 	// 必要な state のみを取得
 	const user = useAuthStore((state) => state.user);
+	const isInitialized = useAuthStore((state) => state.isInitialized);
 	const selectedChild = useAuthStore((state) => state.selectedChild);
 
-	if (!user || user.role !== 'parent') {
-		return <p className="mt-8 text-center text-base">このページは親ユーザーのみ閲覧可能です</p>;
+	// 子ロールのアクセス制限: ストア復元後に role チェックしてリダイレクト
+	useEffect(() => {
+		if (!isInitialized) return;
+		if (!user || user.role !== 'parent') {
+			router.replace('/quest');
+		}
+	}, [isInitialized, user, router]);
+
+	// ストア未初期化 or 子ロールは何も描画しない（リダイレクト待ち）
+	if (!isInitialized || !user || user.role !== 'parent') {
+		return null;
 	}
 
 	// 子アカウント未選択

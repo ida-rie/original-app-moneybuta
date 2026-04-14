@@ -14,6 +14,17 @@ import {
 	FormMessage,
 } from '@/components/ui/form';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { SquarePen, Trash2, Save } from 'lucide-react';
 import { useAuthStore } from '@/lib/zustand/authStore';
 import { toast } from 'sonner';
@@ -181,23 +192,43 @@ const QuestListEditor = ({ quest, mutate }: QuestListEditorProps) => {
 											</Tooltip>
 										</TooltipProvider>
 
-										<TooltipProvider>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<button
-														type="button"
-														className="cursor-pointer"
+										<AlertDialog>
+											<TooltipProvider>
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<AlertDialogTrigger asChild>
+															<button
+																type="button"
+																className="cursor-pointer"
+																aria-label="削除"
+															>
+																<Trash2 size={23} />
+															</button>
+														</AlertDialogTrigger>
+													</TooltipTrigger>
+													<TooltipContent side="top">
+														<p>削除する</p>
+													</TooltipContent>
+												</Tooltip>
+											</TooltipProvider>
+											<AlertDialogContent>
+												<AlertDialogHeader>
+													<AlertDialogTitle>クエストを削除しますか？</AlertDialogTitle>
+													<AlertDialogDescription>
+														「{quest.title}」を削除します。この操作は取り消せません。
+													</AlertDialogDescription>
+												</AlertDialogHeader>
+												<AlertDialogFooter>
+													<AlertDialogCancel>キャンセル</AlertDialogCancel>
+													<AlertDialogAction
 														onClick={() => handleQuestDelete(quest.id)}
-														aria-label="削除"
+														className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 													>
-														<Trash2 size={23} />
-													</button>
-												</TooltipTrigger>
-												<TooltipContent side="top">
-													<p>削除する</p>
-												</TooltipContent>
-											</Tooltip>
-										</TooltipProvider>
+														削除する
+													</AlertDialogAction>
+												</AlertDialogFooter>
+											</AlertDialogContent>
+										</AlertDialog>
 									</div>
 								</div>
 							</form>

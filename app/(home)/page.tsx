@@ -3,7 +3,7 @@
 import { CurrentAmount } from '@/components/amount/CurrentAmount';
 import { IncomeChart } from '@/components/chart/IncomeChart';
 import { useAuthStore } from '@/lib/zustand/authStore';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 const Home = () => {
 	// 必要な state のみを取得
@@ -16,6 +16,10 @@ const Home = () => {
 
 	const isAllLoaded = amountLoaded && chartLoaded;
 
+	// インライン関数の都度生成を防ぎ、useEffect の無限ループを回避する
+	const handleAmountLoaded = useCallback(() => setAmountLoaded(true), []);
+	const handleChartLoaded = useCallback(() => setChartLoaded(true), []);
+
 	// 復元中、リダイレクト処理中は何も描かない
 	if (!isInitialized || !user) return null;
 
@@ -26,8 +30,8 @@ const Home = () => {
 
 	return (
 		<>
-			<CurrentAmount onLoaded={() => setAmountLoaded(true)} />
-			<IncomeChart onLoaded={() => setChartLoaded(true)} />
+			<CurrentAmount onLoaded={handleAmountLoaded} />
+			<IncomeChart onLoaded={handleChartLoaded} />
 
 			{/* ✅ ローディング中ならオーバーレイ表示 */}
 			{!isAllLoaded && (

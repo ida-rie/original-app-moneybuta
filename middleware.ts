@@ -6,7 +6,7 @@ export const middleware = (req: NextRequest) => {
 	const { pathname } = req.nextUrl;
 
 	// 認証が必要なパス一覧
-	const protectedPaths = ['/', '/mypage', '/quests', '/settings'];
+	const protectedPaths = ['/', '/mypage', '/quest', '/settings'];
 	const isProtected = protectedPaths.some((path) => pathname.startsWith(path));
 
 	// 対象外のパスならスルー
@@ -27,5 +27,5 @@ export const middleware = (req: NextRequest) => {
 
 // middlewareを有効にするパス
 export const config = {
-	matcher: ['/', '/mypage/:path*', '/quests/:path*', '/settings/:path*'], // 調整可能
+	matcher: ['/', '/mypage/:path*', '/quest/:path*', '/settings/:path*'],
 };

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/prisma/supabaseCreateClient';
 import { prisma } from '@/lib/prisma';
+import { utcToZonedTime } from 'date-fns-tz';
 
 // 基本金額の取得
 export async function GET(req: NextRequest) {
@@ -28,14 +29,14 @@ export async function GET(req: NextRequest) {
 			return NextResponse.json({ error: '認証エラー' }, { status: 401 });
 		}
 
-		// 該当のBasicAmountを取得（最新の1件）
+		// 該当のBasicAmountを取得（今月分。なければ直近の月を返す）
 		const basicAmount = await prisma.basicAmount.findFirst({
 			where: {
 				childUserId: childId,
 				userId: user.id,
 			},
 			orderBy: {
-				createdAt: 'desc',
+				month: 'desc',
 			},
 		});
 
@@ -69,20 +70,27 @@ export async function POST(req: NextRequest) {
 			return NextResponse.json({ error: '認証エラー' }, { status: 401 });
 		}
 
-		// 現在の年月（例: 2025-06）を文字列で生成
-		const now = new Date();
-		const monthDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+		// 現在の年月を JST で生成（例: 2025-06）
+		// UTC のまま計算すると JST 0〜8 時台に前月扱いになるため JST に変換する
+		const nowJst = utcToZonedTime(new Date(), 'Asia/Tokyo');
+		const monthDate = `${nowJst.getFullYear()}-${String(nowJst.getMonth() + 1).padStart(2, '0')}`;
 
-		const created = await prisma.basicAmount.create({
-			data: {
+		const upserted = await prisma.basicAmount.upsert({
+			where: {
+				childUserId_month: { childUserId, month: monthDate },
+			},
+			create: {
 				userId: user.id,
 				childUserId,
 				basicAmount,
 				month: monthDate,
 			},
+			update: {
+				basicAmount,
+			},
 		});
 
-		return NextResponse.json(created, { status: 201 });
+		return NextResponse.json(upserted, { status: 201 });
 	} catch (error) {
 		console.error('基本金額の作成エラー:', error);
 		return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

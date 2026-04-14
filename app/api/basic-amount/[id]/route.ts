@@ -3,10 +3,9 @@ import { supabase } from '@/lib/prisma/supabaseCreateClient';
 import { prisma } from '@/lib/prisma';
 
 // 基本金額の更新
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function PUT(req: NextRequest, context: any) {
+export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
 	try {
-		const { id } = context.params;
+		const { id } = await context.params;
 		const { basicAmount, month } = await req.json();
 
 		const accessToken = req.headers.get('Authorization')?.replace('Bearer ', '');
@@ -43,10 +42,9 @@ export async function PUT(req: NextRequest, context: any) {
 	}
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function DELETE(req: NextRequest, context: any) {
+export async function DELETE(req: NextRequest, context: { params: Promise<{ id: string }> }) {
 	try {
-		const { id } = context.params;
+		const { id } = await context.params;
 
 		const accessToken = req.headers.get('Authorization')?.replace('Bearer ', '');
 		if (!accessToken) {
