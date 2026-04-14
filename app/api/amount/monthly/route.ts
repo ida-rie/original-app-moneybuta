@@ -37,19 +37,6 @@ export async function GET(req: Request) {
 		return NextResponse.json({ error: '認証エラー' }, { status: 401 });
 	}
 
-	if (sessionError || !user) {
-		return NextResponse.json(
-			{
-				month,
-				basicAmount: 0,
-				rewardSum: 0,
-				totalAmount: 0,
-				breakdown: [] as BreakdownItemType[],
-			},
-			{ status: 200 }
-		);
-	}
-
 	try {
 		// 日本時間を明示的に指定してUTCに変換
 		const { start, end } = getMonthUtc(month);
@@ -84,33 +71,37 @@ export async function GET(req: Request) {
 			(groupedByDate[key] ??= []).push(q);
 		});
 
+		// 月初日（"YYYY-MM-01"）は basicAmount がある限り必ず breakdown に含める
+		const monthStart = `${month}-01`;
+		const allDates = [
+			...new Set([...(basicAmount ? [monthStart] : []), ...Object.keys(groupedByDate)]),
+		].sort();
+
 		let runningTotal = 0;
 
-		const breakdown: BreakdownItemType[] = Object.keys(groupedByDate)
-			.sort() // "YYYY-MM-DD" なら文字列ソートで OK
-			.map((date, index) => {
-				const quests = groupedByDate[date]!;
-				const dailySum = quests.reduce((s, q) => s + q.reward, 0);
+		const breakdown: BreakdownItemType[] = allDates.map((date) => {
+			const quests = groupedByDate[date] ?? [];
+			const dailySum = quests.reduce((s, q) => s + q.reward, 0);
 
-				// 日別アイテム
-				const items = quests.map((q) => ({
-					content: q.title,
-					amount: q.reward,
-				}));
+			// 日別アイテム
+			const items = quests.map((q) => ({
+				content: q.title,
+				amount: q.reward,
+			}));
 
-				// 初日に基本金額を加算
-				if (index === 0 && basicAmount) {
-					items.unshift({
-						content: '基本金額',
-						amount: basicAmount.basicAmount,
-					});
-					runningTotal += basicAmount.basicAmount;
-				}
+			// 月初に基本金額を加算
+			if (date === monthStart && basicAmount) {
+				items.unshift({
+					content: '基本金額',
+					amount: basicAmount.basicAmount,
+				});
+				runningTotal += basicAmount.basicAmount;
+			}
 
-				runningTotal += dailySum;
+			runningTotal += dailySum;
 
-				return { date, total: runningTotal, items };
-			});
+			return { date, total: runningTotal, items };
+		});
 
 		const total = breakdown.length
 			? breakdown[breakdown.length - 1].total

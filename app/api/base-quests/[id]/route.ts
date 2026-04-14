@@ -9,10 +9,9 @@ type UpdateBaseQuestRequest = {
 };
 
 // 基本クエストの更新
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function PUT(req: NextRequest, context: any) {
+export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
 	try {
-		const { id } = context.params;
+		const { id } = await context.params;
 		const body: UpdateBaseQuestRequest = await req.json();
 
 		const accessToken = req.headers.get('Authorization')?.replace('Bearer ', '');
@@ -58,10 +57,9 @@ export async function PUT(req: NextRequest, context: any) {
 }
 
 // 基本クエストの削除
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function DELETE(req: NextRequest, context: any) {
+export async function DELETE(req: NextRequest, context: { params: Promise<{ id: string }> }) {
 	try {
-		const { id } = context.params;
+		const { id } = await context.params;
 
 		// 認証トークン取得
 		const accessToken = req.headers.get('Authorization')?.replace('Bearer ', '');

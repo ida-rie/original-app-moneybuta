@@ -44,33 +44,27 @@ export async function GET(req: NextRequest) {
 				let count = 0;
 
 				for (const base of baseQuests) {
-					const existing = await prisma.questHistory.findFirst({
+					// findFirst + create/update の2ステップを upsert で1ステップに統合
+					await prisma.questHistory.upsert({
 						where: {
-							baseQuestId: base.id,
-							childUserId: child.id,
-							questDate: today,
-						},
-					});
-
-					if (existing) {
-						await prisma.questHistory.update({
-							where: { id: existing.id },
-							data: {
-								title: base.title,
-								reward: base.reward,
-							},
-						});
-					} else {
-						await prisma.questHistory.create({
-							data: {
+							baseQuestId_childUserId_questDate: {
 								baseQuestId: base.id,
 								childUserId: child.id,
-								title: base.title,
-								reward: base.reward,
 								questDate: today,
 							},
-						});
-					}
+						},
+						create: {
+							baseQuestId: base.id,
+							childUserId: child.id,
+							title: base.title,
+							reward: base.reward,
+							questDate: today,
+						},
+						update: {
+							title: base.title,
+							reward: base.reward,
+						},
+					});
 
 					count++;
 				}

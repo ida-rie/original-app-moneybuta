@@ -11,10 +11,9 @@ type updateUserRequest = {
 };
 
 // ユーザー情報の取得
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function GET(_req: NextRequest, context: any) {
+export async function GET(_req: NextRequest, context: { params: Promise<{ id: string }> }) {
 	try {
-		const { id } = context.params;
+		const { id } = await context.params;
 		const user = await prisma.user.findUnique({
 			where: { id },
 			include: {
@@ -35,10 +34,9 @@ export async function GET(_req: NextRequest, context: any) {
 }
 
 // ユーザー情報の更新
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function PUT(req: NextRequest, context: any) {
+export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
 	try {
-		const { id } = context.params;
+		const { id } = await context.params;
 		const body: updateUserRequest = await req.json();
 
 		// トークンを確認
@@ -122,10 +120,9 @@ export async function PUT(req: NextRequest, context: any) {
 }
 
 // ユーザー情報の削除
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function DELETE(req: NextRequest, context: any) {
+export async function DELETE(req: NextRequest, context: { params: Promise<{ id: string }> }) {
 	try {
-		const { id } = context.params;
+		const { id } = await context.params;
 
 		const accessToken = req.headers.get('Authorization')?.replace('Bearer ', '');
 		if (!accessToken) {

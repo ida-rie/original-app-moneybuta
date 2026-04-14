@@ -141,7 +141,7 @@ const BasicAmountEditor = ({ basicAmount, mutate }: BasicAmountProps) => {
 										<FormControl>
 											<Input
 												type="number"
-												value={field.value}
+												value={field.value === 0 ? '' : field.value}
 												onChange={(e) => field.onChange(Number(e.target.value))}
 											/>
 										</FormControl>

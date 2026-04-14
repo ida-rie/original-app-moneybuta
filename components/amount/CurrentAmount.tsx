@@ -12,7 +12,7 @@ export const CurrentAmount = ({ onLoaded }: onLoadedType) => {
 	const user = useAuthStore((state) => state.user);
 	const selectedChild = useAuthStore((state) => state.selectedChild);
 	const [amount, setAmount] = useState<number | null>(0);
-	const [diff, setDiff] = useState<number>(0);
+	const [diff, setDiff] = useState<number | null>(null);
 
 	useEffect(() => {
 		const fetchAmount = async () => {
@@ -27,6 +27,9 @@ export const CurrentAmount = ({ onLoaded }: onLoadedType) => {
 			const today = new Date();
 			const month = format(today, 'yyyy-MM');
 			const todayStr = format(today, 'yyyy-MM-dd');
+			const yesterday = new Date(today);
+			yesterday.setDate(today.getDate() - 1);
+			const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
 
 			try {
 				const token = sessionStorage.getItem('access_token');
@@ -49,22 +52,26 @@ export const CurrentAmount = ({ onLoaded }: onLoadedType) => {
 
 				if (!json || !Array.isArray(json.breakdown)) {
 					setAmount(json.totalAmount ?? 0);
-					setDiff(0);
+					setDiff(null);
 					onLoaded();
 					return;
 				}
 
 				const todayEntry = json.breakdown?.find((entry) => entry.date === todayStr);
+				const yesterdayEntry = json.breakdown?.find((entry) => entry.date === yesterdayStr);
 				const todayTotal = todayEntry?.total ?? json.totalAmount ?? 0;
-				const todayRewardTotal =
-					todayEntry?.items?.reduce((sum, item) => sum + item.amount, 0) ?? 0;
+				// 昨日のデータがない場合（月初・初日など）は diff を null にして非表示にする
+				const diffAmount =
+					todayEntry && yesterdayEntry
+						? todayTotal - yesterdayEntry.total
+						: null;
 
 				setAmount(todayTotal);
-				setDiff(todayRewardTotal);
+				setDiff(diffAmount);
 			} catch (error) {
 				console.error('金額取得エラー:', error);
 				setAmount(0);
-				setDiff(0);
+				setDiff(null);
 			} finally {
 				onLoaded();
 			}
@@ -79,9 +86,11 @@ export const CurrentAmount = ({ onLoaded }: onLoadedType) => {
 			<div>
 				<p className="mb-4">こん月のおこづかいの金がく</p>
 				<p className="text-5xl mb-2 quicksand">¥{amount}</p>
-				<p>
-					きのうより <span className="quicksand">＋{diff}</span>円
-				</p>
+				{diff !== null && (
+					<p>
+						きのうより <span className="quicksand">＋{diff}</span>円
+					</p>
+				)}
 			</div>
 		</div>
 	);

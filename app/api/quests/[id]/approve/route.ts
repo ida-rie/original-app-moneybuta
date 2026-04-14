@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function PUT(req: NextRequest, context: any) {
+export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
 	try {
-		const { id } = context.params;
+		const { id } = await context.params;
 
 		// 認証トークン取得
 		const accessToken = req.headers.get('Authorization')?.replace('Bearer ', '');
@@ -21,6 +20,18 @@ export async function PUT(req: NextRequest, context: any) {
 
 		if (authError || !user) {
 			return NextResponse.json({ error: 'ユーザー認証に失敗しました' }, { status: 401 });
+		}
+
+		// クエストを取得して権限チェック
+		const quest = await prisma.questHistory.findUnique({
+			where: { id },
+			include: { childUser: { select: { parentId: true } } },
+		});
+		if (!quest) {
+			return NextResponse.json({ error: 'クエストが見つかりません' }, { status: 404 });
+		}
+		if (quest.childUser.parentId !== user.id) {
+			return NextResponse.json({ error: '権限がありません' }, { status: 403 });
 		}
 
 		// クエストを承認状態にする

@@ -71,8 +71,8 @@ export async function GET(req: NextRequest) {
 
 				await prisma.amountHistory.upsert({
 					where: {
-						userId_date: {
-							userId: parent.id,
+						childUserId_date: {
+							childUserId: child.id,
 							date: start,
 						},
 					},
@@ -85,7 +85,6 @@ export async function GET(req: NextRequest) {
 					},
 					update: {
 						totalAmount,
-						childUserId: child.id,
 						basicAmountId: basic.id,
 					},
 				});

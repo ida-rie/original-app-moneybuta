@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/prisma/supabaseCreateClient';
 import { BaseQuestType } from '@/types/baseQuestType';
+import { getTodayUtc } from '@/lib/utils/getTodayUtc';
 
 // クエスト作成時の型定義
 type BaseQuestItem = {
@@ -71,8 +72,7 @@ export async function POST(req: NextRequest) {
 			return NextResponse.json({ error: '不正なリクエスト形式です' }, { status: 400 });
 		}
 
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
+		const { start: todayStart } = getTodayUtc();
 
 		let createdCount = 0;
 
@@ -86,18 +86,24 @@ export async function POST(req: NextRequest) {
 				},
 			});
 
-			await prisma.questHistory.create({
-				data: {
+			await prisma.questHistory.upsert({
+				where: {
+					baseQuestId_childUserId_questDate: {
+						baseQuestId: base.id,
+						childUserId,
+						questDate: todayStart,
+					},
+				},
+				create: {
 					baseQuestId: base.id,
 					childUserId,
 					title: base.title,
 					reward: base.reward,
 					completed: false,
 					approved: false,
-					// createdAt: new Date(),
-					questDate: new Date(),
-					// updatedAt: new Date(),
+					questDate: todayStart,
 				},
+				update: {},
 			});
 
 			createdCount++;
