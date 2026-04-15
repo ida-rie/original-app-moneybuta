@@ -11,24 +11,27 @@ import { supabase } from '@/lib/supabase';
  * Cookie と sessionStorage を最新のトークンに差し替える。
  */
 const RestoreUserFromSession = () => {
-	const setUser = useAuthStore((state) => state.setUser);
+	const setUserAndInitialize = useAuthStore((state) => state.setUserAndInitialize);
 	const setIsInitialized = useAuthStore((state) => state.setIsInitialized);
 
 	useEffect(() => {
 		if (typeof window === 'undefined') return;
 
 		// sessionStorage からユーザー情報を復元
+		// user と isInitialized を1回の set() で同時更新することで、
+		// re-render を2回→1回に抑制し SWR の重複リクエストを防ぐ
 		const stored = sessionStorage.getItem('user');
 		if (stored) {
 			try {
 				const parsed = JSON.parse(stored);
-				setUser(parsed);
+				setUserAndInitialize(parsed); // user + isInitialized を同時更新（1 re-render）
 			} catch (error) {
 				console.error('ユーザー情報の復元に失敗しました:', error);
+				setIsInitialized(true); // パース失敗時はフラグだけ立てる
 			}
+		} else {
+			setIsInitialized(true); // ユーザーなし（未ログイン）の場合もフラグを立てる
 		}
-
-		setIsInitialized(true);
 
 		// Supabase のトークン自動更新を監視し、Cookie・sessionStorage を更新する
 		const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -43,7 +46,7 @@ const RestoreUserFromSession = () => {
 		return () => {
 			subscription.unsubscribe();
 		};
-	}, [setUser, setIsInitialized]);
+	}, [setUserAndInitialize, setIsInitialized]);
 
 	return null;
 };

@@ -29,6 +29,8 @@ type AuthState = {
 
 	user: User | null;
 	setUser: (user: User | null) => void;
+	/** user と isInitialized を1回の set() で同時更新し、re-render を1回に抑制する */
+	setUserAndInitialize: (user: User | null) => void;
 	clearUser: () => void;
 
 	addChild: (child: ChildUser) => void;
@@ -50,6 +52,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 	// —— ユーザー設定 ——
 	setUser: (user) => {
 		set({ user });
+		if (typeof window !== 'undefined') {
+			sessionStorage.setItem('user', JSON.stringify(user));
+		}
+	},
+
+	// —— user + isInitialized を1回の set() で同時更新（re-render を1回に抑制）——
+	setUserAndInitialize: (user) => {
+		set({ user, isInitialized: true });
 		if (typeof window !== 'undefined') {
 			sessionStorage.setItem('user', JSON.stringify(user));
 		}
