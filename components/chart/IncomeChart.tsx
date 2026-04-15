@@ -8,8 +8,8 @@ import { ChartGraph } from '../chart/ChartGraph';
 import { ChartIncomeHistory } from './ChartIncomeHistory';
 import { useAuthStore } from '@/lib/zustand/authStore';
 import { generateRecentMonths } from '@/lib/utils/generateRecentMonths';
-import { MonthlyAmountType } from '@/types/MonthlyAmountType';
 import { onLoadedType } from '@/types/onLoadedType';
+import { useMonthlyAmount } from '@/hooks/useMonthlyAmount';
 import Image from 'next/image';
 
 export const IncomeChart = ({ onLoaded }: onLoadedType) => {
@@ -18,56 +18,25 @@ export const IncomeChart = ({ onLoaded }: onLoadedType) => {
 
 	const months = generateRecentMonths(3);
 	const [selectedMonth, setSelectedMonth] = useState(months[0]);
-	const [data, setData] = useState<MonthlyAmountType | null>(null);
-	const [isLoading, setIsLoading] = useState(true);
 
+	const childId = user?.role === 'child' ? user.id : selectedChild?.id;
 	const { width } = useWindowSize();
 	const interval = width <= 768 ? 2 : 0;
 
+	// SWR でデータ取得（CurrentAmount が当月を取得済みならキャッシュを共有）
+	const { data, isLoading } = useMonthlyAmount(childId, selectedMonth);
+
+	// ローディング完了を親に通知（既存の onLoaded 互換性維持）
 	useEffect(() => {
-		const fetchMonthlyAmount = async () => {
-			setIsLoading(true);
-			const childId = user?.role === 'child' ? user.id : selectedChild?.id;
+		if (!isLoading) {
+			onLoaded?.();
+		}
+	}, [isLoading, onLoaded]);
 
-			if (!childId) {
-				setIsLoading(false);
-				onLoaded?.();
-				return;
-			}
-
-			try {
-				const res = await fetch(`/api/amount/monthly?childId=${childId}&month=${selectedMonth}`, {
-					headers: {
-						'Content-Type': 'application/json',
-						'Authorization': `Bearer ${sessionStorage.getItem('access_token')}`,
-					},
-				});
-
-				if (!res.ok) {
-					const error = await res.json();
-					throw new Error(error.message || 'APIエラー');
-				}
-
-				const json: MonthlyAmountType = await res.json();
-				setData(json);
-			} catch (err) {
-				console.error('月別データ取得エラー:', err);
-			} finally {
-				setIsLoading(false);
-				onLoaded?.();
-			}
-		};
-
-		fetchMonthlyAmount();
-	}, [selectedMonth, selectedChild, user, onLoaded]);
-
-	const graphData = (() => {
-		if (!data) return [];
-		return data.breakdown.map((d) => ({
-			date: d.date,
-			amount: d.total,
-		}));
-	})();
+	const graphData = data?.breakdown?.map((d) => ({
+		date: d.date,
+		amount: d.total,
+	})) ?? [];
 
 	return (
 		<div>
