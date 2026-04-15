@@ -1,16 +1,27 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useWindowSize } from '@/hooks/useWindowSize';
 import { ChartHeader } from '../chart/ChartHeader';
-import { ChartGraph } from '../chart/ChartGraph';
 import { ChartIncomeHistory } from './ChartIncomeHistory';
 import { useAuthStore } from '@/lib/zustand/authStore';
 import { generateRecentMonths } from '@/lib/utils/generateRecentMonths';
 import { onLoadedType } from '@/types/onLoadedType';
 import { useMonthlyAmount } from '@/hooks/useMonthlyAmount';
-import Image from 'next/image';
+
+// Recharts（~450KB）をページ初期ロードから分離し、グラフ表示時のみ読み込む
+const ChartGraph = dynamic(
+	() => import('../chart/ChartGraph').then((mod) => mod.ChartGraph),
+	{
+		ssr: false, // Recharts はブラウザ API に依存するため SSR 無効
+		loading: () => (
+			<div className="animate-pulse h-[300px] bg-gray-200 rounded-lg" />
+		),
+	}
+);
 
 export const IncomeChart = ({ onLoaded }: onLoadedType) => {
 	const user = useAuthStore((state) => state.user);
