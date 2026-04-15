@@ -27,6 +27,8 @@ model User {
   parent   User?  @relation("ParentChild", fields: [parentId], references: [id])
   children User[] @relation("ParentChild")
 
+  @@index([parentId]) // 子アカウント一覧取得に使用
+
   // 関連リレーション
   basicAmountsAsParent BasicAmount[] @relation("ParentBasicAmounts")
   basicAmountsAsChild  BasicAmount[] @relation("ChildBasicAmounts")
@@ -76,6 +78,8 @@ model AmountHistory {
   basicAmount BasicAmount @relation(fields: [basicAmountId], references: [id])
 
   @@unique([childUserId, date])
+  @@index([childUserId])    // 月別金額集計クエリに使用
+  @@index([basicAmountId])  // BasicAmountとのJOINに使用
 }
 
 model BaseQuest {
