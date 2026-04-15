@@ -13,39 +13,38 @@ export async function GET(req: NextRequest) {
 	}
 
 	try {
-		// 日本時間を明示的に指定してUTCに変換
 		const { start } = getTodayUtc();
 		const today = start;
 
+		// 【変更前】親→子→クエストと3段階のネストループで N+1 が発生していた
+		// 【変更後】1クエリで親・子・基本クエストを一括取得
 		const parents = await prisma.user.findMany({
 			where: { role: 'parent' },
-			select: { id: true },
+			select: {
+				id: true,
+				children: {
+					where: { role: 'child' },
+					select: {
+						id: true,
+						baseQuestsAsChild: {
+							select: { id: true, title: true, reward: true },
+						},
+					},
+				},
+			},
 		});
 
-		for (const parent of parents) {
-			const children = await prisma.user.findMany({
-				where: {
-					parentId: parent.id,
-					role: 'child',
-				},
-				select: { id: true },
-			});
-
-			for (const child of children) {
-				const baseQuests = await prisma.baseQuest.findMany({
-					where: { childUserId: child.id },
-				});
-
-				if (baseQuests.length === 0) {
+		// 全upsertをフラットなリストに展開し Promise.all で並列実行
+		// ※ Connection Pooler（最大15接続）設定済みのため、小規模データでは問題なし
+		const upsertPromises = parents.flatMap((parent) =>
+			parent.children.flatMap((child) => {
+				if (child.baseQuestsAsChild.length === 0) {
 					console.log(`⚠️ スキップ: 基本クエストなし childId=${child.id}`);
-					continue;
+					return [];
 				}
 
-				let count = 0;
-
-				for (const base of baseQuests) {
-					// findFirst + create/update の2ステップを upsert で1ステップに統合
-					await prisma.questHistory.upsert({
+				return child.baseQuestsAsChild.map((base) =>
+					prisma.questHistory.upsert({
 						where: {
 							baseQuestId_childUserId_questDate: {
 								baseQuestId: base.id,
@@ -64,17 +63,15 @@ export async function GET(req: NextRequest) {
 							title: base.title,
 							reward: base.reward,
 						},
-					});
+					})
+				);
+			})
+		);
 
-					count++;
-				}
+		const results = await Promise.all(upsertPromises);
 
-				console.log(`✅ 子 ${child.id}: ${count} 件のクエスト履歴を作成・更新`);
-			}
-		}
-
-		console.log('✅ クエスト履歴作成バッチ正常終了');
-		return NextResponse.json({ message: 'クエスト履歴作成完了' });
+		console.log(`✅ クエスト履歴作成バッチ正常終了: ${results.length} 件処理`);
+		return NextResponse.json({ message: 'クエスト履歴作成完了', count: results.length });
 	} catch (error) {
 		console.error('❌ クエスト履歴作成エラー:', error);
 		return NextResponse.json({ error: 'サーバーエラー' }, { status: 500 });
