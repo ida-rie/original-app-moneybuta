@@ -19,7 +19,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
-import { useAuthStore } from '@/lib/zustand/authStore';
+import { ChildUser, ParentUser, useAuthStore } from '@/lib/zustand/authStore';
+import { apiJson } from '@/lib/client/apiClient';
 
 type Mode = 'create' | 'edit' | 'childEdit';
 
@@ -67,6 +68,7 @@ const getSchemaByMode = (mode: Mode) => {
 
 type CreateFormData = z.infer<typeof createUserSchema>;
 type EditFormData = z.infer<typeof editUserSchema>;
+type StoreUser = ParentUser | ChildUser;
 
 const getInitialValues = (
 	mode: Mode,
@@ -134,8 +136,6 @@ const ProfileEditDialog = ({
 	// 必要な state のみを取得
 	const user = useAuthStore((state) => state.user);
 
-	const token = sessionStorage.getItem('access_token');
-
 	// モードによってタイトルとボタン文言を変更
 	const dialogTitleMap: Record<Mode, string> = {
 		create: '子どもアカウント追加',
@@ -182,41 +182,41 @@ const ProfileEditDialog = ({
 		const email = emailOrId.includes('@') ? emailOrId : `${emailOrId}@moneybuta.local`;
 
 		// サーバーサイドで Auth 作成 + DB 登録を一括処理
-		const res = await fetch('/api/users/signup', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
+		try {
+			const createdChild = await apiJson<{
+				id: string;
+			}>('/api/users/signup', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					email,
+					password,
+					name,
+					role: 'child',
+					parentId: user!.id,
+					iconUrl: iconUrl ?? DEFAULT_ICON,
+				}),
+			});
+
+			// 作成した子ユーザーの情報を親ユーザーに追加
+			const { addChild } = useAuthStore.getState();
+			addChild({
+				id: createdChild.id,
 				email,
-				password,
 				name,
 				role: 'child',
-				parentId: user!.id,
-				iconUrl: iconUrl ?? DEFAULT_ICON,
-			}),
-		});
+				iconUrl: selectedIcon ?? null,
+			});
 
-		if (!res.ok) {
-			const errorData = await res.json().catch(() => ({}));
-			console.error('APIエラー:', errorData);
-			toast.error(`登録に失敗しました: ${errorData.error ?? 'エラーが発生しました'}`);
+			toast.success('子どもユーザーを追加しました🐷');
+
+			return true;
+		} catch (error) {
+			console.error('APIエラー:', error);
+			const message = error instanceof Error ? error.message : 'エラーが発生しました';
+			toast.error(`登録に失敗しました: ${message}`);
 			return false;
 		}
-
-		const createdChild = await res.json();
-
-		// 作成した子ユーザーの情報を親ユーザーに追加
-		const { addChild } = useAuthStore.getState();
-		addChild({
-			id: createdChild.id,
-			email,
-			name,
-			role: 'child',
-			iconUrl: selectedIcon ?? null,
-		});
-
-		toast.success('子どもユーザーを追加しました🐷');
-
-		return true;
 	};
 
 	// ユーザー情報を編集
@@ -241,24 +241,20 @@ const ProfileEditDialog = ({
 		if (selectedIcon?.trim()) updateData.iconUrl = selectedIcon.trim();
 
 		// user情報を更新
-		const res = await fetch(`/api/users/${targetUserId ?? user?.id}`, {
-			method: 'PUT',
-			headers: {
-				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${token}`,
-			},
-			body: JSON.stringify(updateData),
-		});
-
-		if (!res.ok) {
-			const errorText = await res.text(); // エラーメッセージを取得
-			console.error('APIエラー:', errorText);
+		let updatedUser: StoreUser;
+		try {
+			updatedUser = await apiJson<StoreUser>(`/api/users/${targetUserId ?? user?.id}`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(updateData),
+			});
+		} catch (error) {
+			console.error('APIエラー:', error);
 			toast.error('ユーザー情報の更新に失敗しました');
 			return false;
 		}
-
-		// 更新されたユーザー情報を取得
-		const updatedUser = await res.json();
 
 		// 自分自身ならセッション再取得
 		if (user?.id === targetUserId) {
@@ -297,6 +293,10 @@ const ProfileEditDialog = ({
 				setUser(updatedUser); // 親自身
 			} else {
 				// 子アカウント編集時
+				if (updatedUser.role !== 'child') {
+					toast.error('子どもユーザー情報の形式が不正です');
+					return false;
+				}
 				const updatedChildren =
 					user.children?.map((c) => (c.id === updatedUser.id ? updatedUser : c)) ?? [];
 				setUser({ ...user, children: updatedChildren });

@@ -17,6 +17,7 @@ import { BasicAmountType } from '@/types/basicAmountType';
 import { useAuthStore } from '@/lib/zustand/authStore';
 import { KeyedMutator } from 'swr';
 import { toast } from 'sonner';
+import { apiJson, apiRequest } from '@/lib/client/apiClient';
 
 type BasicAmountProps = {
 	basicAmount: BasicAmountType | null;
@@ -33,9 +34,6 @@ const basinAmontSchema = z.object({
 const BasicAmountEditor = ({ basicAmount, mutate }: BasicAmountProps) => {
 	const [isEdting, setIsEditing] = useState(!basicAmount);
 
-	// トークンの取得
-	const accessToken = sessionStorage.getItem('access_token');
-
 	// 必要な state のみを取得
 	const user = useAuthStore((state) => state.user);
 	const selectedChild = useAuthStore((state) => state.selectedChild);
@@ -51,15 +49,9 @@ const BasicAmountEditor = ({ basicAmount, mutate }: BasicAmountProps) => {
 	// フォーム送信処理（更新）
 	const onSubmit = async (data: z.infer<typeof basinAmontSchema>) => {
 		try {
-			const accessToken = sessionStorage.getItem('access_token');
-			if (!accessToken) {
-				console.error('トークンがありません');
-				return;
-			}
-
 			const childUserId = useAuthStore.getState().selectedChild?.id;
 			if (!childUserId) {
-				console.error('子アカウントが選択されていません');
+				toast.error('子アカウントが選択されていません');
 				return;
 			}
 
@@ -67,11 +59,10 @@ const BasicAmountEditor = ({ basicAmount, mutate }: BasicAmountProps) => {
 
 			const method = basicAmount ? 'PUT' : 'POST';
 
-			const res = await fetch(endpoint, {
+			await apiJson(endpoint, {
 				method,
 				headers: {
 					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${accessToken}`,
 				},
 				body: JSON.stringify({
 					basicAmount: data.basicAmount,
@@ -79,49 +70,39 @@ const BasicAmountEditor = ({ basicAmount, mutate }: BasicAmountProps) => {
 				}),
 			});
 
-			if (!res.ok) {
-				const error = await res.json();
-				throw new Error(error.message || '保存に失敗しました');
-			}
-
 			await mutate(); // 再取得
 			setIsEditing(false);
+			toast.success('基本金額を保存しました');
 		} catch (err) {
 			console.error('保存エラー:', err);
+			toast.error('基本金額の保存に失敗しました');
 		}
 	};
 
 	// 基本金額の削除
 	const handleAmountDelete = async (id: string) => {
 		try {
-			if (!accessToken) {
-				toast('アクセストークンが見つかりません');
+			if (!user || !selectedChild) {
+				toast.error('ユーザー情報が不正です');
 				return;
 			}
 
-			if (!user || !selectedChild) {
-				toast('ユーザー情報が不正です');
-				return;
-			}
-			const res = await fetch(`/api/basic-amount/${id}`, {
+			const res = await apiRequest(`/api/basic-amount/${id}`, {
 				method: 'DELETE',
-				headers: {
-					Authorization: `Bearer ${accessToken}`,
-				},
 			});
 
 			if (!res.ok) {
 				const error = await res.json();
-				toast(`基本金額の削除に失敗しました: ${error.error}`);
+				toast.error(`基本金額の削除に失敗しました: ${error.error}`);
 				return;
 			}
 
-			toast('基本金額を削除しました');
+			toast.success('基本金額を削除しました');
 			await mutate(); // 基本金額を再取得
 			form.reset();
 		} catch (error) {
 			console.error('削除エラー:', error);
-			toast('予期せぬエラーが発生しました');
+			toast.error('予期せぬエラーが発生しました');
 		}
 	};
 

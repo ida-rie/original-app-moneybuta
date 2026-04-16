@@ -2,18 +2,14 @@
 
 import useSWR from 'swr';
 import { MonthlyAmountType } from '@/types/MonthlyAmountType';
+import { apiJson } from '@/lib/client/apiClient';
 
 // 認証ヘッダー付きfetcher（月別金額APIはトークン必須）
 const fetcher = (url: string) => {
-	const token = sessionStorage.getItem('access_token');
-	return fetch(url, {
+	return apiJson<MonthlyAmountType>(url, {
 		headers: {
 			'Content-Type': 'application/json',
-			Authorization: `Bearer ${token}`,
 		},
-	}).then((res) => {
-		if (!res.ok) throw new Error('月別金額の取得に失敗しました');
-		return res.json();
 	});
 };
 

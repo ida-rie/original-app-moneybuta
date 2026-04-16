@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/prisma/supabaseCreateClient';
+import { requireAuth } from '@/lib/server/requireAuth';
 
 type CreateUserRequest = {
 	id?: string; // 親アカウントはクライアントで Auth 作成済みのため id を渡す
@@ -18,9 +19,29 @@ export async function POST(req: Request) {
 		const body: CreateUserRequest = await req.json();
 
 		let userId = body.id;
+		let createdChildAuthUserId: string | null = null;
 
 		// 子アカウントはサーバーサイドで Supabase Auth ユーザーを作成（メール確認不要）
 		if (body.role === 'child') {
+			const { user, errorResponse } = await requireAuth(req);
+			if (errorResponse) return errorResponse;
+
+			const requestingUser = await prisma.user.findUnique({
+				where: { id: user.id },
+				select: { id: true, role: true },
+			});
+
+			if (!requestingUser || requestingUser.role !== 'parent') {
+				return NextResponse.json(
+					{ error: '親アカウントのみ子アカウントを作成できます' },
+					{ status: 403 }
+				);
+			}
+
+			if (!body.parentId || body.parentId !== user.id) {
+				return NextResponse.json({ error: 'parentId が不正です' }, { status: 403 });
+			}
+
 			if (!body.password) {
 				return NextResponse.json({ error: 'パスワードは必須です' }, { status: 400 });
 			}
@@ -41,24 +62,37 @@ export async function POST(req: Request) {
 			}
 
 			userId = authData.user.id;
+			createdChildAuthUserId = authData.user.id;
 		}
 
 		if (!userId) {
 			return NextResponse.json({ error: 'ユーザーIDが取得できませんでした' }, { status: 400 });
 		}
 
-		const user = await prisma.user.create({
-			data: {
-				id: userId,
-				email: body.email,
-				name: body.name,
-				role: body.role,
-				parentId: body.parentId ?? null,
-				iconUrl: body.iconUrl ?? null,
-			},
-		});
+		try {
+			const user = await prisma.user.create({
+				data: {
+					id: userId,
+					email: body.email,
+					name: body.name,
+					role: body.role,
+					parentId: body.parentId ?? null,
+					iconUrl: body.iconUrl ?? null,
+				},
+			});
 
-		return NextResponse.json(user, { status: 201 });
+			return NextResponse.json(user, { status: 201 });
+		} catch (dbError) {
+			if (createdChildAuthUserId) {
+				const { error: rollbackError } = await supabase.auth.admin.deleteUser(createdChildAuthUserId);
+
+				if (rollbackError) {
+					console.error('子アカウント Auth ロールバック失敗:', rollbackError);
+				}
+			}
+
+			throw dbError;
+		}
 	} catch (error) {
 		console.error('ユーザー作成エラー:', error);
 		return NextResponse.json({ error: 'ユーザーの作成に失敗しました' }, { status: 500 });

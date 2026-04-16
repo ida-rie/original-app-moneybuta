@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/prisma/supabaseCreateClient';
 import { prisma } from '@/lib/prisma';
 import { utcToZonedTime } from 'date-fns-tz';
+import { requireAuth } from '@/lib/server/requireAuth';
+import { canAccessChild, canManageChildAsParent } from '@/lib/server/childAccess';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,21 +16,8 @@ export async function GET(req: NextRequest) {
 			return NextResponse.json({ error: 'childIdが必要です' }, { status: 400 });
 		}
 
-		// トークン取得
-		const accessToken = req.headers.get('Authorization')?.replace('Bearer ', '');
-		if (!accessToken) {
-			return NextResponse.json({ error: '認証情報がありません' }, { status: 401 });
-		}
-
-		// ユーザー取得
-		const {
-			data: { user },
-			error: sessionError,
-		} = await supabase.auth.getUser(accessToken);
-
-		if (sessionError || !user) {
-			return NextResponse.json({ error: '認証エラー' }, { status: 401 });
-		}
+		const { user, errorResponse } = await requireAuth(req);
+		if (errorResponse) return errorResponse;
 
 		// 該当のBasicAmountを取得（今月分。なければ直近の月を返す）
 		const basicAmount = await prisma.basicAmount.findFirst({
@@ -58,18 +46,12 @@ export async function POST(req: NextRequest) {
 	try {
 		const { childUserId, basicAmount } = await req.json();
 
-		const accessToken = req.headers.get('Authorization')?.replace('Bearer ', '');
-		if (!accessToken) {
-			return NextResponse.json({ error: '認証情報がありません' }, { status: 401 });
-		}
+		const { user, errorResponse } = await requireAuth(req);
+		if (errorResponse) return errorResponse;
 
-		const {
-			data: { user },
-			error: sessionError,
-		} = await supabase.auth.getUser(accessToken);
-
-		if (sessionError || !user) {
-			return NextResponse.json({ error: '認証エラー' }, { status: 401 });
+		const hasAccess = await canManageChildAsParent(user, childUserId);
+		if (!hasAccess) {
+			return NextResponse.json({ error: '権限がありません' }, { status: 403 });
 		}
 
 		// 現在の年月を JST で生成（例: 2025-06）

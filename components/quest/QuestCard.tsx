@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { UserType } from '@/types/userType';
 import { toast } from 'sonner';
 import { useQuestList } from '@/hooks/useQuestList';
+import { apiRequest } from '@/lib/client/apiClient';
 
 type QuestCardProps = {
 	user: UserType;
@@ -16,48 +17,56 @@ const QuestCard = ({ user }: QuestCardProps) => {
 
 	const handleClickComplete = async (questId: string) => {
 		setCompleteLoading((prev) => ({ ...prev, [questId]: true }));
-		const token = sessionStorage.getItem('access_token');
-		const res = await fetch(`/api/quests/${questId}/complete`, {
-			method: 'PUT',
-			headers: {
-				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${token}`,
-			},
-		});
+		try {
+			const res = await apiRequest(`/api/quests/${questId}/complete`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			});
 
-		if (!res.ok) {
-			const errorText = await res.text(); // エラーメッセージを取得
-			console.error('APIエラー:', errorText);
+			if (!res.ok) {
+				const errorText = await res.text();
+				console.error('APIエラー:', errorText);
+				toast.error('クエストの完了に失敗しました');
+				return;
+			}
+
+			toast.success('クエストをかんりょうしました！');
+			await mutateQuests();
+		} catch (error) {
+			console.error('APIエラー:', error);
 			toast.error('クエストの完了に失敗しました');
-			return;
+		} finally {
+			setCompleteLoading((prev) => ({ ...prev, [questId]: false }));
 		}
-
-		toast.success('クエストをかんりょうしました！');
-		await mutateQuests();
-		setCompleteLoading((prev) => ({ ...prev, [questId]: false }));
 	};
 
 	const handleClickApprove = async (questId: string) => {
 		setApproveLoading((prev) => ({ ...prev, [questId]: true }));
-		const token = sessionStorage.getItem('access_token');
-		const res = await fetch(`/api/quests/${questId}/approve`, {
-			method: 'PUT',
-			headers: {
-				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${token}`,
-			},
-		});
+		try {
+			const res = await apiRequest(`/api/quests/${questId}/approve`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			});
 
-		if (!res.ok) {
-			const errorText = await res.text(); // エラーメッセージを取得
-			console.error('APIエラー:', errorText);
+			if (!res.ok) {
+				const errorText = await res.text();
+				console.error('APIエラー:', errorText);
+				toast.error('クエストの承認に失敗しました');
+				return;
+			}
+
+			toast.success('クエストを承認しました！');
+			await mutateQuests();
+		} catch (error) {
+			console.error('APIエラー:', error);
 			toast.error('クエストの承認に失敗しました');
-			return;
+		} finally {
+			setApproveLoading((prev) => ({ ...prev, [questId]: false }));
 		}
-
-		toast.success('クエストを承認しました！');
-		await mutateQuests();
-		setCompleteLoading((prev) => ({ ...prev, [questId]: false }));
 	};
 
 	return (

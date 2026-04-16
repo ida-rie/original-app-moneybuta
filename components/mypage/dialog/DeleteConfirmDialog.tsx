@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/lib/zustand/authStore';
+import { apiRequest } from '@/lib/client/apiClient';
 
 type Props = {
 	open: boolean;
@@ -18,29 +19,32 @@ const DeleteConfirmDialog = ({ open, onClose, onCloseAll, targetUserId }: Props)
 	// 必要な state のみを取得
 	const user = useAuthStore((state) => state.user);
 
-	const token = sessionStorage.getItem('access_token');
-
 	// ユーザー情報を削除
 	const handleDelete = async () => {
 		let success = false;
 		const idToDelete = targetUserId ?? user?.id;
 
-		if (!token || !idToDelete) {
-			toast.error('認証情報またはユーザー情報が不足しています');
+		if (!idToDelete) {
+			toast.error('ユーザー情報が不足しています');
 			return;
 		}
 
-		// user情報を削除
-		const res = await fetch(`/api/users/${targetUserId ?? user?.id}`, {
-			method: 'DELETE',
-			headers: {
-				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${token}`,
-			},
-		});
+		let res;
+		try {
+			res = await apiRequest(`/api/users/${targetUserId ?? user?.id}`, {
+				method: 'DELETE',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			});
+		} catch (error) {
+			console.error('APIエラー:', error);
+			toast.error('ユーザー情報の削除に失敗しました');
+			return;
+		}
 
 		if (!res.ok) {
-			const errorText = await res.text(); // エラーメッセージを取得
+			const errorText = await res.text();
 			console.error('APIエラー:', errorText);
 			toast.error('ユーザー情報の削除に失敗しました');
 			return;

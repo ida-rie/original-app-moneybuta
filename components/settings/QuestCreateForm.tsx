@@ -20,6 +20,7 @@ import { useAuthStore } from '@/lib/zustand/authStore';
 import { toast } from 'sonner';
 import { BaseQuestType } from '@/types/baseQuestType';
 import { KeyedMutator } from 'swr';
+import { apiRequest } from '@/lib/client/apiClient';
 
 // お手伝いクエストのスキーマ
 const questSchema = z.object({
@@ -45,8 +46,6 @@ const QuestCreateForm = ({ mutate }: QuestCreateFormProps) => {
 	const user = useAuthStore((state) => state.user);
 	const selectedChild = useAuthStore((state) => state.selectedChild);
 
-	const accessToken = sessionStorage.getItem('access_token');
-
 	// フォーム初期化
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
@@ -63,21 +62,15 @@ const QuestCreateForm = ({ mutate }: QuestCreateFormProps) => {
 	// フォーム送信処理
 	const onSubmit = async (data: FormValues) => {
 		try {
-			if (!accessToken) {
-				alert('アクセストークンが見つかりません');
-				return;
-			}
-
 			if (!user || !selectedChild) {
-				alert('ユーザー情報が不正です');
+				toast.error('ユーザー情報が不正です');
 				return;
 			}
 
-			const response = await fetch('/api/base-quests', {
+			const response = await apiRequest('/api/base-quests', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${accessToken}`,
 				},
 				body: JSON.stringify({
 					quests: data.quests,
@@ -88,16 +81,16 @@ const QuestCreateForm = ({ mutate }: QuestCreateFormProps) => {
 			if (!response.ok) {
 				const errorData = await response.json();
 				console.error('エラー内容:', errorData);
-				alert('登録に失敗しました');
+				toast.error('登録に失敗しました');
 				return;
 			}
 
-			toast('クエストを登録しました');
+			toast.success('クエストを登録しました');
 			await mutate();
 			form.reset(); // 初期化したい場合
 		} catch (error) {
 			console.error('送信エラー:', error);
-			toast('予期せぬエラーが発生しました');
+			toast.error('予期せぬエラーが発生しました');
 		}
 	};
 

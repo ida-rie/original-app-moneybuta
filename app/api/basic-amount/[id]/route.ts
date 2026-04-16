@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/prisma/supabaseCreateClient';
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/server/requireAuth';
+import { getAuthorizedBasicAmount } from '@/lib/server/resourceAccess';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,23 +11,12 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 		const { id } = await context.params;
 		const { basicAmount, month } = await req.json();
 
-		const accessToken = req.headers.get('Authorization')?.replace('Bearer ', '');
-		if (!accessToken) {
-			return NextResponse.json({ error: '認証情報がありません' }, { status: 401 });
-		}
+		const { user, errorResponse } = await requireAuth(req);
+		if (errorResponse) return errorResponse;
 
-		const {
-			data: { user },
-			error: sessionError,
-		} = await supabase.auth.getUser(accessToken);
-
-		if (sessionError || !user) {
-			return NextResponse.json({ error: '認証エラー' }, { status: 401 });
-		}
-
-		const target = await prisma.basicAmount.findUnique({ where: { id } });
-		if (!target || target.userId !== user.id) {
-			return NextResponse.json({ error: '権限がありません' }, { status: 403 });
+		const { basicAmount: target, status, error } = await getAuthorizedBasicAmount(id, user);
+		if (!target) {
+			return NextResponse.json({ error }, { status: status! });
 		}
 
 		const updated = await prisma.basicAmount.update({
@@ -48,30 +38,12 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
 	try {
 		const { id } = await context.params;
 
-		const accessToken = req.headers.get('Authorization')?.replace('Bearer ', '');
-		if (!accessToken) {
-			return NextResponse.json({ error: '認証情報がありません' }, { status: 401 });
-		}
+		const { user, errorResponse } = await requireAuth(req);
+		if (errorResponse) return errorResponse;
 
-		const {
-			data: { user },
-			error: sessionError,
-		} = await supabase.auth.getUser(accessToken);
-
-		if (sessionError || !user) {
-			return NextResponse.json({ error: '認証エラー' }, { status: 401 });
-		}
-
-		// 対象のbasicAmount取得
-		const targetAmount = await prisma.basicAmount.findUnique({ where: { id } });
-
+		const { basicAmount: targetAmount, status, error } = await getAuthorizedBasicAmount(id, user);
 		if (!targetAmount) {
-			return NextResponse.json({ error: '対象の基本金額が見つかりません' }, { status: 404 });
-		}
-
-		// 権限チェック（作成者＝親ユーザー）
-		if (targetAmount.userId !== user.id) {
-			return NextResponse.json({ error: '権限がありません' }, { status: 403 });
+			return NextResponse.json({ error }, { status: status! });
 		}
 
 		// 削除実行

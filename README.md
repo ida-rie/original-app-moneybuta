@@ -169,7 +169,14 @@
 
 - Zustand で認証状態・選択中の子アカウントを保持
 - sessionStorage でアクセストークン保存（開発環境向け）
+- 認証ガードは `proxy.ts` で実装
 - Supabase の Service Role Key を用いたサーバー側処理
+- API 呼び出しは `lib/client/apiClient.ts` で共通化
+- アプリ全体フォントは `app/fonts/NotoSansJP-Regular.woff2` を `next/font/local` で読み込み
+- 認可まわりの回帰確認は [docs/auth-regression-checklist.md](./docs/auth-regression-checklist.md) を参照
+- `npm run lint` は `eslint .` を実行
+- `npm run build` は `next build --webpack` を実行
+- Google Fonts 依存は解消済み。現状は Turbopack が sandbox 環境で不安定なため、通常 build は webpack を採用
 
 ---
 

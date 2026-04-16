@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/prisma/supabaseCreateClient';
 import { format } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 import { utcToZonedTime } from 'date-fns-tz';
 import { getMonthUtc } from '@/lib/utils/getMonthUtc';
+import { requireAuth } from '@/lib/server/requireAuth';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,20 +22,10 @@ export async function GET(req: Request) {
 		return NextResponse.json({ error: 'childIdとmonthは必須です' }, { status: 400 });
 	}
 
-	const accessToken = req.headers.get('Authorization')?.replace('Bearer ', '');
-
-	if (!accessToken) {
-		return NextResponse.json({ error: 'アクセストークンが必要です' }, { status: 401 });
-	}
-
-	const {
-		data: { user },
-		error: sessionError,
-	} = await supabase.auth.getUser(accessToken);
-
-	if (sessionError || !user) {
-		return NextResponse.json({ error: '認証エラー' }, { status: 401 });
-	}
+	const { errorResponse } = await requireAuth(req, {
+		missingTokenMessage: 'アクセストークンが必要です',
+	});
+	if (errorResponse) return errorResponse;
 
 	try {
 		// 日本時間を明示的に指定してUTCに変換

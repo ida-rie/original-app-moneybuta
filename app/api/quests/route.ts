@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getTodayUtc } from '@/lib/utils/getTodayUtc';
+import { requireAuth } from '@/lib/server/requireAuth';
+import { canAccessChild } from '@/lib/server/childAccess';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +14,14 @@ export async function GET(req: NextRequest) {
 
 		if (!childId) {
 			return NextResponse.json({ error: 'childIdが必要です' }, { status: 400 });
+		}
+
+		const { user, errorResponse } = await requireAuth(req);
+		if (errorResponse) return errorResponse;
+
+		const hasAccess = await canAccessChild(user, childId);
+		if (!hasAccess) {
+			return NextResponse.json({ error: '権限がありません' }, { status: 403 });
 		}
 
 		// 日本時間を明示的に指定してUTCに変換

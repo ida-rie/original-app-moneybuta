@@ -3,6 +3,7 @@
 import useSWR from 'swr';
 import { useAuthStore } from '@/lib/zustand/authStore';
 import { BasicAmountType } from '@/types/basicAmountType';
+import { apiJson } from '@/lib/client/apiClient';
 
 // 基本金額データを取得するカスタムフック
 export const useBasicAmount = () => {
@@ -10,25 +11,13 @@ export const useBasicAmount = () => {
 	const user = useAuthStore((state) => state.user?.id);
 	const selectedChild = useAuthStore((state) => state.selectedChild?.id);
 
-	const token = sessionStorage.getItem('access_token');
+	const token =
+		typeof window !== 'undefined' ? sessionStorage.getItem('access_token') : null;
 
 	const shouldFetch = Boolean(selectedChild && user && token);
 
 	const fetcher = async (url: string) => {
-		// トークンがなければスキップ
-		if (!token) return null;
-
-		const res = await fetch(url, {
-			headers: {
-				Authorization: `Bearer ${token}`,
-			},
-		});
-
-		if (!res.ok) {
-			throw new Error('基本金額の取得に失敗しました');
-		}
-
-		const json = await res.json();
+		const json = await apiJson<{ data: BasicAmountType | null }>(url);
 		return json.data as BasicAmountType | null;
 	};
 

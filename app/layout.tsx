@@ -1,12 +1,14 @@
 import type { Metadata } from 'next';
-import { Noto_Sans_JP } from 'next/font/google';
+import localFont from 'next/font/local';
 import { Toaster } from 'sonner';
 import './globals.css';
 
-// Noto Sans JP フォントをインポート
-const notoSansJP = Noto_Sans_JP({
-	subsets: ['latin'], // 日本語サポート
-	weight: '400', // 必要なウェイトを指定
+// ローカル同梱した Noto Sans JP を使用して build 時の外部通信をなくす
+const notoSansJP = localFont({
+	src: './fonts/NotoSansJP-Regular.woff2',
+	weight: '400',
+	style: 'normal',
+	display: 'swap',
 });
 
 export const metadata: Metadata = {

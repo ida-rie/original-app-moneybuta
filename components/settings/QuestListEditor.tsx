@@ -30,6 +30,7 @@ import { useAuthStore } from '@/lib/zustand/authStore';
 import { toast } from 'sonner';
 import { BaseQuestType } from '@/types/baseQuestType';
 import { KeyedMutator } from 'swr';
+import { apiRequest } from '@/lib/client/apiClient';
 
 type QuestListEditorProps = {
 	quest: BaseQuestType;
@@ -47,9 +48,6 @@ const questSchema = z.object({
 const QuestListEditor = ({ quest, mutate }: QuestListEditorProps) => {
 	const [isEdting, setIsEditing] = useState(false);
 
-	// トークンの取得
-	const accessToken = sessionStorage.getItem('access_token');
-
 	// 必要な state のみを取得
 	const user = useAuthStore((state) => state.user);
 	const selectedChild = useAuthStore((state) => state.selectedChild);
@@ -66,16 +64,10 @@ const QuestListEditor = ({ quest, mutate }: QuestListEditorProps) => {
 	// フォーム送信処理(更新)
 	const onSubmit = (questId: string) => async (data: z.infer<typeof questSchema>) => {
 		try {
-			if (!accessToken) {
-				toast('アクセストークンが見つかりません');
-				return;
-			}
-
-			const response = await fetch(`/api/base-quests/${questId}`, {
+			const response = await apiRequest(`/api/base-quests/${questId}`, {
 				method: 'PUT',
 				headers: {
 					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${accessToken}`,
 				},
 				body: JSON.stringify({
 					title: data.title,
@@ -86,48 +78,41 @@ const QuestListEditor = ({ quest, mutate }: QuestListEditorProps) => {
 			if (!response.ok) {
 				const error = await response.json();
 				console.error('クエスト更新失敗:', error);
-				toast('クエストの更新に失敗しました');
+				toast.error('クエストの更新に失敗しました');
 				return;
 			}
 
-			toast('クエストを更新しました');
+			toast.success('クエストを更新しました');
 			await mutate();
 			setIsEditing(false);
 		} catch (error) {
 			console.error('送信エラー:', error);
-			toast('予期せぬエラーが発生しました');
+			toast.error('予期せぬエラーが発生しました');
 		}
 	};
 	// クエストの削除
 	const handleQuestDelete = async (id: string) => {
 		try {
-			if (!accessToken) {
-				toast('アクセストークンが見つかりません');
+			if (!user || !selectedChild) {
+				toast.error('ユーザー情報が不正です');
 				return;
 			}
 
-			if (!user || !selectedChild) {
-				toast('ユーザー情報が不正です');
-				return;
-			}
-			const res = await fetch(`/api/base-quests/${id}`, {
+			const res = await apiRequest(`/api/base-quests/${id}`, {
 				method: 'DELETE',
-				headers: {
-					Authorization: `Bearer ${accessToken}`,
-				},
 			});
 
 			if (!res.ok) {
 				const error = await res.json();
-				toast(`クエストの削除に失敗しました: ${error.error}`);
+				toast.error(`クエストの削除に失敗しました: ${error.error}`);
 				return;
 			}
 
-			toast('クエストを削除しました');
+			toast.success('クエストを削除しました');
 			await mutate(); // クエスト一覧を再取得
 		} catch (error) {
 			console.error('削除エラー:', error);
-			toast('予期せぬエラーが発生しました');
+			toast.error('予期せぬエラーが発生しました');
 		}
 	};
 

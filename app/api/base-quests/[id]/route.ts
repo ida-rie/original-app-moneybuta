@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/prisma/supabaseCreateClient';
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/server/requireAuth';
+import { getAuthorizedBaseQuest } from '@/lib/server/resourceAccess';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,29 +17,12 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 		const { id } = await context.params;
 		const body: UpdateBaseQuestRequest = await req.json();
 
-		const accessToken = req.headers.get('Authorization')?.replace('Bearer ', '');
-		if (!accessToken) {
-			return NextResponse.json({ error: '認証情報がありません' }, { status: 401 });
-		}
+		const { user, errorResponse } = await requireAuth(req);
+		if (errorResponse) return errorResponse;
 
-		const {
-			data: { user },
-			error: sessionError,
-		} = await supabase.auth.getUser(accessToken);
-
-		if (sessionError || !user) {
-			return NextResponse.json({ error: '認証エラー' }, { status: 401 });
-		}
-
-		// クエストが存在するか確認
-		const existingQuest = await prisma.baseQuest.findUnique({ where: { id } });
+		const { baseQuest: existingQuest, status, error } = await getAuthorizedBaseQuest(id, user);
 		if (!existingQuest) {
-			return NextResponse.json({ error: 'クエストが存在しません' }, { status: 404 });
-		}
-
-		// ログインユーザーがこのクエストの親か確認
-		if (existingQuest.userId !== user.id) {
-			return NextResponse.json({ error: '権限がありません' }, { status: 403 });
+			return NextResponse.json({ error }, { status: status! });
 		}
 
 		// 更新処理
@@ -64,33 +48,12 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
 		const { id } = await context.params;
 
 		// 認証トークン取得
-		const accessToken = req.headers.get('Authorization')?.replace('Bearer ', '');
-		if (!accessToken) {
-			return NextResponse.json({ error: '認証情報がありません' }, { status: 401 });
-		}
+		const { user, errorResponse } = await requireAuth(req);
+		if (errorResponse) return errorResponse;
 
-		// Supabaseユーザー取得
-		const {
-			data: { user },
-			error: sessionError,
-		} = await supabase.auth.getUser(accessToken);
-
-		if (sessionError || !user) {
-			return NextResponse.json({ error: '認証エラー' }, { status: 401 });
-		}
-
-		// 削除対象の基本クエスト取得
-		const baseQuest = await prisma.baseQuest.findUnique({
-			where: { id },
-		});
-
+		const { baseQuest, status, error } = await getAuthorizedBaseQuest(id, user);
 		if (!baseQuest) {
-			return NextResponse.json({ error: 'クエストが見つかりません' }, { status: 404 });
-		}
-
-		// 自身のクエストかチェック
-		if (baseQuest.userId !== user.id) {
-			return NextResponse.json({ error: '権限がありません' }, { status: 403 });
+			return NextResponse.json({ error }, { status: status! });
 		}
 
 		// ① 関連履歴を先に削除

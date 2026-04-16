@@ -1,7 +1,9 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/prisma/supabaseCreateClient';
-import { deleteRelatedUserData } from '@/lib/prisma/deleteRelatedUserData';
+import { deleteRelatedUserDataInTx } from '@/lib/prisma/deleteRelatedUserData';
+import { requireAuth } from '@/lib/server/requireAuth';
+import { canAccessUser } from '@/lib/server/childAccess';
 
 type updateUserRequest = {
 	email: string;
@@ -10,14 +12,75 @@ type updateUserRequest = {
 	iconUrl: string;
 };
 
+const deleteChildAccount = async (childId: string) => {
+	const { error: childDeleteAuthError } = await supabase.auth.admin.deleteUser(childId);
+	if (childDeleteAuthError) {
+		console.error(`子アカウント認証削除失敗: childId=${childId}`, childDeleteAuthError);
+		throw new Error(`child_auth_delete_failed:${childId}`);
+	}
+
+	await prisma.$transaction(async (tx) => {
+		await deleteRelatedUserDataInTx(tx, childId, 'child');
+		await tx.user.delete({ where: { id: childId } });
+	});
+};
+
+const deleteParentAccount = async (parentId: string) => {
+	const childUsers = await prisma.user.findMany({
+		where: { parentId },
+		select: { id: true },
+		orderBy: { createdAt: 'asc' },
+	});
+
+	for (const child of childUsers) {
+		await deleteChildAccount(child.id);
+	}
+
+	const { error: parentDeleteAuthError } = await supabase.auth.admin.deleteUser(parentId);
+	if (parentDeleteAuthError) {
+		console.error(`親ユーザー認証削除失敗: parentId=${parentId}`, parentDeleteAuthError);
+		throw new Error(`parent_auth_delete_failed:${parentId}`);
+	}
+
+	await prisma.$transaction(async (tx) => {
+		await deleteRelatedUserDataInTx(tx, parentId, 'parent');
+		await tx.user.delete({ where: { id: parentId } });
+	});
+};
+
 // ユーザー情報の取得
 export async function GET(_req: NextRequest, context: { params: Promise<{ id: string }> }) {
 	try {
 		const { id } = await context.params;
+		const { user: authUser, errorResponse } = await requireAuth(_req);
+		if (errorResponse) return errorResponse;
+
+		const hasAccess = await canAccessUser(authUser, id);
+		if (!hasAccess) {
+			return NextResponse.json({ error: '権限がありません' }, { status: 403 });
+		}
+
+		const shouldIncludeChildren = authUser.id === id;
+
 		const user = await prisma.user.findUnique({
 			where: { id },
-			include: {
-				children: true, // 子アカウントを一緒に取得
+			select: {
+				id: true,
+				email: true,
+				name: true,
+				role: true,
+				iconUrl: true,
+				children: shouldIncludeChildren
+					? {
+							select: {
+								id: true,
+								email: true,
+								name: true,
+								role: true,
+								iconUrl: true,
+							},
+					  }
+					: false,
 			},
 		});
 
@@ -39,21 +102,8 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 		const { id } = await context.params;
 		const body: updateUserRequest = await req.json();
 
-		// トークンを確認
-		const accessToken = req.headers.get('Authorization')?.replace('Bearer ', '');
-		if (!accessToken) {
-			return NextResponse.json({ error: '認証情報がありません' }, { status: 401 });
-		}
-
-		// Supabaseのセッションを取得
-		const {
-			data: { user },
-			error: sessionError,
-		} = await supabase.auth.getUser(accessToken);
-
-		if (sessionError || !user) {
-			return NextResponse.json({ error: '認証エラー' }, { status: 401 });
-		}
+		const { user, errorResponse } = await requireAuth(req);
+		if (errorResponse) return errorResponse;
 
 		// 自分自身 or 子アカウントかをチェック
 		const targetUser = await prisma.user.findUnique({ where: { id } });
@@ -135,19 +185,8 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
 	try {
 		const { id } = await context.params;
 
-		const accessToken = req.headers.get('Authorization')?.replace('Bearer ', '');
-		if (!accessToken) {
-			return NextResponse.json({ error: '認証情報がありません' }, { status: 401 });
-		}
-
-		const {
-			data: { user: authUser },
-			error: sessionError,
-		} = await supabase.auth.getUser(accessToken);
-
-		if (sessionError || !authUser) {
-			return NextResponse.json({ error: '認証エラー' }, { status: 401 });
-		}
+		const { user: authUser, errorResponse } = await requireAuth(req);
+		if (errorResponse) return errorResponse;
 
 		const requestingUser = await prisma.user.findUnique({ where: { id: authUser.id } });
 		if (!requestingUser || requestingUser.role !== 'parent') {
@@ -161,32 +200,7 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
 
 		// 自分自身を削除する場合（=親自身）
 		if (authUser.id === id) {
-			// 子ユーザーを全削除（並列処理）
-			const childUsers = await prisma.user.findMany({
-				where: { parentId: id },
-				select: { id: true },
-			});
-
-			await Promise.all(
-				childUsers.map(async (child) => {
-					await deleteRelatedUserData(child.id, 'child');
-					const { error } = await supabase.auth.admin.deleteUser(child.id);
-					if (error) {
-						console.error(`子アカウント（${child.id}）の認証削除失敗:`, error);
-					}
-					await prisma.user.delete({ where: { id: child.id } });
-				})
-			);
-
-			// 親のデータも削除
-			await deleteRelatedUserData(id, 'parent');
-
-			const { error: parentDeleteError } = await supabase.auth.admin.deleteUser(id);
-			if (parentDeleteError) {
-				console.error('親ユーザー削除エラー:', parentDeleteError);
-			}
-
-			await prisma.user.delete({ where: { id } });
+			await deleteParentAccount(id);
 
 			return NextResponse.json(
 				{ message: '親アカウントと子アカウントを削除しました' },
@@ -202,16 +216,7 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
 			);
 		}
 
-		// 子どもの関連データを削除
-		await deleteRelatedUserData(id, 'child');
-
-		const { error: childDeleteAuthError } = await supabase.auth.admin.deleteUser(id);
-		if (childDeleteAuthError) {
-			console.error('子アカウント認証削除失敗:', childDeleteAuthError);
-			return NextResponse.json({ error: '認証情報の削除に失敗しました' }, { status: 500 });
-		}
-
-		await prisma.user.delete({ where: { id } });
+		await deleteChildAccount(id);
 
 		return NextResponse.json({ message: '子アカウントを削除しました' }, { status: 200 });
 	} catch (error) {

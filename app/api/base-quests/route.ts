@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { supabase } from '@/lib/prisma/supabaseCreateClient';
 import { BaseQuestType } from '@/types/baseQuestType';
 import { getTodayUtc } from '@/lib/utils/getTodayUtc';
+import { requireAuth } from '@/lib/server/requireAuth';
+import { canAccessChild, canManageChildAsParent } from '@/lib/server/childAccess';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,6 +26,14 @@ export const GET = async (req: NextRequest) => {
 
 		if (!childId) {
 			return NextResponse.json({ error: 'childIdが必要です' }, { status: 400 });
+		}
+
+		const { user, errorResponse } = await requireAuth(req);
+		if (errorResponse) return errorResponse;
+
+		const hasAccess = await canAccessChild(user, childId);
+		if (!hasAccess) {
+			return NextResponse.json({ error: '権限がありません' }, { status: 403 });
 		}
 
 		const baseQuests: BaseQuestType[] = await prisma.baseQuest.findMany({
@@ -52,26 +61,18 @@ export async function POST(req: NextRequest) {
 	try {
 		const body: BaseQuestCreateRequest = await req.json();
 
-		// 認証ヘッダーの取得
-		const accessToken = req.headers.get('Authorization')?.replace('Bearer ', '');
-		if (!accessToken) {
-			return NextResponse.json({ error: '認証情報がありません' }, { status: 401 });
-		}
-
-		// Supabaseからログインユーザーを取得
-		const {
-			data: { user },
-			error: sessionError,
-		} = await supabase.auth.getUser(accessToken);
-
-		if (sessionError || !user) {
-			return NextResponse.json({ error: '認証エラー' }, { status: 401 });
-		}
+		const { user, errorResponse } = await requireAuth(req);
+		if (errorResponse) return errorResponse;
 
 		const { quests, childUserId } = body;
 
 		if (!quests || !Array.isArray(quests) || !childUserId) {
 			return NextResponse.json({ error: '不正なリクエスト形式です' }, { status: 400 });
+		}
+
+		const hasAccess = await canManageChildAsParent(user, childUserId);
+		if (!hasAccess) {
+			return NextResponse.json({ error: '権限がありません' }, { status: 403 });
 		}
 
 		const { start: todayStart } = getTodayUtc();

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { supabase } from '@/lib/supabase';
+import { requireAuth } from '@/lib/server/requireAuth';
+import { getAuthorizedQuestForApproval } from '@/lib/server/resourceAccess';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,32 +9,14 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 	try {
 		const { id } = await context.params;
 
-		// 認証トークン取得
-		const accessToken = req.headers.get('Authorization')?.replace('Bearer ', '');
-		if (!accessToken) {
-			return NextResponse.json({ error: '認証情報がありません' }, { status: 401 });
-		}
-
-		// Supabaseでユーザー取得
-		const {
-			data: { user },
-			error: authError,
-		} = await supabase.auth.getUser(accessToken);
-
-		if (authError || !user) {
-			return NextResponse.json({ error: 'ユーザー認証に失敗しました' }, { status: 401 });
-		}
-
-		// クエストを取得して権限チェック
-		const quest = await prisma.questHistory.findUnique({
-			where: { id },
-			include: { childUser: { select: { parentId: true } } },
+		const { user, errorResponse } = await requireAuth(req, {
+			authErrorMessage: 'ユーザー認証に失敗しました',
 		});
+		if (errorResponse) return errorResponse;
+
+		const { quest, status, error } = await getAuthorizedQuestForApproval(id, user);
 		if (!quest) {
-			return NextResponse.json({ error: 'クエストが見つかりません' }, { status: 404 });
-		}
-		if (quest.childUser.parentId !== user.id) {
-			return NextResponse.json({ error: '権限がありません' }, { status: 403 });
+			return NextResponse.json({ error }, { status: status! });
 		}
 
 		// クエストを承認状態にする
