@@ -35,7 +35,11 @@ const AuthCallbackPage = () => {
 				sessionStorage.setItem('access_token', accessToken);
 
 				// DBからユーザー情報を取得
-				const res = await fetch(`/api/users/${session.user.id}`);
+				const res = await fetch(`/api/users/${session.user.id}`, {
+					headers: {
+						Authorization: `Bearer ${accessToken}`,
+					},
+				});
 				if (!res.ok) {
 					toast.error('ユーザー情報の取得に失敗しました');
 					setTimeout(() => router.push('/signin'), 2000);

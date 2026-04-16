@@ -82,7 +82,11 @@ const SignIn = () => {
 			// idに紐づくuserの情報を取得
 			const user = signInData.user;
 
-			const res = await fetch(`/api/users/${user.id}`);
+			const res = await fetch(`/api/users/${user.id}`, {
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			});
 			if (!res.ok) {
 				const errorText = await res.text(); // エラーメッセージを取得
 				console.error('APIエラー:', errorText);
