@@ -4,9 +4,10 @@
 import useSWR from 'swr';
 import { useAuthStore } from '@/lib/zustand/authStore';
 import { QuestType } from '@/types/questType';
+import { apiJson } from '@/lib/client/apiClient';
 
 // クエスト一覧を取得するカスタムフック
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = (url: string) => apiJson<QuestType[]>(url);
 
 export const useQuestList = () => {
 	// 必要な state のみを取得

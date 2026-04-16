@@ -3,12 +3,9 @@
 import useSWR from 'swr';
 import { useAuthStore } from '@/lib/zustand/authStore';
 import { BaseQuestType } from '@/types/baseQuestType';
+import { apiJson } from '@/lib/client/apiClient';
 
-const fetcher = (url: string) =>
-	fetch(url).then((res) => {
-		if (!res.ok) throw new Error('基本クエスト取得失敗');
-		return res.json();
-	});
+const fetcher = (url: string) => apiJson<BaseQuestType[]>(url);
 
 // BaseQuest一覧を取得するカスタムフック
 export const useBaseQuests = () => {
