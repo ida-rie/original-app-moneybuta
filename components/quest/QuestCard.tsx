@@ -15,8 +15,19 @@ const QuestCard = ({ user }: QuestCardProps) => {
 	const [approveLoading, setApproveLoading] = useState<Record<string, boolean>>({});
 	const [completeLoading, setCompleteLoading] = useState<Record<string, boolean>>({});
 
+	const patchQuest = (questId: string, patch: Partial<(typeof quests)[number]>) => {
+		return (current: typeof quests = []) =>
+			current.map((q) => (q.id === questId ? { ...q, ...patch } : q));
+	};
+
 	const handleClickComplete = async (questId: string) => {
 		setCompleteLoading((prev) => ({ ...prev, [questId]: true }));
+		const previousQuests = quests;
+
+		await mutateQuests(patchQuest(questId, { completed: true, completedAt: new Date() }), {
+			revalidate: false,
+		});
+
 		try {
 			const res = await apiRequest(`/api/quests/${questId}/complete`, {
 				method: 'PUT',
@@ -28,14 +39,25 @@ const QuestCard = ({ user }: QuestCardProps) => {
 			if (!res.ok) {
 				const errorText = await res.text();
 				console.error('APIエラー:', errorText);
-				toast.error('クエストの完了に失敗しました');
-				return;
+				throw new Error(errorText || 'クエストの完了に失敗しました');
+			}
+
+			const payload = await res.json();
+			const updated = payload?.quest;
+			if (updated) {
+				await mutateQuests(
+					patchQuest(questId, {
+						completed: updated.completed,
+						completedAt: updated.completedAt ? new Date(updated.completedAt) : new Date(),
+					}),
+					{ revalidate: false }
+				);
 			}
 
 			toast.success('クエストをかんりょうしました！');
-			await mutateQuests();
 		} catch (error) {
 			console.error('APIエラー:', error);
+			await mutateQuests(previousQuests, { revalidate: false });
 			toast.error('クエストの完了に失敗しました');
 		} finally {
 			setCompleteLoading((prev) => ({ ...prev, [questId]: false }));
@@ -44,6 +66,10 @@ const QuestCard = ({ user }: QuestCardProps) => {
 
 	const handleClickApprove = async (questId: string) => {
 		setApproveLoading((prev) => ({ ...prev, [questId]: true }));
+		const previousQuests = quests;
+
+		await mutateQuests(patchQuest(questId, { approved: true }), { revalidate: false });
+
 		try {
 			const res = await apiRequest(`/api/quests/${questId}/approve`, {
 				method: 'PUT',
@@ -55,14 +81,21 @@ const QuestCard = ({ user }: QuestCardProps) => {
 			if (!res.ok) {
 				const errorText = await res.text();
 				console.error('APIエラー:', errorText);
-				toast.error('クエストの承認に失敗しました');
-				return;
+				throw new Error(errorText || 'クエストの承認に失敗しました');
+			}
+
+			const payload = await res.json();
+			const updated = payload?.quest;
+			if (updated) {
+				await mutateQuests(patchQuest(questId, { approved: updated.approved }), {
+					revalidate: false,
+				});
 			}
 
 			toast.success('クエストを承認しました！');
-			await mutateQuests();
 		} catch (error) {
 			console.error('APIエラー:', error);
+			await mutateQuests(previousQuests, { revalidate: false });
 			toast.error('クエストの承認に失敗しました');
 		} finally {
 			setApproveLoading((prev) => ({ ...prev, [questId]: false }));

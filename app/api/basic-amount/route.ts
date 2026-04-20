@@ -19,6 +19,11 @@ export async function GET(req: NextRequest) {
 		const { user, errorResponse } = await requireAuth(req);
 		if (errorResponse) return errorResponse;
 
+		const hasAccess = await canAccessChild(user, childId);
+		if (!hasAccess) {
+			return NextResponse.json({ error: '権限がありません' }, { status: 403 });
+		}
+
 		// 該当のBasicAmountを取得（今月分。なければ直近の月を返す）
 		const basicAmount = await prisma.basicAmount.findFirst({
 			where: {
