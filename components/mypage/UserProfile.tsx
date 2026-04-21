@@ -56,21 +56,24 @@ const UserProfile = ({ user }: UserProfileProps) => {
 				<Button type="button" variant="primary" onClick={() => setOpen(true)}>
 					へんこうする
 				</Button>
-				<ProfileEditDialog
-					open={open}
-					onClose={() => setOpen(false)}
-					mode="edit"
-					defaultValues={{
-						emailOrId:
-							user?.role === 'child'
-								? user?.email?.replace('@moneybuta.local', '') ?? ''
-								: user?.email ?? '',
-						name: user?.name ?? '',
-						password: '',
-						iconUrl: user?.iconUrl ?? '',
-					}}
-					targetUserId={user?.id}
-				/>
+				{open && (
+					<ProfileEditDialog
+						key={`profile-edit-${user?.id ?? 'unknown'}`}
+						open={open}
+						onClose={() => setOpen(false)}
+						mode="edit"
+						defaultValues={{
+							emailOrId:
+								user?.role === 'child'
+									? user?.email?.replace('@moneybuta.local', '') ?? ''
+									: user?.email ?? '',
+							name: user?.name ?? '',
+							password: '',
+							iconUrl: user?.iconUrl ?? '',
+						}}
+						targetUserId={user?.id}
+					/>
+				)}
 			</div>
 		</>
 	);

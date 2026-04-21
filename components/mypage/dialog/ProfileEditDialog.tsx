@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useLayoutEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase'; // パスワード変更後の再ログインに使用
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -155,7 +155,7 @@ const ProfileEditDialog = ({
 	// 子アカウント自身が編集する場合はID/PWフィールドを非表示
 	const isChildSelfEdit = mode === 'edit' && user?.role === 'child';
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		if (open) {
 			const values = getInitialValues(mode, defaultValues);
 			form.reset(values);
