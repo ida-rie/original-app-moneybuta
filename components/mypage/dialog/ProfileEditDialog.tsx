@@ -407,6 +407,7 @@ const ProfileEditDialog = ({
 					<form
 						onSubmit={form.handleSubmit(onSubmit)}
 						className="space-y-6 text-center px-4 sm:px-8"
+						autoComplete="off"
 					>
 						<FormField
 							control={form.control}
@@ -415,7 +416,11 @@ const ProfileEditDialog = ({
 								<FormItem>
 									<FormLabel>名まえ</FormLabel>
 									<FormControl>
-										<Input placeholder="名まえを入力してください" {...field} />
+										<Input
+											placeholder="名まえを入力してください"
+											autoComplete="nickname"
+											{...field}
+										/>
 									</FormControl>
 									<FormMessage />
 								</FormItem>
@@ -429,7 +434,14 @@ const ProfileEditDialog = ({
 									<FormItem>
 										<FormLabel>ユーザーID</FormLabel>
 										<FormControl>
-											<Input placeholder="ユーザーIDを入力してください" {...field} />
+											<Input
+												placeholder="ユーザーIDを入力してください"
+												autoComplete="off"
+												data-form-type="other"
+												data-lpignore="true"
+												data-1p-ignore="true"
+												{...field}
+											/>
 										</FormControl>
 										<FormMessage />
 									</FormItem>
@@ -446,8 +458,12 @@ const ProfileEditDialog = ({
 										<FormControl>
 											<Input
 												placeholder="新しいパスワードを入力してください"
-												{...field}
 												type="password"
+												autoComplete="new-password"
+												data-form-type="other"
+												data-lpignore="true"
+												data-1p-ignore="true"
+												{...field}
 											/>
 										</FormControl>
 										<FormMessage />

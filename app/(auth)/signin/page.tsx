@@ -130,7 +130,11 @@ const SignIn = () => {
 				className="m-auto"
 			/>
 			<Form {...form}>
-				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 text-center">
+				<form
+					onSubmit={form.handleSubmit(onSubmit)}
+					className="space-y-6 text-center"
+					autoComplete="on"
+				>
 					<FormField
 						control={form.control}
 						name="emailOrId"
@@ -140,6 +144,7 @@ const SignIn = () => {
 								<FormControl>
 									<Input
 										placeholder="ユーザー名またはメールアドレスを入力してください"
+										autoComplete="username"
 										{...field}
 									/>
 								</FormControl>
@@ -154,7 +159,12 @@ const SignIn = () => {
 							<FormItem>
 								<FormLabel>パスワード</FormLabel>
 								<FormControl>
-									<Input type="password" placeholder="パスワードを入力してください" {...field} />
+									<Input
+										type="password"
+										placeholder="パスワードを入力してください"
+										autoComplete="current-password"
+										{...field}
+									/>
 								</FormControl>
 								<FormMessage />
 							</FormItem>
