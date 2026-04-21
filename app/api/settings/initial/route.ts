@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getTodayUtc } from '@/lib/utils/getTodayUtc';
 import { requireAuth } from '@/lib/server/requireAuth';
 import { canAccessChild } from '@/lib/server/childAccess';
 import { logApiPerf } from '@/lib/server/perf';
 
 export const dynamic = 'force-dynamic';
 
-// クエストの履歴を取得
 export async function GET(req: NextRequest) {
 	const startedAt = Date.now();
 	let authAt = startedAt;
@@ -32,44 +30,32 @@ export async function GET(req: NextRequest) {
 			return NextResponse.json({ error: '権限がありません' }, { status: 403 });
 		}
 
-		// 日本時間を明示的に指定してUTCに変換
-		const { start, end } = getTodayUtc();
-
-		const quests = await prisma.questHistory.findMany({
-			where: {
-				childUserId: childId,
-				questDate: {
-					gte: start,
-					lte: end,
-				},
-			},
-			orderBy: { createdAt: 'desc' },
-			select: {
-				id: true,
-				title: true,
-				reward: true,
-				completed: true,
-				completedAt: true,
-				approved: true,
-				approvedAt: true,
-			},
-		});
-
-		if (!quests) {
-			return NextResponse.json({ message: 'データが見つかりません', data: null }, { status: 200 });
-		}
+		const [baseQuests, basicAmount] = await Promise.all([
+			prisma.baseQuest.findMany({
+				where: { childUserId: childId },
+				orderBy: { createdAt: 'desc' },
+			}),
+			prisma.basicAmount.findFirst({
+				where: { childUserId: childId, userId: user.id },
+				orderBy: { month: 'desc' },
+			}),
+		]);
 		dbAt = Date.now();
 
-		logApiPerf('GET /api/quests', {
+		logApiPerf('GET /api/settings/initial', {
 			authMs: authAt - startedAt,
 			authzMs: authzAt - authAt,
 			dbMs: dbAt - authzAt,
 			totalMs: dbAt - startedAt,
 		});
 
-		return NextResponse.json(quests);
+		return NextResponse.json({
+			baseQuests,
+			basicAmount: basicAmount ?? null,
+		});
 	} catch (error) {
-		console.error('クエスト一覧取得エラー:', error);
-		return NextResponse.json({ error: 'クエスト一覧の取得に失敗しました' }, { status: 500 });
+		console.error('設定初期データ取得エラー:', error);
+		return NextResponse.json({ error: 'サーバーエラー' }, { status: 500 });
 	}
 }
+

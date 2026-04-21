@@ -18,8 +18,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Trash2 } from 'lucide-react';
 import { useAuthStore } from '@/lib/zustand/authStore';
 import { toast } from 'sonner';
-import { BaseQuestType } from '@/types/baseQuestType';
-import { KeyedMutator } from 'swr';
 import { apiRequest } from '@/lib/client/apiClient';
 
 // お手伝いクエストのスキーマ
@@ -38,7 +36,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 type QuestCreateFormProps = {
-	mutate: KeyedMutator<BaseQuestType[]>;
+	mutate: () => Promise<unknown>;
 };
 
 const QuestCreateForm = ({ mutate }: QuestCreateFormProps) => {

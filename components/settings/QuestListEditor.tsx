@@ -29,12 +29,11 @@ import { SquarePen, Trash2, Save } from 'lucide-react';
 import { useAuthStore } from '@/lib/zustand/authStore';
 import { toast } from 'sonner';
 import { BaseQuestType } from '@/types/baseQuestType';
-import { KeyedMutator } from 'swr';
 import { apiRequest } from '@/lib/client/apiClient';
 
 type QuestListEditorProps = {
 	quest: BaseQuestType;
-	mutate: KeyedMutator<BaseQuestType[]>;
+	mutate: () => Promise<unknown>;
 };
 
 // お手伝いクエストのスキーマ

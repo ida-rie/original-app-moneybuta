@@ -9,15 +9,12 @@ import QuestCreateForm from '@/components/settings/QuestCreateForm';
 import QuestListEditor from '@/components/settings/QuestListEditor';
 import BasicAmountEditor from '@/components/settings/BasicAmountEditor';
 import { useAuthStore } from '@/lib/zustand/authStore';
-import { useBaseQuests } from '@/hooks/useBaseQuests';
-import { useBasicAmount } from '@/hooks/useBasicAmount';
+import { useSettingsInitial } from '@/hooks/useSettingsInitial';
 import { toast } from 'sonner';
 
 const Setting = () => {
 	const router = useRouter();
-	const { baseQuests, loadingQuests, mutateBaseQuests } = useBaseQuests();
-	const { basicAmount, loadingAmount, amountError, mutateBasicAmount, amountReady } =
-		useBasicAmount();
+	const { baseQuests, basicAmount, loading, error, refetch } = useSettingsInitial();
 
 	// 必要な state のみを取得
 	const user = useAuthStore((state) => state.user);
@@ -43,15 +40,19 @@ const Setting = () => {
 	}
 
 	// 読み込み中
-	if (loadingQuests || (amountReady && loadingAmount)) {
+	if (loading) {
 		return (
-			<div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-80 z-50">
-				<p className="text-xl font-semibold">よみこみ中...</p>
+			<div className="animate-pulse space-y-6">
+				<MainTitle title="各種設定" icon={Settings} />
+				<div className="h-6 w-48 bg-gray-200 rounded" />
+				<div className="h-24 w-full bg-gray-200 rounded" />
+				<div className="h-24 w-full bg-gray-200 rounded" />
+				<div className="h-24 w-full bg-gray-200 rounded" />
 			</div>
 		);
 	}
 
-	if (amountError) {
+	if (error) {
 		toast('基本金額の取得に失敗しました');
 		return;
 	}
@@ -69,7 +70,7 @@ const Setting = () => {
 					</p>
 					{baseQuests.length > 0 ? (
 						baseQuests.map((quest) => (
-							<QuestListEditor key={quest.id} quest={quest} mutate={mutateBaseQuests} />
+							<QuestListEditor key={quest.id} quest={quest} mutate={refetch} />
 						))
 					) : (
 						<p>設定済みクエストがありません。</p>
@@ -80,14 +81,14 @@ const Setting = () => {
 					<p className="text-lg pl-2 border-l-4 border-[var(--color-accent)] mb-4">
 						クエストの新規設定
 					</p>
-					<QuestCreateForm mutate={mutateBaseQuests} />
+					<QuestCreateForm mutate={refetch} />
 				</div>
 			</div>
 
 			<div className="mb-10">
 				<SubTitle title="基本金額の設定" icon={ReceiptJapaneseYen} />
 				<div>
-					<BasicAmountEditor basicAmount={basicAmount ?? null} mutate={mutateBasicAmount} />
+					<BasicAmountEditor basicAmount={basicAmount ?? null} mutate={refetch} />
 				</div>
 			</div>
 		</>

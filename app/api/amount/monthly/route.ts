@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { utcToZonedTime } from 'date-fns-tz';
 import { getMonthUtc } from '@/lib/utils/getMonthUtc';
 import { requireAuth } from '@/lib/server/requireAuth';
+import { logApiPerf } from '@/lib/server/perf';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +14,17 @@ type BreakdownItemType = {
 	items: { content: string; amount: number }[];
 };
 
+type MonthlyQuestRow = {
+	title: string;
+	reward: number;
+	approvedAt: Date | null;
+};
+
 export async function GET(req: Request) {
+	const startedAt = Date.now();
+	let authAt = startedAt;
+	let dbAt = startedAt;
+
 	const { searchParams } = new URL(req.url);
 	const childId = searchParams.get('childId');
 	const month = searchParams.get('month');
@@ -25,6 +36,7 @@ export async function GET(req: Request) {
 	const { errorResponse } = await requireAuth(req, {
 		missingTokenMessage: 'アクセストークンが必要です',
 	});
+	authAt = Date.now();
 	if (errorResponse) return errorResponse;
 
 	try {
@@ -37,6 +49,7 @@ export async function GET(req: Request) {
 				month: { lte: month }, // 指定月以前
 			},
 			orderBy: { month: 'desc' },
+			select: { basicAmount: true },
 		});
 
 		const questHistories = await prisma.questHistory.findMany({
@@ -51,11 +64,18 @@ export async function GET(req: Request) {
 			orderBy: {
 				approvedAt: 'asc',
 			},
+			select: {
+				title: true,
+				reward: true,
+				approvedAt: true,
+			},
 		});
 
 		// JST 日付でグループ化
-		const groupedByDate: Record<string, typeof questHistories> = {};
+		const groupedByDate: Record<string, MonthlyQuestRow[]> = {};
+		let rewardSum = 0;
 		questHistories.forEach((q) => {
+			rewardSum += q.reward;
 			const jstDate = utcToZonedTime(q.approvedAt!, 'Asia/Tokyo');
 			const key = format(jstDate, 'yyyy-MM-dd');
 			(groupedByDate[key] ??= []).push(q);
@@ -96,11 +116,18 @@ export async function GET(req: Request) {
 		const total = breakdown.length
 			? breakdown[breakdown.length - 1].total
 			: basicAmount?.basicAmount ?? 0;
+		dbAt = Date.now();
+
+		logApiPerf('GET /api/amount/monthly', {
+			authMs: authAt - startedAt,
+			dbMs: dbAt - authAt,
+			totalMs: dbAt - startedAt,
+		});
 
 		return NextResponse.json({
 			month,
 			basicAmount: basicAmount?.basicAmount ?? 0,
-			rewardSum: questHistories.reduce((sum, q) => sum + q.reward, 0),
+			rewardSum,
 			totalAmount: total, // ← これが total = breakdownの最後の値、または basicAmount
 			breakdown,
 		});

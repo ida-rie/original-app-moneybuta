@@ -15,13 +15,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { SquarePen, Trash2, Save } from 'lucide-react';
 import { BasicAmountType } from '@/types/basicAmountType';
 import { useAuthStore } from '@/lib/zustand/authStore';
-import { KeyedMutator } from 'swr';
 import { toast } from 'sonner';
 import { apiJson, apiRequest } from '@/lib/client/apiClient';
 
 type BasicAmountProps = {
 	basicAmount: BasicAmountType | null;
-	mutate: KeyedMutator<BasicAmountType | null>;
+	mutate: () => Promise<unknown>;
 };
 
 // 基本金額のスキーマ

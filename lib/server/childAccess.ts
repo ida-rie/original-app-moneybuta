@@ -2,38 +2,32 @@ import { User } from '@supabase/supabase-js';
 import { prisma } from '@/lib/prisma';
 
 export const canAccessChild = async (authUser: User, childUserId: string) => {
-	if (authUser.id === childUserId) {
-		const child = await prisma.user.findUnique({
-			where: { id: childUserId },
-			select: { id: true, role: true },
-		});
-		return child?.role === 'child';
-	}
-
-	const child = await prisma.user.findUnique({
-		where: { id: childUserId },
-		select: { parentId: true, role: true },
+	const child = await prisma.user.findFirst({
+		where: {
+			id: childUserId,
+			role: 'child',
+			OR: [{ id: authUser.id }, { parentId: authUser.id }],
+		},
+		select: { id: true },
 	});
 
-	return child?.role === 'child' && child.parentId === authUser.id;
+	return !!child;
 };
 
 export const canManageChildAsParent = async (authUser: User, childUserId: string) => {
-	const parentUser = await prisma.user.findUnique({
-		where: { id: authUser.id },
-		select: { role: true },
+	const child = await prisma.user.findFirst({
+		where: {
+			id: childUserId,
+			role: 'child',
+			parent: {
+				id: authUser.id,
+				role: 'parent',
+			},
+		},
+		select: { id: true },
 	});
 
-	if (parentUser?.role !== 'parent') {
-		return false;
-	}
-
-	const child = await prisma.user.findUnique({
-		where: { id: childUserId },
-		select: { parentId: true, role: true },
-	});
-
-	return child?.role === 'child' && child.parentId === authUser.id;
+	return !!child;
 };
 
 export const canAccessUser = async (authUser: User, targetUserId: string) => {

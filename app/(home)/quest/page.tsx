@@ -22,8 +22,13 @@ const QuestPage = () => {
 	// 読み込み中
 	if (loading) {
 		return (
-			<div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-80 z-50">
-				<p className="text-xl font-semibold">よみこみ中...</p>
+			<div className="p-4 max-w-2xl mx-auto">
+				<MainTitle title="おてつだいクエスト" icon={Swords} />
+				<div className="space-y-4 animate-pulse">
+					<div className="h-[120px] rounded-xl bg-gray-200" />
+					<div className="h-[120px] rounded-xl bg-gray-200" />
+					<div className="h-[120px] rounded-xl bg-gray-200" />
+				</div>
 			</div>
 		);
 	}

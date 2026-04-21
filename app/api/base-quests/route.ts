@@ -4,6 +4,7 @@ import { BaseQuestType } from '@/types/baseQuestType';
 import { getTodayUtc } from '@/lib/utils/getTodayUtc';
 import { requireAuth } from '@/lib/server/requireAuth';
 import { canAccessChild, canManageChildAsParent } from '@/lib/server/childAccess';
+import { logApiPerf } from '@/lib/server/perf';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +21,11 @@ export type BaseQuestCreateRequest = {
 
 // 基本クエストの一覧を取得
 export const GET = async (req: NextRequest) => {
+	const startedAt = Date.now();
+	let authAt = startedAt;
+	let authzAt = startedAt;
+	let dbAt = startedAt;
+
 	try {
 		const { searchParams } = new URL(req.url);
 		const childId = searchParams.get('childId');
@@ -29,9 +35,11 @@ export const GET = async (req: NextRequest) => {
 		}
 
 		const { user, errorResponse } = await requireAuth(req);
+		authAt = Date.now();
 		if (errorResponse) return errorResponse;
 
 		const hasAccess = await canAccessChild(user, childId);
+		authzAt = Date.now();
 		if (!hasAccess) {
 			return NextResponse.json({ error: '権限がありません' }, { status: 403 });
 		}
@@ -44,10 +52,24 @@ export const GET = async (req: NextRequest) => {
 				createdAt: 'desc',
 			},
 		});
+		dbAt = Date.now();
 
 		if (!baseQuests || baseQuests.length === 0) {
+			logApiPerf('GET /api/base-quests', {
+				authMs: authAt - startedAt,
+				authzMs: authzAt - authAt,
+				dbMs: dbAt - authzAt,
+				totalMs: dbAt - startedAt,
+			});
 			return NextResponse.json({ message: 'データが見つかりません', data: [] }, { status: 200 });
 		}
+
+		logApiPerf('GET /api/base-quests', {
+			authMs: authAt - startedAt,
+			authzMs: authzAt - authAt,
+			dbMs: dbAt - authzAt,
+			totalMs: dbAt - startedAt,
+		});
 
 		return NextResponse.json(baseQuests);
 	} catch (error) {
@@ -77,27 +99,23 @@ export async function POST(req: NextRequest) {
 
 		const { start: todayStart } = getTodayUtc();
 
-		let createdCount = 0;
-
-		for (const quest of quests) {
-			const base = await prisma.baseQuest.create({
-				data: {
+		const createdCount = await prisma.$transaction(async (tx) => {
+			const createdBaseQuests = await tx.baseQuest.createManyAndReturn({
+				data: quests.map((quest) => ({
 					title: quest.title,
 					reward: quest.reward,
 					childUserId,
 					userId: user.id,
+				})),
+				select: {
+					id: true,
+					title: true,
+					reward: true,
 				},
 			});
 
-			await prisma.questHistory.upsert({
-				where: {
-					baseQuestId_childUserId_questDate: {
-						baseQuestId: base.id,
-						childUserId,
-						questDate: todayStart,
-					},
-				},
-				create: {
+			await tx.questHistory.createMany({
+				data: createdBaseQuests.map((base) => ({
 					baseQuestId: base.id,
 					childUserId,
 					title: base.title,
@@ -105,12 +123,11 @@ export async function POST(req: NextRequest) {
 					completed: false,
 					approved: false,
 					questDate: todayStart,
-				},
-				update: {},
+				})),
 			});
 
-			createdCount++;
-		}
+			return createdBaseQuests.length;
+		});
 
 		return NextResponse.json(
 			{ message: 'クエストを作成しました', count: createdCount },

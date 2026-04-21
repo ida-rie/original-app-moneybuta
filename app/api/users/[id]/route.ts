@@ -4,6 +4,7 @@ import { supabase } from '@/lib/prisma/supabaseCreateClient';
 import { deleteRelatedUserDataInTx } from '@/lib/prisma/deleteRelatedUserData';
 import { requireAuth } from '@/lib/server/requireAuth';
 import { canAccessUser } from '@/lib/server/childAccess';
+import { logApiPerf } from '@/lib/server/perf';
 
 type updateUserRequest = {
 	email?: string;
@@ -50,12 +51,19 @@ const deleteParentAccount = async (parentId: string) => {
 
 // ユーザー情報の取得
 export async function GET(_req: NextRequest, context: { params: Promise<{ id: string }> }) {
+	const startedAt = Date.now();
+	let authAt = startedAt;
+	let authzAt = startedAt;
+	let dbAt = startedAt;
+
 	try {
 		const { id } = await context.params;
 		const { user: authUser, errorResponse } = await requireAuth(_req);
+		authAt = Date.now();
 		if (errorResponse) return errorResponse;
 
 		const hasAccess = await canAccessUser(authUser, id);
+		authzAt = Date.now();
 		if (!hasAccess) {
 			return NextResponse.json({ error: '権限がありません' }, { status: 403 });
 		}
@@ -87,6 +95,14 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
 		if (!user) {
 			return NextResponse.json({ error: 'User not found' }, { status: 404 });
 		}
+		dbAt = Date.now();
+
+		logApiPerf('GET /api/users/[id]', {
+			authMs: authAt - startedAt,
+			authzMs: authzAt - authAt,
+			dbMs: dbAt - authzAt,
+			totalMs: dbAt - startedAt,
+		});
 
 		return NextResponse.json(user, { status: 200 });
 	} catch (error) {
