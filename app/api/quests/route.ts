@@ -26,18 +26,16 @@ export async function GET(req: NextRequest) {
 		authAt = Date.now();
 		if (errorResponse) return errorResponse;
 
-		const hasAccess = await canAccessChild(user, childId);
-		authzAt = Date.now();
-		if (!hasAccess) {
-			return NextResponse.json({ error: '権限がありません' }, { status: 403 });
-		}
-
 		// 日本時間を明示的に指定してUTCに変換
 		const { start, end } = getTodayUtc();
 
 		const quests = await prisma.questHistory.findMany({
 			where: {
 				childUserId: childId,
+				childUser: {
+					role: 'child',
+					OR: [{ id: user.id }, { parentId: user.id }],
+				},
 				questDate: {
 					gte: start,
 					lte: end,
@@ -54,11 +52,24 @@ export async function GET(req: NextRequest) {
 				approvedAt: true,
 			},
 		});
+		authzAt = Date.now();
+		dbAt = authzAt;
 
-		if (!quests) {
-			return NextResponse.json({ message: 'データが見つかりません', data: null }, { status: 200 });
+		// 空結果は「権限なし」か「データなし」か判定が必要
+		if (quests.length === 0) {
+			const hasAccess = await canAccessChild(user, childId);
+			dbAt = Date.now();
+			if (!hasAccess) {
+				return NextResponse.json({ error: '権限がありません' }, { status: 403 });
+			}
+			logApiPerf('GET /api/quests', {
+				authMs: authAt - startedAt,
+				authzMs: authzAt - authAt,
+				dbMs: dbAt - authzAt,
+				totalMs: dbAt - startedAt,
+			});
+			return NextResponse.json([]);
 		}
-		dbAt = Date.now();
 
 		logApiPerf('GET /api/quests', {
 			authMs: authAt - startedAt,

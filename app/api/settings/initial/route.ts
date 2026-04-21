@@ -24,23 +24,39 @@ export async function GET(req: NextRequest) {
 		authAt = Date.now();
 		if (errorResponse) return errorResponse;
 
-		const hasAccess = await canAccessChild(user, childId);
-		authzAt = Date.now();
-		if (!hasAccess) {
-			return NextResponse.json({ error: '権限がありません' }, { status: 403 });
-		}
-
 		const [baseQuests, basicAmount] = await Promise.all([
 			prisma.baseQuest.findMany({
-				where: { childUserId: childId },
+				where: {
+					childUserId: childId,
+					childUser: {
+						role: 'child',
+						OR: [{ id: user.id }, { parentId: user.id }],
+					},
+				},
 				orderBy: { createdAt: 'desc' },
 			}),
 			prisma.basicAmount.findFirst({
-				where: { childUserId: childId, userId: user.id },
+				where: {
+					childUserId: childId,
+					userId: user.id,
+					childUser: {
+						role: 'child',
+						OR: [{ id: user.id }, { parentId: user.id }],
+					},
+				},
 				orderBy: { month: 'desc' },
 			}),
 		]);
+		authzAt = Date.now();
 		dbAt = Date.now();
+
+		if (baseQuests.length === 0 && !basicAmount) {
+			const hasAccess = await canAccessChild(user, childId);
+			dbAt = Date.now();
+			if (!hasAccess) {
+				return NextResponse.json({ error: '権限がありません' }, { status: 403 });
+			}
+		}
 
 		logApiPerf('GET /api/settings/initial', {
 			authMs: authAt - startedAt,
@@ -58,4 +74,3 @@ export async function GET(req: NextRequest) {
 		return NextResponse.json({ error: 'サーバーエラー' }, { status: 500 });
 	}
 }
-
