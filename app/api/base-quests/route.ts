@@ -38,27 +38,23 @@ export const GET = async (req: NextRequest) => {
 		authAt = Date.now();
 		if (errorResponse) return errorResponse;
 
+		const hasAccess = await canAccessChild(user, childId);
+		authzAt = Date.now();
+		if (!hasAccess) {
+			return NextResponse.json({ error: '権限がありません' }, { status: 403 });
+		}
+
 		const baseQuests: BaseQuestType[] = await prisma.baseQuest.findMany({
 			where: {
 				childUserId: childId,
-				childUser: {
-					role: 'child',
-					OR: [{ id: user.id }, { parentId: user.id }],
-				},
 			},
 			orderBy: {
 				createdAt: 'desc',
 			},
 		});
-		authzAt = Date.now();
 		dbAt = Date.now();
 
 		if (!baseQuests || baseQuests.length === 0) {
-			const hasAccess = await canAccessChild(user, childId);
-			dbAt = Date.now();
-			if (!hasAccess) {
-				return NextResponse.json({ error: '権限がありません' }, { status: 403 });
-			}
 			logApiPerf('GET /api/base-quests', {
 				authMs: authAt - startedAt,
 				authzMs: authzAt - authAt,

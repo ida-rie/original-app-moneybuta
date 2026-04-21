@@ -26,29 +26,24 @@ export async function GET(req: NextRequest) {
 		authAt = Date.now();
 		if (errorResponse) return errorResponse;
 
+		const hasAccess = await canAccessChild(user, childId);
+		authzAt = Date.now();
+		if (!hasAccess) {
+			return NextResponse.json({ error: '権限がありません' }, { status: 403 });
+		}
+
 		// 該当のBasicAmountを取得（今月分。なければ直近の月を返す）
 		const basicAmount = await prisma.basicAmount.findFirst({
 			where: {
 				childUserId: childId,
-				userId: user.id,
-				childUser: {
-					role: 'child',
-					OR: [{ id: user.id }, { parentId: user.id }],
-				},
 			},
 			orderBy: {
 				month: 'desc',
 			},
 		});
-		authzAt = Date.now();
 		dbAt = Date.now();
 
 		if (!basicAmount) {
-			const hasAccess = await canAccessChild(user, childId);
-			dbAt = Date.now();
-			if (!hasAccess) {
-				return NextResponse.json({ error: '権限がありません' }, { status: 403 });
-			}
 			logApiPerf('GET /api/basic-amount', {
 				authMs: authAt - startedAt,
 				authzMs: authzAt - authAt,
