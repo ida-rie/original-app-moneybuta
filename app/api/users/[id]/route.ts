@@ -6,10 +6,10 @@ import { requireAuth } from '@/lib/server/requireAuth';
 import { canAccessUser } from '@/lib/server/childAccess';
 
 type updateUserRequest = {
-	email: string;
-	name: string;
-	password: string;
-	iconUrl: string;
+	email?: string;
+	name?: string;
+	password?: string;
+	iconUrl?: string;
 };
 
 const deleteChildAccount = async (childId: string) => {
@@ -119,9 +119,37 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 		}
 
 		// 子アカウント自身は名前・アイコンのみ変更可（ID・パスワード変更は親のみ）
-		const requestingUser = await prisma.user.findUnique({ where: { id: user.id } });
+		const requestingUser = await prisma.user.findUnique({
+			where: { id: user.id },
+			select: { role: true },
+		});
+
+		const normalized = {
+			email: body.email?.trim(),
+			name: body.name?.trim(),
+			password: body.password?.trim(),
+			iconUrl: body.iconUrl?.trim(),
+		};
+
+		const authUpdateData: { email?: string; password?: string } = {};
+		const profileUpdateData: { email?: string; name?: string; iconUrl?: string } = {};
+
+		if (normalized.email) {
+			authUpdateData.email = normalized.email;
+			profileUpdateData.email = normalized.email;
+		}
+		if (normalized.password) {
+			authUpdateData.password = normalized.password;
+		}
+		if (normalized.name) {
+			profileUpdateData.name = normalized.name;
+		}
+		if (normalized.iconUrl) {
+			profileUpdateData.iconUrl = normalized.iconUrl;
+		}
+
 		if (requestingUser?.role === 'child' && isOwnAccount) {
-			if (body.email || body.password) {
+			if (authUpdateData.email || authUpdateData.password) {
 				return NextResponse.json(
 					{ error: '子アカウントではユーザーIDとパスワードを変更できません' },
 					{ status: 403 }
@@ -130,11 +158,11 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 		}
 
 		// ① Supabase認証情報（email/password）を更新
-		if (body.email || body.password) {
+		if (authUpdateData.email || authUpdateData.password) {
 			const updateParams: { email?: string; password?: string; email_confirm?: boolean } = {};
-			if (body.email) updateParams.email = body.email;
-			if (body.password) updateParams.password = body.password;
-			if (body.email) updateParams.email_confirm = true;
+			if (authUpdateData.email) updateParams.email = authUpdateData.email;
+			if (authUpdateData.password) updateParams.password = authUpdateData.password;
+			if (authUpdateData.email) updateParams.email_confirm = true;
 
 			const { error: updateAuthError } = await supabase.auth.admin.updateUserById(id, updateParams);
 
@@ -144,38 +172,26 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 			}
 		}
 
-		// ② アプリ内のユーザー情報（name/email/icon）を更新
-		let updatedUser;
-
-		if (isOwnAccount && targetUser.role === 'parent') {
-			updatedUser = await prisma.user.update({
+		if (Object.keys(profileUpdateData).length === 0) {
+			const currentUser = await prisma.user.findUnique({
 				where: { id },
-				data: {
-					...(body.name && { name: body.name }),
-					...(body.iconUrl && { iconUrl: body.iconUrl }),
-					...(body.email && { email: body.email }),
-				},
-				include: {
-					children: true,
-				},
+				include: { children: true },
 			});
-		} else {
-			updatedUser = await prisma.user.update({
-				where: { id },
-				data: {
-					...(body.name && { name: body.name }),
-					...(body.iconUrl && { iconUrl: body.iconUrl }),
-					...(body.email && { email: body.email }),
-				},
-				include: {
-					children: true, // ← ここを追加
-				},
-			});
+			return NextResponse.json(currentUser, { status: 200 });
 		}
+
+		// ② アプリ内のユーザー情報（name/email/icon）を更新
+		const updatedUser = await prisma.user.update({
+			where: { id },
+			data: profileUpdateData,
+			include: {
+				children: true,
+			},
+		});
 
 		return NextResponse.json(updatedUser, { status: 200 });
 	} catch (error) {
-		console.error('ユーザー取得エラー:', error);
+		console.error('ユーザー更新エラー:', error);
 		return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
 	}
 }

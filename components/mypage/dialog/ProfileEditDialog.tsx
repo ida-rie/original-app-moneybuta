@@ -222,23 +222,48 @@ const ProfileEditDialog = ({
 	// ユーザー情報を編集
 	const handleEdit = async (data: EditFormData) => {
 		const { emailOrId, password, name } = data;
+		const defaultName = defaultValues?.name?.trim() ?? '';
+		const defaultIcon =
+			defaultValues?.iconUrl && defaultValues.iconUrl.trim() !== ''
+				? defaultValues.iconUrl.trim()
+				: DEFAULT_ICON;
+		const defaultEmailOrId = defaultValues?.emailOrId?.trim() ?? '';
 
-		// 入力（変更）があればメールとして整形
-		const email =
-			emailOrId && emailOrId.trim() !== ''
-				? emailOrId.includes('@')
-					? emailOrId
-					: `${emailOrId}@moneybuta.local`
-				: undefined;
+		const normalizeEmail = (value: string) =>
+			value.includes('@') ? value : `${value}@moneybuta.local`;
 
-		// 送信データを構築
 		const updateData: Record<string, string> = {};
 
-		// 入力（変更）があれば更新データに含める
-		if (email) updateData.email = email;
-		if (name?.trim()) updateData.name = name.trim();
-		if (password?.trim()) updateData.password = password.trim();
-		if (selectedIcon?.trim()) updateData.iconUrl = selectedIcon.trim();
+		const trimmedName = name?.trim() ?? '';
+		if (trimmedName && trimmedName !== defaultName) {
+			updateData.name = trimmedName;
+		}
+
+		const normalizedIcon = selectedIcon?.trim() || DEFAULT_ICON;
+		if (normalizedIcon !== defaultIcon) {
+			updateData.iconUrl = normalizedIcon;
+		}
+
+		if (!isChildSelfEdit) {
+			const trimmedEmailOrId = emailOrId?.trim() ?? '';
+			if (trimmedEmailOrId) {
+				const nextEmail = normalizeEmail(trimmedEmailOrId);
+				const currentEmail = defaultEmailOrId ? normalizeEmail(defaultEmailOrId) : '';
+				if (nextEmail !== currentEmail) {
+					updateData.email = nextEmail;
+				}
+			}
+
+			const trimmedPassword = password?.trim() ?? '';
+			if (trimmedPassword) {
+				updateData.password = trimmedPassword;
+			}
+		}
+
+		if (Object.keys(updateData).length === 0) {
+			toast.info('変更はありません');
+			return true;
+		}
 
 		// user情報を更新
 		let updatedUser: StoreUser;
@@ -252,35 +277,43 @@ const ProfileEditDialog = ({
 			});
 		} catch (error) {
 			console.error('APIエラー:', error);
-			toast.error('ユーザー情報の更新に失敗しました');
+			const message = error instanceof Error ? error.message : 'ユーザー情報の更新に失敗しました';
+			toast.error(message);
 			return false;
 		}
 
 		// 自分自身ならセッション再取得
 		if (user?.id === targetUserId) {
-			if (password) {
+			if (updateData.password) {
 				// パスワードを変更した場合は再ログイン
 				const { data: siData, error: siErr } = await supabase.auth.signInWithPassword({
-					email: updatedUser.email as string,
-					password,
+					email: updateData.email ?? (updatedUser.email as string),
+					password: updateData.password,
 				});
 
 				if (siErr || !siData.session) {
 					console.error('再ログイン失敗:', siErr);
-					toast.error('再ログインに失敗しました');
-					return false;
+					toast.warning(
+						'プロフィールは更新されました。次回サインイン時に新しいパスワードでログインしてください。'
+					);
+				} else {
+					document.cookie = `access_token=${siData.session.access_token}; path=/; max-age=86400`;
+					sessionStorage.setItem('access_token', siData.session.access_token);
+					toast.success('パスワードを更新しました🐷');
 				}
-				sessionStorage.setItem('access_token', siData.session.access_token);
-				toast.success('パスワードを更新しました🐷');
-			} else {
+			} else if (updateData.email) {
 				// パスワードを変更しない場合はセッションだけリフレッシュ
 				const { error: refErr } = await supabase.auth.refreshSession();
 
 				if (refErr) {
 					console.error('セッションリフレッシュ失敗:', refErr);
-					toast.error('セッションを更新できませんでした');
-					return false;
+					toast.warning(
+						'プロフィールは更新されました。再ログインすると最新の認証情報が反映されます。'
+					);
+				} else {
+					toast.success('ユーザー情報を更新しました🐷');
 				}
+			} else {
 				toast.success('ユーザー情報を更新しました🐷');
 			}
 		}
