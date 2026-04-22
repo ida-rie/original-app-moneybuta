@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PiggyBank, Check } from 'lucide-react';
+import { PiggyBank } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserType } from '@/types/userType';
 import { toast } from 'sonner';
@@ -245,16 +245,14 @@ const QuestCard = ({ user }: QuestCardProps) => {
 										// 3. 親が承認済み
 										<Button
 											type="button"
-											variant="incomplete"
+											variant="revoke"
 											onClick={() => handleClickRevoke(quest.id)}
 											disabled={revokeLoading[quest.id]}
-											className="flex items-center gap-1"
 										>
-											<Check size={16} />
 											{revokeLoading[quest.id] ? '送信中…' : '承認解除'}
 										</Button>
 									)
-							) : // 子どもの表示
+								) : // 子どもの表示
 							!quest.completed ? (
 								<Button
 									type="button"
@@ -267,7 +265,7 @@ const QuestCard = ({ user }: QuestCardProps) => {
 							) : !quest.approved ? (
 								<Button
 									type="button"
-									variant="incomplete"
+									variant="undo"
 									onClick={() => handleClickUncomplete(quest.id)}
 									disabled={uncompleteLoading[quest.id]}
 								>
