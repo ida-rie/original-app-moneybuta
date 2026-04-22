@@ -58,21 +58,39 @@ export const IosInstallGuideModal = () => {
 				setOpen(nextOpen);
 			}}
 		>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>ホーム画面に追加しよう</DialogTitle>
-					<DialogDescription>
+			<DialogContent className="max-w-[92vw] sm:max-w-md p-5">
+				<DialogHeader className="space-y-2">
+					<DialogTitle className="text-base leading-relaxed">ホーム画面に追加しよう</DialogTitle>
+					<DialogDescription className="text-sm leading-relaxed">
 						iPhoneでは「共有」からホーム画面に追加すると、アプリのように起動できます。
 					</DialogDescription>
 				</DialogHeader>
 
-				<div className="text-sm space-y-2">
-					<p>1. 画面下の <Share2 className="inline" size={14} /> 共有ボタンをタップ</p>
-					<p>2. 「ホーム画面に追加」を選択</p>
-					<p>3. 右上の「追加」をタップ</p>
+				<div className="mt-2 space-y-2">
+					<div className="rounded-lg bg-[var(--color-background)] border border-[var(--color-border)] p-3">
+						<p className="text-sm leading-relaxed text-[var(--color-text)]">
+							<span className="font-semibold mr-2">1.</span>
+							画面下の共有ボタンをタップ
+							<span className="inline-flex align-middle ml-2 rounded-md bg-white border border-[var(--color-border)] p-1">
+								<Share2 size={14} />
+							</span>
+						</p>
+					</div>
+					<div className="rounded-lg bg-[var(--color-background)] border border-[var(--color-border)] p-3">
+						<p className="text-sm leading-relaxed text-[var(--color-text)]">
+							<span className="font-semibold mr-2">2.</span>
+							「ホーム画面に追加」を選択
+						</p>
+					</div>
+					<div className="rounded-lg bg-[var(--color-background)] border border-[var(--color-border)] p-3">
+						<p className="text-sm leading-relaxed text-[var(--color-text)]">
+							<span className="font-semibold mr-2">3.</span>
+							右上の「追加」をタップ
+						</p>
+					</div>
 				</div>
 
-				<DialogFooter>
+				<DialogFooter className="mt-2">
 					<Button type="button" variant="primary" onClick={closeGuide}>
 						閉じる
 					</Button>
