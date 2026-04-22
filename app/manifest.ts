@@ -13,19 +13,19 @@ const manifest = (): MetadataRoute.Manifest => {
 		lang: 'ja',
 		icons: [
 			{
-				src: '/pwa/icon-192.png',
+				src: '/pwa/icon-192.jpg',
 				sizes: '192x192',
-				type: 'image/png',
+				type: 'image/jpeg',
 			},
 			{
-				src: '/pwa/icon-512.png',
+				src: '/pwa/icon-512.jpg',
 				sizes: '512x512',
-				type: 'image/png',
+				type: 'image/jpeg',
 			},
 			{
-				src: '/pwa/icon-512.png',
+				src: '/pwa/icon-512.jpg',
 				sizes: '512x512',
-				type: 'image/png',
+				type: 'image/jpeg',
 				purpose: 'maskable',
 			},
 		],

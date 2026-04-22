@@ -45,13 +45,13 @@ export async function POST(req: NextRequest) {
 							auth: sub.auth,
 						},
 					},
-					{
-						title: 'マネぶた',
-						body: 'テスト通知です。通知設定は正常です。',
-						url: '/mypage',
-						icon: '/pwa/icon-192.png',
-					}
-				);
+						{
+							title: 'マネぶた',
+							body: 'テスト通知です。通知設定は正常です。',
+							url: '/mypage',
+							icon: '/pwa/icon-192.jpg',
+						}
+					);
 				sent += 1;
 			} catch (error: unknown) {
 				failed += 1;

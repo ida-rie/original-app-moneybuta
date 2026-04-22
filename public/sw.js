@@ -1,11 +1,11 @@
-const CACHE_NAME = 'moneybuta-static-v1';
+const CACHE_NAME = 'moneybuta-static-v2';
 const OFFLINE_URL = '/offline.html';
 const ASSETS_TO_CACHE = [
   '/',
   OFFLINE_URL,
   '/favicon.ico',
-  '/pwa/icon-192.png',
-  '/pwa/icon-512.png',
+  '/pwa/icon-192.jpg',
+  '/pwa/icon-512.jpg',
 ];
 
 self.addEventListener('install', (event) => {

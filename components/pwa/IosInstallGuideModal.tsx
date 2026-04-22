@@ -58,7 +58,7 @@ export const IosInstallGuideModal = () => {
 				setOpen(nextOpen);
 			}}
 		>
-			<DialogContent className="max-w-[92vw] sm:max-w-md p-5">
+			<DialogContent className="max-w-[92vw] sm:max-w-md p-5 bg-[var(--color-card-bg)] border border-[var(--color-border)]">
 				<DialogHeader className="space-y-2">
 					<DialogTitle className="text-base leading-relaxed">ホーム画面に追加しよう</DialogTitle>
 					<DialogDescription className="text-sm leading-relaxed">
