@@ -180,8 +180,23 @@ try {
   const complete1 = await api(`/api/quests/${todayQuest.id}/complete`, childA.token, { method: 'PUT' });
   add('子A1が完了できる', complete1.status === 200, `status=${complete1.status}`);
 
+  const uncomplete1 = await api(`/api/quests/${todayQuest.id}/complete`, childA.token, { method: 'DELETE' });
+  add('子A1が完了を取り消せる', uncomplete1.status === 200, `status=${uncomplete1.status}`);
+
+  const uncomplete2 = await api(`/api/quests/${todayQuest.id}/complete`, childA.token, { method: 'DELETE' });
+  add('未完了の取り消しは409', uncomplete2.status === 409, `status=${uncomplete2.status}`);
+
+  const completeAgain = await api(`/api/quests/${todayQuest.id}/complete`, childA.token, { method: 'PUT' });
+  add('子A1が再度完了できる', completeAgain.status === 200, `status=${completeAgain.status}`);
+
+  const uncompleteByParent = await api(`/api/quests/${todayQuest.id}/complete`, parentA.token, { method: 'DELETE' });
+  add('親Aの完了取り消しは403', uncompleteByParent.status === 403, `status=${uncompleteByParent.status}`);
+
   const approve1 = await api(`/api/quests/${todayQuest.id}/approve`, parentA.token, { method: 'PUT' });
   add('親Aが承認できる', approve1.status === 200, `status=${approve1.status}`);
+
+  const uncompleteAfterApprove = await api(`/api/quests/${todayQuest.id}/complete`, childA.token, { method: 'DELETE' });
+  add('承認済みの完了取り消しは409', uncompleteAfterApprove.status === 409, `status=${uncompleteAfterApprove.status}`);
 
   const complete2 = await api(`/api/quests/${todayQuest.id}/complete`, childA.token, { method: 'PUT' });
   add('再完了は409', complete2.status === 409, `status=${complete2.status}`);

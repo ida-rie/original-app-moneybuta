@@ -15,6 +15,7 @@ const QuestCard = ({ user }: QuestCardProps) => {
 	const [approveLoading, setApproveLoading] = useState<Record<string, boolean>>({});
 	const [revokeLoading, setRevokeLoading] = useState<Record<string, boolean>>({});
 	const [completeLoading, setCompleteLoading] = useState<Record<string, boolean>>({});
+	const [uncompleteLoading, setUncompleteLoading] = useState<Record<string, boolean>>({});
 
 	const patchQuest = (questId: string, patch: Partial<(typeof quests)[number]>) => {
 		return (current: typeof quests = []) =>
@@ -62,6 +63,57 @@ const QuestCard = ({ user }: QuestCardProps) => {
 			toast.error('クエストの完了に失敗しました');
 		} finally {
 			setCompleteLoading((prev) => ({ ...prev, [questId]: false }));
+		}
+	};
+
+	const handleClickUncomplete = async (questId: string) => {
+		setUncompleteLoading((prev) => ({ ...prev, [questId]: true }));
+		const previousQuests = quests;
+
+		await mutateQuests(
+			patchQuest(questId, {
+				completed: false,
+				completedAt: null,
+			}),
+			{ revalidate: false }
+		);
+
+		try {
+			const res = await apiRequest(`/api/quests/${questId}/complete`, {
+				method: 'DELETE',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (!res.ok) {
+				const payload = await res.json().catch(() => null);
+				const errorMessage = typeof payload?.error === 'string' ? payload.error : '';
+				if (res.status === 409 && errorMessage.includes('OKした')) {
+					throw new Error('おうちのひとが OKしたから けせないよ');
+				}
+				throw new Error(errorMessage || 'やったよを けせなかったよ');
+			}
+
+			const payload = await res.json();
+			const updated = payload?.quest;
+			if (updated) {
+				await mutateQuests(
+					patchQuest(questId, {
+						completed: updated.completed,
+						completedAt: updated.completedAt ? new Date(updated.completedAt) : null,
+					}),
+					{ revalidate: false }
+				);
+			}
+
+			toast.success('やったよを けしたよ！');
+		} catch (error) {
+			console.error('APIエラー:', error);
+			await mutateQuests(previousQuests, { revalidate: false });
+			toast.error(error instanceof Error ? error.message : 'やったよを けせなかったよ');
+		} finally {
+			setUncompleteLoading((prev) => ({ ...prev, [questId]: false }));
 		}
 	};
 
@@ -202,12 +254,8 @@ const QuestCard = ({ user }: QuestCardProps) => {
 											{revokeLoading[quest.id] ? '送信中…' : '承認解除'}
 										</Button>
 									)
-								) : // 子どもの表示はそのまま
-							quest.completed ? (
-								<Button type="button" variant="complete" className="pointer-events-none">
-									クリア！
-								</Button>
-							) : (
+							) : // 子どもの表示
+							!quest.completed ? (
 								<Button
 									type="button"
 									variant="incomplete"
@@ -215,6 +263,19 @@ const QuestCard = ({ user }: QuestCardProps) => {
 									disabled={completeLoading[quest.id]}
 								>
 									{completeLoading[quest.id] ? '送信中…' : 'やったよ'}
+								</Button>
+							) : !quest.approved ? (
+								<Button
+									type="button"
+									variant="incomplete"
+									onClick={() => handleClickUncomplete(quest.id)}
+									disabled={uncompleteLoading[quest.id]}
+								>
+									{uncompleteLoading[quest.id] ? '送信中…' : 'やったよを けす'}
+								</Button>
+							) : (
+								<Button type="button" variant="complete" className="pointer-events-none">
+									クリア！
 								</Button>
 							)}
 						</div>

@@ -116,7 +116,13 @@ try {
   });
   createdBasicAmountIds.push(basic.id);
 
-  const makeQuest = async (title) => {
+  const makeQuest = async (title, options = {}) => {
+    const {
+      completed = true,
+      approved = false,
+      approvedAt = null,
+      approvedBy = null,
+    } = options;
     const base = await prisma.baseQuest.create({
       data: {
         userId: parentId,
@@ -134,10 +140,12 @@ try {
         title,
         reward,
         questDate: day.start,
-        completed: true,
-        completedAt: day.start,
-        completedBy: childId,
-        approved: false,
+        completed,
+        completedAt: completed ? day.start : null,
+        completedBy: completed ? childId : null,
+        approved,
+        approvedAt,
+        approvedBy,
       },
     });
     createdQuestIds.push(q.id);
@@ -171,19 +179,35 @@ try {
   const s = parseStatuses([ar1, ar2]);
   add('承認/解除同時は 200/409', s === '200,409', `statuses=${s}`);
 
-  // 4) 月次 rewardSum の増減
-  const q4 = await makeQuest('Monthly Impact');
+  // 4) 同時完了解除
+  const q4 = await makeQuest('Race Complete Revoke');
+  const [cr1, cr2] = await Promise.all([
+    api(`/api/quests/${q4.id}/complete`, child.token, { method: 'DELETE' }),
+    api(`/api/quests/${q4.id}/complete`, child.token, { method: 'DELETE' }),
+  ]);
+  add('同時完了解除は 200/409', parseStatuses([cr1, cr2]) === '200,409', `statuses=${parseStatuses([cr1, cr2])}`);
+
+  // 5) 完了と完了解除の同時実行
+  const q5 = await makeQuest('Race Complete-Uncomplete', { completed: false });
+  const [cu1, cu2] = await Promise.all([
+    api(`/api/quests/${q5.id}/complete`, child.token, { method: 'PUT' }),
+    api(`/api/quests/${q5.id}/complete`, child.token, { method: 'DELETE' }),
+  ]);
+  add('完了/完了解除同時は 200/409', parseStatuses([cu1, cu2]) === '200,409', `statuses=${parseStatuses([cu1, cu2])}`);
+
+  // 6) 月次 rewardSum の増減
+  const q6 = await makeQuest('Monthly Impact');
   const before = await api(`/api/amount/monthly?childId=${childId}&month=${monthStr()}`, parent.token);
   if (before.status !== 200) throw new Error(`monthly before failed: ${before.status}`);
 
-  const approveQ4 = await api(`/api/quests/${q4.id}/approve`, parent.token, { method: 'PUT' });
-  if (approveQ4.status !== 200) throw new Error(`approve q4 failed: ${approveQ4.status}`);
+  const approveQ6 = await api(`/api/quests/${q6.id}/approve`, parent.token, { method: 'PUT' });
+  if (approveQ6.status !== 200) throw new Error(`approve q6 failed: ${approveQ6.status}`);
 
   const afterApprove = await api(`/api/amount/monthly?childId=${childId}&month=${monthStr()}`, parent.token);
   if (afterApprove.status !== 200) throw new Error(`monthly after approve failed: ${afterApprove.status}`);
 
-  const revokeQ4 = await api(`/api/quests/${q4.id}/approve`, parent.token, { method: 'DELETE' });
-  if (revokeQ4.status !== 200) throw new Error(`revoke q4 failed: ${revokeQ4.status}`);
+  const revokeQ6 = await api(`/api/quests/${q6.id}/approve`, parent.token, { method: 'DELETE' });
+  if (revokeQ6.status !== 200) throw new Error(`revoke q6 failed: ${revokeQ6.status}`);
 
   const afterRevoke = await api(`/api/amount/monthly?childId=${childId}&month=${monthStr()}`, parent.token);
   if (afterRevoke.status !== 200) throw new Error(`monthly after revoke failed: ${afterRevoke.status}`);
