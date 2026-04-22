@@ -24,9 +24,9 @@ const buttonVariants = cva(
 				complete:
 					'font-bold bg-[var(--color-accent)] hover:bg-[var(--color-accent-dark)] hover:text-white border border-[var(--color-accent)] transition-colors',
 				undo:
-					'font-bold border border-[var(--color-secondary)] bg-[var(--color-card-bg)] text-[var(--color-text)] hover:bg-[#FFF8D6] transition-colors',
+					'font-bold border border-[var(--color-secondary)] bg-[#FFF6CC] text-[var(--color-text)] hover:bg-[#FBEA99] transition-colors',
 				revoke:
-					'font-bold border border-[var(--color-accent)] bg-[var(--color-card-bg)] text-[var(--color-text)] hover:bg-[#EAF7E1] transition-colors',
+					'font-bold border border-[var(--color-accent)] bg-[#EAF7E1] text-[var(--color-text)] hover:bg-[#DCEFD0] transition-colors',
 				disabled: 'font-bold bg-gray-600 text-white',
 				delete:
 					'border bg-background shadow-xs hover:bg-[var(--color-text)] hover:text-[var(--color-background)] transition-colors',
