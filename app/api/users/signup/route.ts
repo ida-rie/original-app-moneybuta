@@ -5,7 +5,8 @@ import { requireAuth } from '@/lib/server/requireAuth';
 
 type CreateUserRequest = {
 	id?: string; // 親アカウントはクライアントで Auth 作成済みのため id を渡す
-	email: string;
+	email?: string;
+	loginId?: string;
 	name: string;
 	role: string;
 	parentId?: string | null;
@@ -20,6 +21,8 @@ export async function POST(req: Request) {
 
 		let userId = body.id;
 		let createdChildAuthUserId: string | null = null;
+		let childAuthEmail: string | null = null;
+		let childLoginId: string | null = null;
 
 		// 子アカウントはサーバーサイドで Supabase Auth ユーザーを作成（メール確認不要）
 		if (body.role === 'child') {
@@ -46,8 +49,20 @@ export async function POST(req: Request) {
 				return NextResponse.json({ error: 'パスワードは必須です' }, { status: 400 });
 			}
 
+			const normalizedLoginId = body.loginId?.trim() ?? body.email?.split('@')[0]?.trim();
+			if (!normalizedLoginId) {
+				return NextResponse.json({ error: '子アカウントのユーザーIDは必須です' }, { status: 400 });
+			}
+
+			childLoginId = normalizedLoginId;
+			const authLocalPart = normalizedLoginId
+				.toLowerCase()
+				.replace(/[^a-z0-9._-]/g, '-')
+				.slice(0, 30);
+			childAuthEmail = `${authLocalPart || 'child'}.${crypto.randomUUID()}@child.moneybuta.local`;
+
 			const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-				email: body.email,
+				email: childAuthEmail,
 				password: body.password,
 				email_confirm: true, // 疑似メールなので確認不要
 				user_metadata: { name: body.name },
@@ -69,11 +84,16 @@ export async function POST(req: Request) {
 			return NextResponse.json({ error: 'ユーザーIDが取得できませんでした' }, { status: 400 });
 		}
 
+		if (body.role === 'parent' && !body.email) {
+			return NextResponse.json({ error: 'メールアドレスは必須です' }, { status: 400 });
+		}
+
 		try {
 			const user = await prisma.user.create({
 				data: {
 					id: userId,
-					email: body.email,
+					email: body.role === 'child' ? childAuthEmail! : body.email!,
+					loginId: body.role === 'child' ? childLoginId : null,
 					name: body.name,
 					role: body.role,
 					parentId: body.parentId ?? null,

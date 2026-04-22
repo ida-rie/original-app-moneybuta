@@ -80,9 +80,11 @@ const ChildAccountList = ({ childrenData }: Props) => {
 				defaultValues={
 					mode === 'childEdit' && selectedChild?.email
 						? {
-								emailOrId: selectedChild.email.includes('@moneybuta.local')
-									? selectedChild.email.replace('@moneybuta.local', '')
-									: selectedChild.email,
+								emailOrId:
+									selectedChild.loginId ??
+									(selectedChild.email.includes('@')
+										? selectedChild.email.split('@')[0]
+										: selectedChild.email),
 								name: selectedChild.name ?? '',
 								password: '',
 								iconUrl: selectedChild.iconUrl ?? '/icon/ic_pig.png',

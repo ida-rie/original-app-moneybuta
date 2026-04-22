@@ -48,8 +48,22 @@ const SignIn = () => {
 		const { emailOrId, password } = data;
 
 		try {
-			// 子アカウントの場合、ユーザーIDを擬似的にメールアドレス形式にする
-			const email = emailOrId.includes('@') ? emailOrId : `${emailOrId}@moneybuta.local`;
+			let email = emailOrId.trim();
+			if (!email.includes('@')) {
+				const resolved = await fetch('/api/auth/resolve-login', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ loginId: email }),
+				});
+
+				if (resolved.ok) {
+					const payload: { email?: string } = await resolved.json();
+					email = payload.email ?? `${email}@moneybuta.local`;
+				} else {
+					// 既存互換: 旧方式（loginId + 固定ドメイン）でも試行する
+					email = `${email}@moneybuta.local`;
+				}
+			}
 
 			// supabase認証でサインイン
 			const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
@@ -102,6 +116,7 @@ const SignIn = () => {
 			setUser({
 				id: userInfo.id,
 				email: userInfo.email,
+				loginId: userInfo.loginId,
 				name: userInfo.name,
 				role: userInfo.role,
 				iconUrl: userInfo.iconUrl,

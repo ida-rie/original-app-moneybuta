@@ -38,7 +38,12 @@ const UserProfile = ({ user }: UserProfileProps) => {
 						</dl>
 						<dl className="mb-4">
 							<dt className="font-semibold text-[var(--color-text-secondary)] mb-1">ユーザーID</dt>
-							<dd className="text-lg break-all">{user?.email}</dd>
+							<dd className="text-lg break-all">
+								{user?.role === 'child'
+									? (user.loginId ??
+										(user.email.includes('@') ? user.email.split('@')[0] : user.email))
+									: user?.email}
+							</dd>
 						</dl>
 						<dl className="mb-4">
 							<dt className="font-semibold text-[var(--color-text-secondary)] mb-1">
@@ -65,7 +70,9 @@ const UserProfile = ({ user }: UserProfileProps) => {
 						defaultValues={{
 							emailOrId:
 								user?.role === 'child'
-									? user?.email?.replace('@moneybuta.local', '') ?? ''
+									? (user?.loginId ??
+										(user?.email?.includes('@') ? user.email.split('@')[0] : user?.email) ??
+										'')
 									: user?.email ?? '',
 							name: user?.name ?? '',
 							password: '',

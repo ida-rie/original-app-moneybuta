@@ -6,6 +6,7 @@ import { create } from 'zustand';
 export type ChildUser = {
 	id: string;
 	email: string;
+	loginId?: string | null;
 	name: string;
 	role: 'child';
 	iconUrl: string | null;
@@ -14,6 +15,7 @@ export type ChildUser = {
 export type ParentUser = {
 	id: string;
 	email: string;
+	loginId?: string | null;
 	name: string;
 	role: 'parent';
 	iconUrl: string | null;

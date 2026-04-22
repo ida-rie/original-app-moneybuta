@@ -154,6 +154,7 @@ const ProfileEditDialog = ({
 
 	// 子アカウント自身が編集する場合はID/PWフィールドを非表示
 	const isChildSelfEdit = mode === 'edit' && user?.role === 'child';
+	const isChildAccountMode = mode === 'create' || mode === 'childEdit' || isChildSelfEdit;
 
 	useLayoutEffect(() => {
 		if (open) {
@@ -177,19 +178,19 @@ const ProfileEditDialog = ({
 	// 子アカウント作成（サーバーサイドで Auth ユーザーを作成してメール確認をスキップ）
 	const handleCreate = async (data: CreateFormData) => {
 		const { emailOrId, password, name, iconUrl } = data;
-
-		// 子アカウントの場合、ユーザーIDを擬似的にメールアドレス形式にする
-		const email = emailOrId.includes('@') ? emailOrId : `${emailOrId}@moneybuta.local`;
+		const loginId = emailOrId.trim();
 
 		// サーバーサイドで Auth 作成 + DB 登録を一括処理
 		try {
 			const createdChild = await apiJson<{
 				id: string;
+				email: string;
+				loginId: string | null;
 			}>('/api/users/signup', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					email,
+					loginId,
 					password,
 					name,
 					role: 'child',
@@ -202,7 +203,8 @@ const ProfileEditDialog = ({
 			const { addChild } = useAuthStore.getState();
 			addChild({
 				id: createdChild.id,
-				email,
+				email: createdChild.email,
+				loginId: createdChild.loginId ?? loginId,
 				name,
 				role: 'child',
 				iconUrl: selectedIcon ?? null,
@@ -229,9 +231,6 @@ const ProfileEditDialog = ({
 				: DEFAULT_ICON;
 		const defaultEmailOrId = defaultValues?.emailOrId?.trim() ?? '';
 
-		const normalizeEmail = (value: string) =>
-			value.includes('@') ? value : `${value}@moneybuta.local`;
-
 		const updateData: Record<string, string> = {};
 
 		const trimmedName = name?.trim() ?? '';
@@ -247,10 +246,12 @@ const ProfileEditDialog = ({
 		if (!isChildSelfEdit) {
 			const trimmedEmailOrId = emailOrId?.trim() ?? '';
 			if (trimmedEmailOrId) {
-				const nextEmail = normalizeEmail(trimmedEmailOrId);
-				const currentEmail = defaultEmailOrId ? normalizeEmail(defaultEmailOrId) : '';
-				if (nextEmail !== currentEmail) {
-					updateData.email = nextEmail;
+				if (mode === 'childEdit') {
+					if (trimmedEmailOrId !== defaultEmailOrId) {
+						updateData.loginId = trimmedEmailOrId;
+					}
+				} else if (trimmedEmailOrId !== defaultEmailOrId) {
+					updateData.email = trimmedEmailOrId;
 				}
 			}
 
@@ -432,10 +433,14 @@ const ProfileEditDialog = ({
 								name="emailOrId"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>ユーザーID</FormLabel>
+										<FormLabel>{isChildAccountMode ? 'ユーザーID' : 'メールアドレス'}</FormLabel>
 										<FormControl>
 											<Input
-												placeholder="ユーザーIDを入力してください"
+												placeholder={
+													isChildAccountMode
+														? 'ユーザーIDを入力してください'
+														: 'メールアドレスを入力してください'
+												}
 												autoComplete="off"
 												data-form-type="other"
 												data-lpignore="true"

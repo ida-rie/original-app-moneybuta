@@ -53,6 +53,7 @@ const AuthCallbackPage = () => {
 				setUser({
 					id: userInfo.id,
 					email: userInfo.email,
+					loginId: userInfo.loginId,
 					name: userInfo.name,
 					role: userInfo.role,
 					iconUrl: userInfo.iconUrl,

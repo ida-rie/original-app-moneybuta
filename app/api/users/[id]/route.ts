@@ -8,6 +8,7 @@ import { logApiPerf } from '@/lib/server/perf';
 
 type updateUserRequest = {
 	email?: string;
+	loginId?: string;
 	name?: string;
 	password?: string;
 	iconUrl?: string;
@@ -75,6 +76,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
 			select: {
 				id: true,
 				email: true,
+				loginId: true,
 				name: true,
 				role: true,
 				iconUrl: true,
@@ -83,6 +85,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
 							select: {
 								id: true,
 								email: true,
+								loginId: true,
 								name: true,
 								role: true,
 								iconUrl: true,
@@ -142,15 +145,21 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 
 		const normalized = {
 			email: body.email?.trim(),
+			loginId: body.loginId?.trim(),
 			name: body.name?.trim(),
 			password: body.password?.trim(),
 			iconUrl: body.iconUrl?.trim(),
 		};
 
 		const authUpdateData: { email?: string; password?: string } = {};
-		const profileUpdateData: { email?: string; name?: string; iconUrl?: string } = {};
+		const profileUpdateData: { email?: string; loginId?: string; name?: string; iconUrl?: string } = {};
 
-		if (normalized.email) {
+		if (targetUser.role === 'child') {
+			const nextLoginId = normalized.loginId ?? normalized.email?.split('@')[0]?.trim();
+			if (nextLoginId) {
+				profileUpdateData.loginId = nextLoginId;
+			}
+		} else if (normalized.email) {
 			authUpdateData.email = normalized.email;
 			profileUpdateData.email = normalized.email;
 		}
@@ -165,7 +174,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 		}
 
 		if (requestingUser?.role === 'child' && isOwnAccount) {
-			if (authUpdateData.email || authUpdateData.password) {
+			if (profileUpdateData.loginId || authUpdateData.email || authUpdateData.password) {
 				return NextResponse.json(
 					{ error: '子アカウントではユーザーIDとパスワードを変更できません' },
 					{ status: 403 }
@@ -191,7 +200,15 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 		if (Object.keys(profileUpdateData).length === 0) {
 			const currentUser = await prisma.user.findUnique({
 				where: { id },
-				include: { children: true },
+				select: {
+					id: true,
+					email: true,
+					loginId: true,
+					name: true,
+					role: true,
+					iconUrl: true,
+					children: true,
+				},
 			});
 			return NextResponse.json(currentUser, { status: 200 });
 		}
@@ -200,7 +217,13 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 		const updatedUser = await prisma.user.update({
 			where: { id },
 			data: profileUpdateData,
-			include: {
+			select: {
+				id: true,
+				email: true,
+				loginId: true,
+				name: true,
+				role: true,
+				iconUrl: true,
 				children: true,
 			},
 		});
