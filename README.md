@@ -178,6 +178,8 @@
 - 認可まわりの回帰確認は [docs/auth-regression-checklist.md](./docs/auth-regression-checklist.md) を参照
 - `npm run lint` は `eslint .` を実行
 - `npm run build` は `next build --webpack` を実行
+- Web Push を使う場合は `.env` に `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` を設定
+- Push API はデフォルト無効。利用時のみ `PUSH_FEATURE_ENABLED=true`、テスト送信を使う場合は `PUSH_TEST_ENDPOINT_ENABLED=true` を設定
 - Google Fonts 依存は解消済み。現状は Turbopack が sandbox 環境で不安定なため、通常 build は webpack を採用
 
 ---

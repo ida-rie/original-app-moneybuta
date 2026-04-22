@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/server/requireAuth';
 import { getAuthorizedBaseQuest } from '@/lib/server/resourceAccess';
+import { canManageChildAsParent } from '@/lib/server/childAccess';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +24,12 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 		const { baseQuest: existingQuest, status, error } = await getAuthorizedBaseQuest(id, user);
 		if (!existingQuest) {
 			return NextResponse.json({ error }, { status: status! });
+		}
+		if (body.childUserId && body.childUserId !== existingQuest.childUserId) {
+			const hasAccessToNewChild = await canManageChildAsParent(user, body.childUserId);
+			if (!hasAccessToNewChild) {
+				return NextResponse.json({ error: '更新先の子アカウントに対する権限がありません' }, { status: 403 });
+			}
 		}
 
 		// 更新処理

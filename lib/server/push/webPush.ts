@@ -1,0 +1,43 @@
+import webpush, { PushSubscription } from 'web-push';
+
+let isConfigured = false;
+
+const getVapidConfig = () => {
+	const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+	const privateKey = process.env.VAPID_PRIVATE_KEY;
+	const subject = process.env.VAPID_SUBJECT;
+
+	if (!publicKey || !privateKey || !subject) {
+		return null;
+	}
+
+	return {
+		publicKey,
+		privateKey,
+		subject,
+	};
+};
+
+export const hasWebPushConfig = () => {
+	return !!getVapidConfig();
+};
+
+const ensureVapidConfigured = () => {
+	if (isConfigured) return;
+
+	const config = getVapidConfig();
+	if (!config) {
+		throw new Error('VAPID configuration is missing');
+	}
+
+	webpush.setVapidDetails(config.subject, config.publicKey, config.privateKey);
+	isConfigured = true;
+};
+
+export const sendWebPushNotification = async (
+	subscription: PushSubscription,
+	payload: Record<string, unknown>
+) => {
+	ensureVapidConfigured();
+	return webpush.sendNotification(subscription, JSON.stringify(payload));
+};

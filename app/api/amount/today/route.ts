@@ -5,8 +5,14 @@ import { getTodayUtc } from '@/lib/utils/getTodayUtc';
 export async function GET(req: NextRequest) {
 	console.log('🟢 金額履歴作成バッチ開始');
 
+	const cronSecret = process.env.CRON_SECRET;
+	if (!cronSecret) {
+		console.error('❌ CRON_SECRET が未設定です');
+		return NextResponse.json({ error: 'サーバー設定エラー' }, { status: 503 });
+	}
+
 	const authHeader = req.headers.get('Authorization');
-	if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+	if (authHeader !== `Bearer ${cronSecret}`) {
 		return new Response('Unauthorized', {
 			status: 401,
 		});

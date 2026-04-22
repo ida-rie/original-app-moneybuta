@@ -1,6 +1,9 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 import { Toaster } from 'sonner';
+import { InstallPromptBanner } from '@/components/pwa/InstallPromptBanner';
+import { IosInstallGuideModal } from '@/components/pwa/IosInstallGuideModal';
+import { ServiceWorkerRegister } from '@/components/pwa/ServiceWorkerRegister';
 import './globals.css';
 
 // ローカル同梱した Noto Sans JP を使用して build 時の外部通信をなくす
@@ -14,9 +17,20 @@ const notoSansJP = localFont({
 export const metadata: Metadata = {
 	title: 'マネぶた おこづかいクエスト',
 	description: 'クエスト(お手伝い)をクリアしておこづかいを貯めていくアプリです。',
+	manifest: '/manifest.webmanifest',
+	appleWebApp: {
+		capable: true,
+		title: 'マネぶた',
+		statusBarStyle: 'default',
+	},
 	icons: {
 		icon: '/favicon.ico',
+		apple: '/pwa/apple-touch-icon.png',
 	},
+};
+
+export const viewport: Viewport = {
+	themeColor: '#f9fafb',
 };
 
 const RootLayout = ({
@@ -27,6 +41,9 @@ const RootLayout = ({
 	return (
 		<html lang="ja">
 			<body className={`${notoSansJP.className} antialiased flex flex-col min-h-svh`}>
+				<ServiceWorkerRegister />
+				<InstallPromptBanner />
+				<IosInstallGuideModal />
 				{/* Main コンテンツ */}
 				<div className="grow-1">{children}</div>
 				{/* トースター */}

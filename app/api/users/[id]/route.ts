@@ -109,9 +109,8 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
 
 		return NextResponse.json(user, { status: 200 });
 	} catch (error) {
-		const message = error instanceof Error ? error.message : String(error);
 		console.error('ユーザー取得エラー:', error);
-		return NextResponse.json({ error: message }, { status: 500 });
+		return NextResponse.json({ error: 'サーバーエラー' }, { status: 500 });
 	}
 }
 
