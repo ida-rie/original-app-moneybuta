@@ -19,16 +19,24 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 		if (!quest) {
 			return NextResponse.json({ error }, { status: status! });
 		}
+		if (quest.completed) {
+			return NextResponse.json({ error: 'すでに完了済みです' }, { status: 409 });
+		}
 
-		// クエストを完了状態にする
-		const updated = await prisma.questHistory.update({
-			where: { id },
-			data: {
-				completed: true,
-				completedAt: new Date(),
-				completedBy: user.id,
-			},
+		const result = await prisma.questHistory.updateMany({
+			where: { id, completed: false },
+			data: { completed: true, completedAt: new Date(), completedBy: user.id },
 		});
+		if (result.count === 0) {
+			return NextResponse.json(
+				{ error: 'クエスト状態が更新されたため完了にできませんでした' },
+				{ status: 409 }
+			);
+		}
+		const updated = await prisma.questHistory.findUnique({ where: { id } });
+		if (!updated) {
+			return NextResponse.json({ error: 'クエストが見つかりません' }, { status: 404 });
+		}
 
 		return NextResponse.json({ message: 'クエストを完了しました', quest: updated });
 	} catch (error) {

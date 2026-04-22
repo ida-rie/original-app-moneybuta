@@ -13,6 +13,7 @@ type QuestCardProps = {
 const QuestCard = ({ user }: QuestCardProps) => {
 	const { quests, mutateQuests } = useQuestList();
 	const [approveLoading, setApproveLoading] = useState<Record<string, boolean>>({});
+	const [revokeLoading, setRevokeLoading] = useState<Record<string, boolean>>({});
 	const [completeLoading, setCompleteLoading] = useState<Record<string, boolean>>({});
 
 	const patchQuest = (questId: string, patch: Partial<(typeof quests)[number]>) => {
@@ -87,9 +88,13 @@ const QuestCard = ({ user }: QuestCardProps) => {
 			const payload = await res.json();
 			const updated = payload?.quest;
 			if (updated) {
-				await mutateQuests(patchQuest(questId, { approved: updated.approved }), {
-					revalidate: false,
-				});
+				await mutateQuests(
+					patchQuest(questId, {
+						approved: updated.approved,
+						approvedAt: updated.approvedAt ? new Date(updated.approvedAt) : null,
+					}),
+					{ revalidate: false }
+				);
 			}
 
 			toast.success('クエストを承認しました！');
@@ -99,6 +104,54 @@ const QuestCard = ({ user }: QuestCardProps) => {
 			toast.error('クエストの承認に失敗しました');
 		} finally {
 			setApproveLoading((prev) => ({ ...prev, [questId]: false }));
+		}
+	};
+
+	const handleClickRevoke = async (questId: string) => {
+		setRevokeLoading((prev) => ({ ...prev, [questId]: true }));
+		const previousQuests = quests;
+
+		await mutateQuests(
+			patchQuest(questId, {
+				approved: false,
+				approvedAt: null,
+			}),
+			{ revalidate: false }
+		);
+
+		try {
+			const res = await apiRequest(`/api/quests/${questId}/approve`, {
+				method: 'DELETE',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (!res.ok) {
+				const errorText = await res.text();
+				console.error('APIエラー:', errorText);
+				throw new Error(errorText || 'クエスト承認の解除に失敗しました');
+			}
+
+			const payload = await res.json();
+			const updated = payload?.quest;
+			if (updated) {
+				await mutateQuests(
+					patchQuest(questId, {
+						approved: updated.approved,
+						approvedAt: updated.approvedAt ? new Date(updated.approvedAt) : null,
+					}),
+					{ revalidate: false }
+				);
+			}
+
+			toast.success('クエスト承認を解除しました');
+		} catch (error) {
+			console.error('APIエラー:', error);
+			await mutateQuests(previousQuests, { revalidate: false });
+			toast.error('クエスト承認の解除に失敗しました');
+		} finally {
+			setRevokeLoading((prev) => ({ ...prev, [questId]: false }));
 		}
 	};
 
@@ -136,17 +189,20 @@ const QuestCard = ({ user }: QuestCardProps) => {
 									>
 										{approveLoading[quest.id] ? '送信中…' : '承認'}
 									</Button>
-								) : (
-									// 3. 親が承認済み
-									<Button
-										type="button"
-										variant="incomplete"
-										className="flex items-center gap-1 pointer-events-none"
-									>
-										<Check size={16} /> 承認済
-									</Button>
-								)
-							) : // 子どもの表示はそのまま
+									) : (
+										// 3. 親が承認済み
+										<Button
+											type="button"
+											variant="incomplete"
+											onClick={() => handleClickRevoke(quest.id)}
+											disabled={revokeLoading[quest.id]}
+											className="flex items-center gap-1"
+										>
+											<Check size={16} />
+											{revokeLoading[quest.id] ? '送信中…' : '承認解除'}
+										</Button>
+									)
+								) : // 子どもの表示はそのまま
 							quest.completed ? (
 								<Button type="button" variant="complete" className="pointer-events-none">
 									クリア！

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { utcToZonedTime } from 'date-fns-tz';
 import { getMonthUtc } from '@/lib/utils/getMonthUtc';
 import { requireAuth } from '@/lib/server/requireAuth';
+import { canAccessChild } from '@/lib/server/childAccess';
 import { logApiPerf } from '@/lib/server/perf';
 
 export const dynamic = 'force-dynamic';
@@ -23,6 +24,7 @@ type MonthlyQuestRow = {
 export async function GET(req: Request) {
 	const startedAt = Date.now();
 	let authAt = startedAt;
+	let authzAt = startedAt;
 	let dbAt = startedAt;
 
 	const { searchParams } = new URL(req.url);
@@ -33,11 +35,17 @@ export async function GET(req: Request) {
 		return NextResponse.json({ error: 'childIdとmonthは必須です' }, { status: 400 });
 	}
 
-	const { errorResponse } = await requireAuth(req, {
+	const { user, errorResponse } = await requireAuth(req, {
 		missingTokenMessage: 'アクセストークンが必要です',
 	});
 	authAt = Date.now();
 	if (errorResponse) return errorResponse;
+
+	const hasAccess = await canAccessChild(user, childId);
+	authzAt = Date.now();
+	if (!hasAccess) {
+		return NextResponse.json({ error: '権限がありません' }, { status: 403 });
+	}
 
 	try {
 		// 日本時間を明示的に指定してUTCに変換
@@ -120,7 +128,8 @@ export async function GET(req: Request) {
 
 		logApiPerf('GET /api/amount/monthly', {
 			authMs: authAt - startedAt,
-			dbMs: dbAt - authAt,
+			authzMs: authzAt - authAt,
+			dbMs: dbAt - authzAt,
 			totalMs: dbAt - startedAt,
 		});
 

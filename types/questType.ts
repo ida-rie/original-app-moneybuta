@@ -3,7 +3,7 @@ export type QuestType = {
 	title: string;
 	reward: number;
 	completed: boolean;
+	completedAt: Date | string | null;
 	approved: boolean;
-	completedAt: Date;
-	questDate: Date;
+	approvedAt: Date | string | null;
 };

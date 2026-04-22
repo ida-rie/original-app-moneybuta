@@ -103,6 +103,7 @@
 - 毎月の基本おこづかいの設定
 - お手伝い（クエスト）内容の登録・編集・削除
 - 子どもの報告内容の承認（報酬の確定）
+- 承認済みクエストの承認解除（当日中のみ）
 
 ### 🔁 共通機能
 
@@ -177,6 +178,33 @@
 - `npm run lint` は `eslint .` を実行
 - `npm run build` は `next build --webpack` を実行
 - Google Fonts 依存は解消済み。現状は Turbopack が sandbox 環境で不安定なため、通常 build は webpack を採用
+
+---
+
+## ✅ 承認解除仕様
+
+- 承認解除 API: `DELETE /api/quests/[id]/approve`
+- 実行者: 親アカウント（対象の子どもの保護者のみ）
+- 制約: 承認解除は「承認した当日（JST）」のみ可能
+- 主なステータス:
+  - `200`: 解除成功
+  - `403`: 権限なし（子ども／他家庭の親）
+  - `409`: 未承認・当日外・競合などで解除不可
+
+---
+
+## 🧪 承認解除テスト実行
+
+- APIシナリオ:
+  - `npm run test:approval-revoke`
+- 競合・金額反映:
+  - `npm run test:approval-revoke:extended`
+- まとめて実行:
+  - `npm run test:approval-revoke:all`
+
+関連ドキュメント:
+- チェックシート: [docs/approval-revoke-test-checklist.md](./docs/approval-revoke-test-checklist.md)
+- 実施レポート: [docs/approval-revoke-test-report-2026-04-22.md](./docs/approval-revoke-test-report-2026-04-22.md)
 
 ---
 

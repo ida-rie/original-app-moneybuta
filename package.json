@@ -8,7 +8,10 @@
 		"start": "next start",
 		"lint": "eslint .",
 		"postinstall": "prisma generate",
-		"seed": "tsx lib/seed/quest_seed.ts"
+		"seed": "tsx lib/seed/quest_seed.ts",
+		"test:approval-revoke": "node scripts/approval_revoke_api_check.mjs",
+		"test:approval-revoke:extended": "node scripts/approval_revoke_extended_check.mjs",
+		"test:approval-revoke:all": "npm run test:approval-revoke && npm run test:approval-revoke:extended"
 	},
 	"dependencies": {
 		"@hookform/resolvers": "^5.0.1",
