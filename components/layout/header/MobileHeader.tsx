@@ -8,6 +8,7 @@ import { useAuthStore } from '@/lib/zustand/authStore';
 import signOut from '@/lib/auth/signOut';
 // import { Smile } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { RefreshButton } from '@/components/layout/header/RefreshButton';
 
 import { LogOut } from 'lucide-react';
 
@@ -79,12 +80,13 @@ export const MobileHeader = () => {
 				</Sheet>
 			)}
 
-			{/* <div className=""> */}
-			<button className="grid place-items-center" onClick={handleSignOut}>
-				<LogOut size={20} />
-				<span className="text-[10px]">サインアウト</span>
-			</button>
-			{/* </div> */}
+			<div className="flex items-center gap-2">
+				<RefreshButton className="min-w-0 px-2" />
+				<button className="grid place-items-center" onClick={handleSignOut}>
+					<LogOut size={20} />
+					<span className="text-[10px]">サインアウト</span>
+				</button>
+			</div>
 		</div>
 	);
 };

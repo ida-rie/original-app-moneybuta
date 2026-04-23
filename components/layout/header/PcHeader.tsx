@@ -15,6 +15,7 @@ import {
 import { useAuthStore } from '@/lib/zustand/authStore';
 import signOut from '@/lib/auth/signOut';
 import { Button } from '@/components/ui/button';
+import { RefreshButton } from '@/components/layout/header/RefreshButton';
 
 // PC幅（768px以上）の時に表示するヘッダー
 export const PcHeader = () => {
@@ -98,6 +99,9 @@ export const PcHeader = () => {
 								<Link href="/settings">設定</Link>
 							</li>
 						)}
+						<li>
+							<RefreshButton />
+						</li>
 						<li>
 							<Button variant="delete" onClick={handleSignOut}>
 								サインアウト
