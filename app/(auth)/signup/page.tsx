@@ -21,6 +21,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { BookOpenText, MailCheck } from 'lucide-react';
 import { useAuthStore } from '@/lib/zustand/authStore';
+import { syncSessionCookie } from '@/lib/client/authSession';
 
 const FormSchema = z.object({
 	email: z
@@ -112,11 +113,9 @@ const SignUp = () => {
 			}
 
 			// セッションがある場合（Email Confirmation が OFF の開発環境など）はそのままログイン
-			const accessToken = signUpData.session.access_token;
-			document.cookie = `access_token=${accessToken}; path=/; max-age=86400`;
-			sessionStorage.setItem('access_token', accessToken);
+			await syncSessionCookie(signUpData.session);
 
-			// Zustand にユーザー情報を保存（sessionStorage への書き込みも内部で行われる）
+			// Zustand にユーザー情報を保存（保存先は authStore 側の設定に従う）
 			const setUser = useAuthStore.getState().setUser;
 			setUser({
 				id: user.id,

@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
 import { ChildUser, ParentUser, useAuthStore } from '@/lib/zustand/authStore';
 import { apiJson } from '@/lib/client/apiClient';
+import { syncSessionCookie } from '@/lib/client/authSession';
 
 type Mode = 'create' | 'edit' | 'childEdit';
 
@@ -298,8 +299,7 @@ const ProfileEditDialog = ({
 						'プロフィールは更新されました。次回サインイン時に新しいパスワードでログインしてください。'
 					);
 				} else {
-					document.cookie = `access_token=${siData.session.access_token}; path=/; max-age=86400`;
-					sessionStorage.setItem('access_token', siData.session.access_token);
+					await syncSessionCookie(siData.session);
 					toast.success('パスワードを更新しました🐷');
 				}
 			} else if (updateData.email) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/prisma/supabaseCreateClient';
+import { ACCESS_TOKEN_COOKIE_NAME } from '@/lib/auth/cookieConfig';
 
 type AuthResult =
 	| {
@@ -19,7 +20,14 @@ export const requireAuth = async (
 		authErrorMessage?: string;
 	}
 ): Promise<AuthResult> => {
-	const accessToken = req.headers.get('Authorization')?.replace('Bearer ', '');
+	const bearerToken = req.headers.get('Authorization')?.replace('Bearer ', '');
+	const cookieHeader = req.headers.get('cookie') ?? '';
+	const cookieToken = cookieHeader
+		.split(';')
+		.map((part) => part.trim())
+		.find((part) => part.startsWith(`${ACCESS_TOKEN_COOKIE_NAME}=`))
+		?.slice(`${ACCESS_TOKEN_COOKIE_NAME}=`.length);
+	const accessToken = cookieToken || bearerToken;
 
 	if (!accessToken) {
 		return {

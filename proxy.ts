@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { ACCESS_TOKEN_COOKIE_NAME, REFRESH_TOKEN_COOKIE_NAME } from '@/lib/auth/cookieConfig';
 
 export const proxy = (req: NextRequest) => {
 	const { pathname } = req.nextUrl;
@@ -11,11 +12,12 @@ export const proxy = (req: NextRequest) => {
 	// 対象外のパスならスルー
 	if (!isProtected) return NextResponse.next();
 
-	// cookie から access_token を取得
-	const token = req.cookies.get('access_token')?.value;
+	// cookie から access/refresh token を取得
+	const accessToken = req.cookies.get(ACCESS_TOKEN_COOKIE_NAME)?.value;
+	const refreshToken = req.cookies.get(REFRESH_TOKEN_COOKIE_NAME)?.value;
 
 	// トークンがなければサインインへリダイレクト
-	if (!token) {
+	if (!accessToken && !refreshToken) {
 		const url = req.nextUrl.clone();
 		url.pathname = '/signin';
 		return NextResponse.redirect(url);

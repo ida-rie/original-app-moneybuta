@@ -11,10 +11,7 @@ export const useBasicAmount = () => {
 	const user = useAuthStore((state) => state.user?.id);
 	const selectedChild = useAuthStore((state) => state.selectedChild?.id);
 
-	const token =
-		typeof window !== 'undefined' ? sessionStorage.getItem('access_token') : null;
-
-	const shouldFetch = Boolean(selectedChild && user && token);
+	const shouldFetch = Boolean(selectedChild && user);
 
 	const fetcher = async (url: string) => {
 		const json = await apiJson<{ data: BasicAmountType | null }>(url);

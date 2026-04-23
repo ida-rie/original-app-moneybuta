@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/zustand/authStore';
 import { toast } from 'sonner';
+import { syncSessionCookie } from '@/lib/client/authSession';
 
 const AuthCallbackPage = () => {
 	const router = useRouter();
@@ -26,20 +27,10 @@ const AuthCallbackPage = () => {
 					return;
 				}
 
-				const accessToken = session.access_token;
-
-				// Cookie に保存（middleware用）
-				document.cookie = `access_token=${accessToken}; path=/; max-age=86400`;
-
-				// sessionStorage に保存（Zustand連携用）
-				sessionStorage.setItem('access_token', accessToken);
+				await syncSessionCookie(session);
 
 				// DBからユーザー情報を取得
-				const res = await fetch(`/api/users/${session.user.id}`, {
-					headers: {
-						Authorization: `Bearer ${accessToken}`,
-					},
-				});
+				const res = await fetch('/api/auth/me', { credentials: 'include' });
 				if (!res.ok) {
 					toast.error('ユーザー情報の取得に失敗しました');
 					setTimeout(() => router.push('/signin'), 2000);

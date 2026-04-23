@@ -21,6 +21,7 @@ import Link from 'next/link';
 import { useAuthStore } from '@/lib/zustand/authStore';
 import { useState } from 'react';
 import { BookOpenText } from 'lucide-react';
+import { syncSessionCookie } from '@/lib/client/authSession';
 
 const FormSchema = z.object({
 	emailOrId: z.string().min(1, {
@@ -71,7 +72,7 @@ const SignIn = () => {
 				password,
 			});
 
-			if (signInError || !signInData.user) {
+			if (signInError || !signInData.user || !signInData.session) {
 				if (signInError?.message === 'Email not confirmed') {
 					toast.error(
 						'メールアドレスの確認が完了していません。登録時に送られた確認メールをご確認ください。'
@@ -83,24 +84,10 @@ const SignIn = () => {
 				return;
 			}
 
-			// トークンをセッションストレージに保存
-
-			const accessToken = signInData.session.access_token;
-
-			// cookie に保存（middleware 用）
-			document.cookie = `access_token=${accessToken}; path=/; max-age=86400`; // 有効期限1日
-
-			// sessionStorage に保存（画面用：Zustandと連携）
-			sessionStorage.setItem('access_token', accessToken);
+			await syncSessionCookie(signInData.session);
 
 			// idに紐づくuserの情報を取得
-			const user = signInData.user;
-
-			const res = await fetch(`/api/users/${user.id}`, {
-				headers: {
-					Authorization: `Bearer ${accessToken}`,
-				},
-			});
+			const res = await fetch('/api/auth/me', { credentials: 'include' });
 			if (!res.ok) {
 				const errorText = await res.text(); // エラーメッセージを取得
 				console.error('APIエラー:', errorText);
