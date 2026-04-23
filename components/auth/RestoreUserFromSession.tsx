@@ -18,16 +18,7 @@ const RestoreUserFromSession = () => {
 
 		const restore = async () => {
 			try {
-				let res = await fetch('/api/auth/me', { credentials: 'include' });
-				if (res.status === 401) {
-					const refreshed = await fetch('/api/auth/refresh', {
-						method: 'POST',
-						credentials: 'include',
-					});
-					if (refreshed.ok) {
-						res = await fetch('/api/auth/me', { credentials: 'include' });
-					}
-				}
+				const res = await fetch('/api/auth/restore', { credentials: 'include' });
 				if (!active) return;
 
 				if (!res.ok) {
