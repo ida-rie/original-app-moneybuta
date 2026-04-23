@@ -1,13 +1,32 @@
 'use client';
 
+import { CSRF_TOKEN_COOKIE_NAME } from '@/lib/auth/cookieConfig';
+
 type ApiRequestOptions = Omit<RequestInit, 'headers'> & {
 	headers?: HeadersInit;
 	requireAuth?: boolean;
 };
 
+const getCsrfToken = () => {
+	if (typeof document === 'undefined') return null;
+	const match = document.cookie
+		.split(';')
+		.map((part) => part.trim())
+		.find((part) => part.startsWith(`${CSRF_TOKEN_COOKIE_NAME}=`));
+	if (!match) return null;
+	return decodeURIComponent(match.slice(`${CSRF_TOKEN_COOKIE_NAME}=`.length));
+};
+
+const isMutationMethod = (method?: string) =>
+	Boolean(method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase()));
+
 export const apiRequest = async (url: string, options: ApiRequestOptions = {}) => {
 	const { requireAuth = true, headers, ...rest } = options;
 	const mergedHeaders = new Headers(headers);
+	if (isMutationMethod(rest.method)) {
+		const csrfToken = getCsrfToken();
+		if (csrfToken) mergedHeaders.set('x-csrf-token', csrfToken);
+	}
 	const baseOptions: RequestInit = {
 		...rest,
 		headers: mergedHeaders,

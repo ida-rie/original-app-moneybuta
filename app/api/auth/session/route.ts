@@ -2,11 +2,17 @@ import { NextResponse } from 'next/server';
 import {
 	ACCESS_TOKEN_COOKIE_NAME,
 	ACCESS_TOKEN_MAX_AGE_SECONDS,
+	CSRF_TOKEN_COOKIE_NAME,
+	CSRF_TOKEN_MAX_AGE_SECONDS,
 	REFRESH_TOKEN_COOKIE_NAME,
 	REFRESH_TOKEN_MAX_AGE_SECONDS,
+	SESSION_META_COOKIE_NAME,
+	SESSION_META_MAX_AGE_SECONDS,
 	getAuthCookieSecure,
 } from '@/lib/auth/cookieConfig';
 import { supabase } from '@/lib/prisma/supabaseCreateClient';
+import { createCsrfToken } from '@/lib/auth/csrf';
+import { createInitialSessionMeta, encodeSessionMeta } from '@/lib/auth/sessionMeta';
 
 type SessionPayload = {
 	accessToken?: string;
@@ -36,6 +42,8 @@ export async function POST(req: Request) {
 
 		const res = NextResponse.json({ ok: true }, { status: 200 });
 		const secure = getAuthCookieSecure();
+		const csrfToken = createCsrfToken();
+		const sessionMeta = encodeSessionMeta(createInitialSessionMeta());
 
 		res.cookies.set({
 			name: ACCESS_TOKEN_COOKIE_NAME,
@@ -54,6 +62,24 @@ export async function POST(req: Request) {
 			sameSite: 'lax',
 			path: '/',
 			maxAge: REFRESH_TOKEN_MAX_AGE_SECONDS,
+		});
+		res.cookies.set({
+			name: CSRF_TOKEN_COOKIE_NAME,
+			value: csrfToken,
+			httpOnly: false,
+			secure,
+			sameSite: 'lax',
+			path: '/',
+			maxAge: CSRF_TOKEN_MAX_AGE_SECONDS,
+		});
+		res.cookies.set({
+			name: SESSION_META_COOKIE_NAME,
+			value: sessionMeta,
+			httpOnly: true,
+			secure,
+			sameSite: 'lax',
+			path: '/',
+			maxAge: SESSION_META_MAX_AGE_SECONDS,
 		});
 
 		return res;
